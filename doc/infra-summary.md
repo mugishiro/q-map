@@ -59,3 +59,16 @@ prod (`infra/terraform-prod`, backend key `qmap/prod/terraform.tfstate`)
 - 実ドメイン確定後、tfvars の callback/logout/allowed_origins を更新して各環境で再 apply
 - Amplify の rewrite `/api/*` が各ステージで期待通りか確認
 - CI で plan/apply とフロントビルドを環境別に回す（prod は手動承認推奨）
+
+## 進捗まとめ
+やったこと
+- dev/stg/prod の Terraform を分離し、S3+DynamoDB のステートで運用
+- Lambda を TypeScript にリライトし、`npm run build:lambda` → Terraform で `infra/lambda/dist` をデプロイ
+- 全環境で Terraform apply 済み（dev/stg/prod の Lambda コード更新）
+- 環境別のフロント `.env.*.example` を追加（API/Cognito 情報のサンプル）
+- リポジトリを GitHub (`git@github.com:mugishiro/q-map.git`) へ push 済み
+
+まだ未完了/今後やること
+- 本番/ステージ/開発の実ドメインが未確定（確定後 tfvars を差し替えて apply）
+- フロントソースはリポジトリ未同梱のため、ビルド/デプロイ確認は pending（ソース投入と Amplify 環境変数設定が必要）
+- CI で環境別 plan/apply + フロントビルドを回すワークフローが未実装
