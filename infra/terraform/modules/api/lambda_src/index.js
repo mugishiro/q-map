@@ -7,7 +7,7 @@
 //
 // 注意:
 // - Node テーブルは PK=topicId, SK=nodeId。nodeId 単独取得は GSI2(userId/updatedAt) から絞り込みで解決。
-// - label 生成は簡易。必要ならフロント側で再計算を検討。
+// - label 生成は親の子数に応じて付与（同階層で 1,2,3..., 深さで A/B/C... を付ける簡易版）。
 
 const AWS = require("aws-sdk");
 const crypto = require("crypto");
@@ -18,6 +18,7 @@ const kms = new AWS.KMS({ region: process.env.REGION });
 const TOPICS_TABLE = process.env.TOPICS_TABLE_NAME;
 const NODES_TABLE = process.env.NODES_TABLE_NAME;
 const USER_SETTINGS_TABLE = process.env.USER_SETTINGS_TABLE_NAME;
+const NODES_GSI1 = process.env.NODES_GSI1_NAME; // parentId/createdAt
 const NODES_GSI2 = process.env.NODES_GSI2_NAME; // userId/updatedAt
 
 const json = (status, payload) => ({
@@ -55,7 +56,51 @@ const matchPath = (path, pattern) => {
 
 const newId = () => crypto.randomUUID();
 const nowIso = () => new Date().toISOString();
-const newLabel = () => `N${Date.now().toString(36)}`;
+const letterForDepth = (depth) => {
+  const base = "A".charCodeAt(0);
+  const code = Math.min(base + depth, "Z".charCodeAt(0));
+  return String.fromCharCode(code);
+};
+
+const countChildren = async (topicId, parentId, userId) => {
+  if (!parentId) {
+    // ルート直下: topic 全件から parentId=null をフィルタ
+    const res = await ddb
+      .query({
+        TableName: NODES_TABLE,
+        KeyConditionExpression: "topicId = :t",
+        ExpressionAttributeValues: { ":t": topicId },
+      })
+      .promise();
+    const items = res.Items ?? [];
+    return items.filter((n) => n.userId === userId && !n.parentId).length;
+  }
+  const res = await ddb
+    .query({
+      TableName: NODES_TABLE,
+      IndexName: NODES_GSI1,
+      KeyConditionExpression: "parentId = :p",
+      ExpressionAttributeValues: { ":p": parentId },
+    })
+    .promise();
+  const items = res.Items ?? [];
+  return items.filter((n) => n.userId === userId).length;
+};
+
+const generateLabel = async (topicId, parentId, userId) => {
+  let depth = 0;
+  if (parentId) {
+    const parent = await getNode(topicId, parentId);
+    if (parent && parent.userId === userId) {
+      const path = await buildPath(userId, parent);
+      depth = path.length; // 0-based: root=0, child=1...
+    }
+  }
+  const siblings = await countChildren(topicId, parentId, userId);
+  const letter = letterForDepth(depth);
+  const number = siblings + 1;
+  return `${letter}${number}`;
+};
 
 const queryTopics = async (userId, limit, cursor) => {
   const params = {
@@ -179,6 +224,22 @@ const decryptApiKey = async (ciphertext) => {
   return res.Plaintext.toString("utf8");
 };
 
+const mapMessagesForAnthropic = (messages) => {
+  // Anthropic v1/messages 形式に変換
+  return messages.map((m) => ({
+    role: m.role === "assistant" ? "assistant" : "user",
+    content: [{ type: "text", text: m.content }],
+  }));
+};
+
+const mapMessagesForGemini = (messages) => {
+  // Gemini generateContent の content 配列に変換
+  return messages.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+};
+
 const callLLM = async (userId, messages) => {
   const settings = await readUserSettings(userId);
   if (!settings || !settings.apiKeyEncrypted) {
@@ -188,35 +249,92 @@ const callLLM = async (userId, messages) => {
   const provider = settings.llmProvider || "openai";
   const model = settings.model || "gpt-4o-mini";
 
-  if (provider !== "openai") {
-    return {
-      role: "assistant",
-      content: `Provider ${provider} not implemented. Echo: ${messages.at(-1)?.content ?? ""}`,
-      createdAt: nowIso(),
+  if (provider === "openai") {
+    const payload = {
+      model,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
     };
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content ?? "(empty response)";
+    return { role: "assistant", content, createdAt: nowIso() };
   }
 
-  const payload = {
-    model,
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
-  };
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+  if (provider === "openrouter") {
+    const payload = {
+      model,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+    };
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content ?? "(empty response)";
+    return { role: "assistant", content, createdAt: nowIso() };
   }
-  const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content ?? "(empty response)";
-  return { role: "assistant", content, createdAt: nowIso() };
+
+  if (provider === "anthropic") {
+    const payload = {
+      model,
+      max_tokens: 1024,
+      messages: mapMessagesForAnthropic(messages),
+    };
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+    }
+    const data = await res.json();
+    const content = data?.content?.[0]?.text ?? "(empty response)";
+    return { role: "assistant", content, createdAt: nowIso() };
+  }
+
+  if (provider === "gemini") {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const payload = { contents: mapMessagesForGemini(messages) };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+    }
+    const data = await res.json();
+    const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "(empty response)";
+    return { role: "assistant", content, createdAt: nowIso() };
+  }
+
+  throw { code: "LLM_PROVIDER_NOT_SUPPORTED", status: 400, message: `Provider ${provider} not supported.` };
 };
 
 const ensureBody = (body, keys) => {
@@ -297,12 +415,13 @@ exports.handler = async (event) => {
       if (!topic) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
       const now = nowIso();
       const nodeId = `node#${newId()}`;
+      const label = body.label || (await generateLabel(body.topicId, body.parentId, userId));
       const item = {
         topicId: body.topicId,
         nodeId,
         userId,
         parentId: body.parentId,
-        label: body.label || newLabel(),
+        label,
         title: `あとで: ${body.summary}`,
         summary: body.summary,
         type: "later",
@@ -393,12 +512,13 @@ exports.handler = async (event) => {
 
       const now = nowIso();
       const nodeId = `node#${newId()}`;
+      const label = body.label || (await generateLabel(body.topicId, body.baseNodeId || null, userId));
       const nodeItem = {
         topicId: body.topicId,
         nodeId,
         userId,
         parentId: body.baseNodeId || null,
-        label: body.label || newLabel(),
+        label,
         title: body.message,
         summary: body.message,
         type: "chat",
