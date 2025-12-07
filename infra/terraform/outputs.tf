@@ -47,3 +47,13 @@ output "cognito_domain" {
   description = "Cognito Hosted UI ドメイン"
   value       = module.auth.cognito_domain
 }
+
+output "amplify_app_id" {
+  description = "Amplify App ID"
+  value       = module.amplify.app_id
+}
+
+output "amplify_default_domain" {
+  description = "Amplify デフォルトドメイン"
+  value       = module.amplify.default_domain
+}
