@@ -8,12 +8,22 @@ on:
 
 jobs:
   terraform:
+    # Skip if AWS credentials are not configured
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/terraform
+        working-directory: infra/terraform-dev
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Build Lambda (backend)
+        run: |
+          cd backend
+          npm ci
+          npm run build
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.8.5
@@ -22,9 +32,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
-      - name: Terraform Init
+      - name: Terraform Init (dev)
         run: terraform init -backend-config="bucket=qmap-tfstate-710146154969-apne1" -backend-config="dynamodb_table=qmap-terraform-locks" -backend-config="key=qmap/dev/terraform.tfstate" -backend-config="region=ap-northeast-1"
-      - name: Terraform Plan
+      - name: Terraform Plan (dev)
         run: terraform plan -var-file=dev.tfvars
       - name: Terraform Apply (main only)
         if: github.ref == 'refs/heads/main'
@@ -37,12 +47,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Build & test (skips if no package.json)
-        run: |
-          if [ -f package.json ]; then
-            npm ci
-            npm test
-            npm run build
-          else
-            echo "No frontend yet, skipping build"
-          fi
+      - name: Install deps
+        working-directory: frontend
+        run: npm ci
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
