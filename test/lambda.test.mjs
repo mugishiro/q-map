@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import lambda from "../infra/terraform/modules/api/lambda_src/index.js";
+import lambda from "../infra/lambda/src/index.ts";
 
 describe("lambda helpers", () => {
   const { letterForDepth, matchPath } = lambda._test;

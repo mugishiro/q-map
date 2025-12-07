@@ -1,68 +1,117 @@
 "use strict";
 
-// QMap BFF 実装（シンプル版）
-// - DynamoDB: Topics / Nodes / UserSettings
-// - Cognito JWT (sub) を userId として利用
-// - LLM: OpenAI chat/completions を呼び出すシンプル実装（apiKey は KMS 復号）
-//
-// 注意:
-// - Node テーブルは PK=topicId, SK=nodeId。nodeId 単独取得は GSI2(userId/updatedAt) から絞り込みで解決。
-// - label 生成は親の子数に応じて付与（同階層で 1,2,3..., 深さで A/B/C... を付ける簡易版）。
+import AWS from "aws-sdk";
+import crypto from "crypto";
+import {
+  APIGatewayProxyEventV2WithJWTAuthorizer,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
 
-const AWS = require("aws-sdk");
-const crypto = require("crypto");
+type Role = "user" | "assistant";
+
+export interface Message {
+  role: Role;
+  content: string;
+  createdAt: string;
+}
+
+interface TopicItem {
+  userId: string;
+  topicId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface NodeItem {
+  topicId: string;
+  nodeId: string;
+  userId: string;
+  parentId?: string | null;
+  label?: string;
+  title?: string;
+  summary?: string;
+  type?: string;
+  messages?: Message[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserSettings {
+  userId: string;
+  apiKeyEncrypted?: string;
+  llmProvider?: LLMProvider;
+  model?: string;
+}
+
+type LLMProvider = "openai" | "openrouter" | "anthropic" | "gemini";
+
+class AppError extends Error {
+  code: string;
+  status: number;
+
+  constructor(code: string, message: string, status = 400) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
 
 const ddb = new AWS.DynamoDB.DocumentClient({ region: process.env.REGION });
 const kms = new AWS.KMS({ region: process.env.REGION });
 
-const TOPICS_TABLE = process.env.TOPICS_TABLE_NAME;
-const NODES_TABLE = process.env.NODES_TABLE_NAME;
-const USER_SETTINGS_TABLE = process.env.USER_SETTINGS_TABLE_NAME;
-const NODES_GSI1 = process.env.NODES_GSI1_NAME; // parentId/createdAt
-const NODES_GSI2 = process.env.NODES_GSI2_NAME; // userId/updatedAt
+const TOPICS_TABLE = process.env.TOPICS_TABLE_NAME ?? "";
+const NODES_TABLE = process.env.NODES_TABLE_NAME ?? "";
+const USER_SETTINGS_TABLE = process.env.USER_SETTINGS_TABLE_NAME ?? "";
+const NODES_GSI1 = process.env.NODES_GSI1_NAME ?? ""; // parentId/createdAt
+const NODES_GSI2 = process.env.NODES_GSI2_NAME ?? ""; // userId/updatedAt
 
-const json = (status, payload) => ({
+const json = (status: number, payload: unknown): APIGatewayProxyResultV2 => ({
   statusCode: status,
   headers: { "content-type": "application/json" },
   body: JSON.stringify(payload),
 });
 
-const error = (code, message, status = 400) =>
+const error = (code: string, message: string, status = 400): APIGatewayProxyResultV2 =>
   json(status, { error: { code, message } });
 
-const parseBody = (event) => {
-  if (!event.body) return {};
+const parseBody = <T>(event: APIGatewayProxyEventV2WithJWTAuthorizer): T => {
+  if (!event.body) return {} as T;
   try {
-    return JSON.parse(event.body);
-  } catch (e) {
-    return {};
+    return JSON.parse(event.body) as T;
+  } catch {
+    return {} as T;
   }
 };
 
-const getUserId = (event) =>
-  event?.requestContext?.authorizer?.jwt?.claims?.sub ?? null;
+const getUserId = (event: APIGatewayProxyEventV2WithJWTAuthorizer): string | null => {
+  const sub = event?.requestContext?.authorizer?.jwt?.claims?.sub;
+  return typeof sub === "string" ? sub : null;
+};
 
-const matchPath = (path, pattern) => {
+const matchPath = (path: string, pattern: string): Record<string, string> | null => {
   const regex = new RegExp(
     "^" + pattern.replace(/\//g, "\\/").replace(/\{[^/]+?\}/g, "([^/]+)") + "$"
   );
   const m = path.match(regex);
   if (!m) return null;
   const keys = [...pattern.matchAll(/\{([^/]+?)\}/g)].map((p) => p[1]);
-  const params = {};
-  keys.forEach((k, idx) => (params[k] = m[idx + 1]));
+  const params: Record<string, string> = {};
+  keys.forEach((k, idx) => {
+    params[k] = m[idx + 1];
+  });
   return params;
 };
 
 const newId = () => crypto.randomUUID();
 const nowIso = () => new Date().toISOString();
-const letterForDepth = (depth) => {
+const letterForDepth = (depth: number) => {
   const base = "A".charCodeAt(0);
   const code = Math.min(base + depth, "Z".charCodeAt(0));
   return String.fromCharCode(code);
 };
 
-const countChildren = async (topicId, parentId, userId) => {
+const countChildren = async (topicId: string, parentId: string | null, userId: string) => {
   if (!parentId) {
     // ルート直下: topic 全件から parentId=null をフィルタ
     const res = await ddb
@@ -72,22 +121,22 @@ const countChildren = async (topicId, parentId, userId) => {
         ExpressionAttributeValues: { ":t": topicId },
       })
       .promise();
-    const items = res.Items ?? [];
+    const items = (res.Items as NodeItem[]) ?? [];
     return items.filter((n) => n.userId === userId && !n.parentId).length;
   }
   const res = await ddb
     .query({
-      TableName: NODES_TABLE,
-      IndexName: NODES_GSI1,
-      KeyConditionExpression: "parentId = :p",
-      ExpressionAttributeValues: { ":p": parentId },
-    })
+        TableName: NODES_TABLE,
+        IndexName: NODES_GSI1,
+        KeyConditionExpression: "parentId = :p",
+        ExpressionAttributeValues: { ":p": parentId },
+      })
     .promise();
-  const items = res.Items ?? [];
+  const items = (res.Items as NodeItem[]) ?? [];
   return items.filter((n) => n.userId === userId).length;
 };
 
-const generateLabel = async (topicId, parentId, userId) => {
+const generateLabel = async (topicId: string, parentId: string | null, userId: string) => {
   let depth = 0;
   if (parentId) {
     const parent = await getNode(topicId, parentId);
@@ -102,35 +151,45 @@ const generateLabel = async (topicId, parentId, userId) => {
   return `${letter}${number}`;
 };
 
-const queryTopics = async (userId, limit, cursor) => {
-  const params = {
+const decodeCursor = (cursor?: string | null) => {
+  if (!cursor) return undefined;
+  try {
+    return JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
+  } catch {
+    return undefined;
+  }
+};
+
+const queryTopics = async (userId: string, limit: number, cursor?: string | null) => {
+  const params: AWS.DynamoDB.DocumentClient.QueryInput = {
     TableName: TOPICS_TABLE,
     KeyConditionExpression: "userId = :u",
     ExpressionAttributeValues: { ":u": userId },
     Limit: limit || 50,
   };
-  if (cursor) params.ExclusiveStartKey = JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
+  const exclusive = decodeCursor(cursor);
+  if (exclusive) params.ExclusiveStartKey = exclusive;
   const res = await ddb.query(params).promise();
   return {
-    items: res.Items ?? [],
+    items: (res.Items as TopicItem[]) ?? [],
     nextCursor: res.LastEvaluatedKey
       ? Buffer.from(JSON.stringify(res.LastEvaluatedKey)).toString("base64")
       : null,
   };
 };
 
-const getTopic = async (userId, topicId) => {
+const getTopic = async (userId: string, topicId: string) => {
   const res = await ddb
     .get({ TableName: TOPICS_TABLE, Key: { userId, topicId } })
     .promise();
-  return res.Item || null;
+  return (res.Item as TopicItem | undefined) ?? null;
 };
 
-const deleteTopicWithNodes = async (userId, topicId) => {
+const deleteTopicWithNodes = async (userId: string, topicId: string) => {
   // Delete Topic
   await ddb.delete({ TableName: TOPICS_TABLE, Key: { userId, topicId } }).promise();
   // Delete Nodes by topicId (batch)
-  let lastKey;
+  let lastKey: AWS.DynamoDB.DocumentClient.Key | undefined;
   do {
     const res = await ddb
       .query({
@@ -140,9 +199,9 @@ const deleteTopicWithNodes = async (userId, topicId) => {
         ExclusiveStartKey: lastKey,
       })
       .promise();
-    const items = res.Items ?? [];
+    const items = (res.Items as NodeItem[]) ?? [];
     if (items.length) {
-      const batches = [];
+      const batches: NodeItem[][] = [];
       for (let i = 0; i < items.length; i += 25) {
         batches.push(items.slice(i, i + 25));
       }
@@ -162,7 +221,7 @@ const deleteTopicWithNodes = async (userId, topicId) => {
   } while (lastKey);
 };
 
-const queryNodesByTopic = async (userId, topicId) => {
+const queryNodesByTopic = async (userId: string, topicId: string) => {
   const res = await ddb
     .query({
       TableName: NODES_TABLE,
@@ -171,11 +230,11 @@ const queryNodesByTopic = async (userId, topicId) => {
     })
     .promise();
   // Filter by userId for safety
-  return (res.Items ?? []).filter((n) => n.userId === userId);
+  return ((res.Items as NodeItem[]) ?? []).filter((n) => n.userId === userId);
 };
 
-const findNodeById = async (userId, nodeId) => {
-  // Query GSI2: userId/updatedAt と FilterExpression で nodeId を絞り込む
+const findNodeById = async (userId: string, nodeId: string) => {
+  // Query GSI2: userId/updatedAt と FilterExpression で nodeId を絞り込み
   const res = await ddb
     .query({
       TableName: NODES_TABLE,
@@ -186,20 +245,20 @@ const findNodeById = async (userId, nodeId) => {
       Limit: 1,
     })
     .promise();
-  const items = res.Items ?? [];
+  const items = (res.Items as NodeItem[]) ?? [];
   return items[0] || null;
 };
 
-const getNode = async (topicId, nodeId) => {
+const getNode = async (topicId: string, nodeId: string) => {
   const res = await ddb
     .get({ TableName: NODES_TABLE, Key: { topicId, nodeId } })
     .promise();
-  return res.Item || null;
+  return (res.Item as NodeItem | undefined) ?? null;
 };
 
-const buildPath = async (userId, startNode) => {
-  const path = [];
-  let current = startNode;
+const buildPath = async (userId: string, startNode: NodeItem) => {
+  const path: NodeItem[] = [];
+  let current: NodeItem | null = startNode;
   while (current) {
     path.push(current);
     if (!current.parentId) break;
@@ -210,43 +269,39 @@ const buildPath = async (userId, startNode) => {
   return path.reverse();
 };
 
-const readUserSettings = async (userId) => {
+const readUserSettings = async (userId: string) => {
   const res = await ddb
     .get({ TableName: USER_SETTINGS_TABLE, Key: { userId } })
     .promise();
-  return res.Item || null;
+  return (res.Item as UserSettings | undefined) ?? null;
 };
 
-const decryptApiKey = async (ciphertext) => {
+const decryptApiKey = async (ciphertext: string) => {
   const res = await kms
     .decrypt({ CiphertextBlob: Buffer.from(ciphertext, "base64") })
     .promise();
-  return res.Plaintext.toString("utf8");
+  return res.Plaintext?.toString("utf8") ?? "";
 };
 
-const mapMessagesForAnthropic = (messages) => {
-  // Anthropic v1/messages 形式に変換
-  return messages.map((m) => ({
+const mapMessagesForAnthropic = (messages: Message[]) =>
+  messages.map((m) => ({
     role: m.role === "assistant" ? "assistant" : "user",
     content: [{ type: "text", text: m.content }],
   }));
-};
 
-const mapMessagesForGemini = (messages) => {
-  // Gemini generateContent の content 配列に変換
-  return messages.map((m) => ({
+const mapMessagesForGemini = (messages: Message[]) =>
+  messages.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.content }],
   }));
-};
 
-const callLLM = async (userId, messages) => {
+const callLLM = async (userId: string, messages: Message[]): Promise<Message> => {
   const settings = await readUserSettings(userId);
   if (!settings || !settings.apiKeyEncrypted) {
-    throw { code: "LLM_API_KEY_MISSING", status: 400, message: "LLM API key is not configured." };
+    throw new AppError("LLM_API_KEY_MISSING", "LLM API key is not configured.", 400);
   }
   const apiKey = await decryptApiKey(settings.apiKeyEncrypted);
-  const provider = settings.llmProvider || "openai";
+  const provider: LLMProvider = settings.llmProvider || "openai";
   const model = settings.model || "gpt-4o-mini";
 
   if (provider === "openai") {
@@ -264,9 +319,9 @@ const callLLM = async (userId, messages) => {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+      throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
     }
-    const data = await res.json();
+    const data = (await res.json()) as any;
     const content = data?.choices?.[0]?.message?.content ?? "(empty response)";
     return { role: "assistant", content, createdAt: nowIso() };
   }
@@ -286,9 +341,9 @@ const callLLM = async (userId, messages) => {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+      throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
     }
-    const data = await res.json();
+    const data = (await res.json()) as any;
     const content = data?.choices?.[0]?.message?.content ?? "(empty response)";
     return { role: "assistant", content, createdAt: nowIso() };
   }
@@ -310,15 +365,17 @@ const callLLM = async (userId, messages) => {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+      throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
     }
-    const data = await res.json();
+    const data = (await res.json()) as any;
     const content = data?.content?.[0]?.text ?? "(empty response)";
     return { role: "assistant", content, createdAt: nowIso() };
   }
 
   if (provider === "gemini") {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+      apiKey
+    )}`;
     const payload = { contents: mapMessagesForGemini(messages) };
     const res = await fetch(url, {
       method: "POST",
@@ -327,24 +384,23 @@ const callLLM = async (userId, messages) => {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw { code: "LLM_REQUEST_FAILED", status: 502, message: text };
+      throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
     }
-    const data = await res.json();
+    const data = (await res.json()) as any;
     const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "(empty response)";
     return { role: "assistant", content, createdAt: nowIso() };
   }
 
-  throw { code: "LLM_PROVIDER_NOT_SUPPORTED", status: 400, message: `Provider ${provider} not supported.` };
+  throw new AppError("LLM_PROVIDER_NOT_SUPPORTED", `Provider ${provider} not supported.`, 400);
 };
 
-const ensureBody = (body, keys) => {
-  for (const k of keys) {
-    if (!body[k]) return false;
-  }
-  return true;
+const ensureBody = <T extends Record<string, unknown>>(body: T, keys: (keyof T)[]): boolean => {
+  return keys.every((k) => Boolean(body[k]));
 };
 
-exports.handler = async (event) => {
+export const handler = async (
+  event: APIGatewayProxyEventV2WithJWTAuthorizer
+): Promise<APIGatewayProxyResultV2> => {
   const method = event?.requestContext?.http?.method ?? "UNKNOWN";
   const path = event?.rawPath ?? "/";
   const userId = getUserId(event);
@@ -364,11 +420,11 @@ exports.handler = async (event) => {
 
     // POST /v1/topics
     if (method === "POST" && path === "/v1/topics") {
-      const body = parseBody(event);
+      const body = parseBody<{ name?: string }>(event);
       if (!body.name) return error("VALIDATION_ERROR", "name is required");
       const topicId = `topic#${newId()}`;
       const now = nowIso();
-      const item = { userId, topicId, name: body.name, createdAt: now, updatedAt: now };
+      const item: TopicItem = { userId, topicId, name: body.name, createdAt: now, updatedAt: now };
       await ddb.put({ TableName: TOPICS_TABLE, Item: item }).promise();
       return json(201, { id: topicId, name: body.name, createdAt: now, updatedAt: now });
     }
@@ -378,7 +434,12 @@ exports.handler = async (event) => {
     if (method === "GET" && mTopic && !path.includes("/nodes")) {
       const item = await getTopic(userId, mTopic.topicId);
       if (!item) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
-      return json(200, { id: item.topicId, name: item.name, createdAt: item.createdAt, updatedAt: item.updatedAt });
+      return json(200, {
+        id: item.topicId,
+        name: item.name,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      });
     }
 
     // DELETE /v1/topics/{topicId}
@@ -408,16 +469,16 @@ exports.handler = async (event) => {
 
     // POST /v1/nodes (later)
     if (method === "POST" && path === "/v1/nodes") {
-      const body = parseBody(event);
+      const body = parseBody<{ topicId?: string; parentId?: string; summary?: string; label?: string }>(event);
       if (!ensureBody(body, ["topicId", "parentId", "summary"]))
         return error("VALIDATION_ERROR", "topicId, parentId, summary are required");
-      const topic = await getTopic(userId, body.topicId);
+      const topic = await getTopic(userId, body.topicId!);
       if (!topic) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
       const now = nowIso();
       const nodeId = `node#${newId()}`;
-      const label = body.label || (await generateLabel(body.topicId, body.parentId, userId));
-      const item = {
-        topicId: body.topicId,
+      const label = body.label || (await generateLabel(body.topicId!, body.parentId!, userId));
+      const item: NodeItem = {
+        topicId: body.topicId!,
         nodeId,
         userId,
         parentId: body.parentId,
@@ -453,7 +514,7 @@ exports.handler = async (event) => {
 
     // PATCH /v1/nodes/{nodeId}
     if (method === "PATCH" && mNode) {
-      const body = parseBody(event);
+      const body = parseBody<{ title?: string; summary?: string }>(event);
       const node = await findNodeById(userId, mNode.nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
       const updates = {
@@ -479,42 +540,49 @@ exports.handler = async (event) => {
 
     // POST /v1/chat
     if (method === "POST" && path === "/v1/chat") {
-      const body = parseBody(event);
+      const body = parseBody<{
+        topicId?: string;
+        message?: string;
+        baseNodeId?: string;
+        label?: string;
+      }>(event);
       if (!ensureBody(body, ["topicId", "message"]))
         return error("VALIDATION_ERROR", "topicId and message are required");
 
-      const topic = await getTopic(userId, body.topicId);
+      const topic = await getTopic(userId, body.topicId!);
       if (!topic) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
 
-      let baseNode = null;
+      let baseNode: NodeItem | null = null;
       if (body.baseNodeId) {
         baseNode = await findNodeById(userId, body.baseNodeId);
         if (!baseNode) return error("NODE_NOT_FOUND", "baseNode not found", 404);
       }
 
       // パスの messages を連結
-      const history = [];
+      const history: Message[] = [];
       if (baseNode) {
         const pathArr = await buildPath(userId, baseNode);
         for (const n of pathArr) {
           (n.messages || []).forEach((m) => history.push(m));
         }
       }
-      history.push({ role: "user", content: body.message, createdAt: nowIso() });
+      history.push({ role: "user", content: body.message!, createdAt: nowIso() });
 
-      let assistantMsg;
+      let assistantMsg: Message;
       try {
         assistantMsg = await callLLM(userId, history);
       } catch (err) {
-        const status = err.status || 500;
-        return error(err.code || "LLM_REQUEST_FAILED", err.message || "LLM error", status);
+        if (err instanceof AppError) {
+          return error(err.code, err.message, err.status);
+        }
+        return error("LLM_REQUEST_FAILED", "LLM error", 502);
       }
 
       const now = nowIso();
       const nodeId = `node#${newId()}`;
-      const label = body.label || (await generateLabel(body.topicId, body.baseNodeId || null, userId));
-      const nodeItem = {
-        topicId: body.topicId,
+      const label = body.label || (await generateLabel(body.topicId!, body.baseNodeId || null, userId));
+      const nodeItem: NodeItem = {
+        topicId: body.topicId!,
         nodeId,
         userId,
         parentId: body.baseNodeId || null,
@@ -523,7 +591,7 @@ exports.handler = async (event) => {
         summary: body.message,
         type: "chat",
         messages: [
-          { role: "user", content: body.message, createdAt: now },
+          { role: "user", content: body.message!, createdAt: now },
           assistantMsg,
         ],
         createdAt: now,
@@ -537,12 +605,18 @@ exports.handler = async (event) => {
     return error("NOT_FOUND", "Route not found", 404);
   } catch (e) {
     console.error("handler error", e);
-    return error("INTERNAL_SERVER_ERROR", e.message || "unexpected error", 500);
+    if (e instanceof AppError) {
+      return error(e.code, e.message, e.status);
+    }
+    const message = e instanceof Error ? e.message : "unexpected error";
+    return error("INTERNAL_SERVER_ERROR", message, 500);
   }
 };
 
 // テスト用に内部関数をエクスポート
-module.exports._test = {
+export const _test = {
   letterForDepth,
   matchPath,
 };
+
+export default { handler, _test };
