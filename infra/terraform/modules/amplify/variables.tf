@@ -33,3 +33,10 @@ variable "env_vars_extra" {
   type        = map(string)
   default     = {}
 }
+
+variable "access_token" {
+  description = "GitHub へのアクセス用トークン（PAT）"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

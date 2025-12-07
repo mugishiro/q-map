@@ -98,4 +98,5 @@ module "amplify" {
   user_pool_client_id = module.auth.user_pool_client_id
   cognito_domain      = module.auth.cognito_domain
   env_vars_extra      = var.lambda_environment_extras
+  access_token        = var.amplify_access_token
 }
