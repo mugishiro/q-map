@@ -1,0 +1,14 @@
+[
+  {
+    "source": "/api/<*>",
+    "target": "https://4s9u0m4qqh.execute-api.ap-northeast-1.amazonaws.com/dev/<*>",
+    "status": "200",
+    "condition": null
+  },
+  {
+    "source": "/<*>",
+    "target": "/index.html",
+    "status": "200",
+    "condition": null
+  }
+]

@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+      - name: Terraform Init
+        run: terraform init -backend-config="bucket=qmap-tfstate-710146154969-apne1" -backend-config="dynamodb_table=qmap-terraform-locks" -backend-config="key=qmap/dev/terraform.tfstate" -backend-config="region=ap-northeast-1"
+      - name: Terraform Plan
+        run: terraform plan -var-file=dev.tfvars
+      - name: Terraform Apply (main only)
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -var-file=dev.tfvars
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Build frontend (skips if no package.json)
+        run: |
+          if [ -f package.json ]; then
+            npm ci
+            npm run build
+          else
+            echo "No frontend yet, skipping build"
+          fi
