@@ -1,14 +1,14 @@
 version: 1
 applications:
-  - appRoot: .
+  - appRoot: frontend
     frontend:
       phases:
         preBuild:
           commands:
-            - if [ -f package.json ]; then npm ci; else echo "skip npm ci (no frontend)"; fi
+            - npm ci
         build:
           commands:
-            - if [ -f package.json ]; then npm run build; else mkdir -p dist && echo "<!doctype html><title>QMap</title><body>Placeholder build</body>" > dist/index.html; fi
+            - npm run build
       artifacts:
         baseDirectory: dist
         files:

@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "rootDir": "infra/lambda/src",
-    "outDir": "infra/lambda/dist",
+    "rootDir": "src",
+    "outDir": "dist",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -12,5 +12,5 @@
     "types": ["node", "aws-lambda"],
     "lib": ["es2021", "DOM"]
   },
-  "include": ["infra/lambda/src/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
