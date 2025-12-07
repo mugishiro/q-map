@@ -6,42 +6,50 @@ on:
   push:
     branches: [main]
 
-env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
 jobs:
   terraform:
-    # Skip if AWS credentials are not configured
-    if: ${{ env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != '' }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: infra/terraform-dev
     steps:
       - uses: actions/checkout@v4
+      - name: Check AWS creds
+        id: check_creds
+        run: |
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "missing=true" >> $GITHUB_OUTPUT
+          else
+            echo "missing=false" >> $GITHUB_OUTPUT
+          fi
       - uses: actions/setup-node@v4
+        if: steps.check_creds.outputs.missing == 'false'
         with:
           node-version: 18
       - name: Build Lambda (backend)
+        if: steps.check_creds.outputs.missing == 'false'
         run: |
           cd backend
           npm ci
           npm run build
       - uses: hashicorp/setup-terraform@v3
+        if: steps.check_creds.outputs.missing == 'false'
         with:
           terraform_version: 1.8.5
       - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.check_creds.outputs.missing == 'false'
         with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
       - name: Terraform Init (dev)
+        if: steps.check_creds.outputs.missing == 'false'
         run: terraform init -backend-config="bucket=qmap-tfstate-710146154969-apne1" -backend-config="dynamodb_table=qmap-terraform-locks" -backend-config="key=qmap/dev/terraform.tfstate" -backend-config="region=ap-northeast-1"
       - name: Terraform Plan (dev)
+        if: steps.check_creds.outputs.missing == 'false'
         run: terraform plan -var-file=dev.tfvars
       - name: Terraform Apply (main only)
-        if: github.ref == 'refs/heads/main'
+        if: steps.check_creds.outputs.missing == 'false' && github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve -var-file=dev.tfvars
 
   frontend:
