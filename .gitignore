@@ -8,3 +8,7 @@ infra/terraform/modules/api/lambda.zip
 
 # Local var files (contains environment-specific URLs)
 infra/terraform/*.tfvars
+
+# Node
+node_modules/
+package-lock.json

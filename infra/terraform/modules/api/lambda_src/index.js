@@ -540,3 +540,9 @@ exports.handler = async (event) => {
     return error("INTERNAL_SERVER_ERROR", e.message || "unexpected error", 500);
   }
 };
+
+// テスト用に内部関数をエクスポート
+module.exports._test = {
+  letterForDepth,
+  matchPath,
+};

@@ -37,10 +37,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Build frontend (skips if no package.json)
+      - name: Build & test (skips if no package.json)
         run: |
           if [ -f package.json ]; then
             npm ci
+            npm test
             npm run build
           else
             echo "No frontend yet, skipping build"
