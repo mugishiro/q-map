@@ -68,22 +68,22 @@ module "auth" {
 module "api" {
   source = "./modules/api"
 
-  name_prefix                   = local.name_prefix
-  stage                         = local.stage
-  region                        = var.region
-  tags                          = local.default_tags
-  kms_key_arn                   = module.base.kms_key_arn
-  topics_table_name             = module.data.topics_table_name
-  nodes_table_name              = module.data.nodes_table_name
-  user_settings_table_name      = module.data.user_settings_table_name
-  nodes_gsi1_name               = module.data.nodes_gsi1_name
-  nodes_gsi2_name               = module.data.nodes_gsi2_name
-  cognito_user_pool_arn         = module.auth.user_pool_arn
-  cognito_user_pool_client_id   = module.auth.user_pool_client_id
-  cognito_user_pool_issuer      = module.auth.user_pool_issuer
-  allowed_origins               = var.allowed_origins
-  lambda_timeout_seconds        = var.lambda_timeout_seconds
-  lambda_memory_mb              = var.lambda_memory_mb
-  lambda_environment_extras     = var.lambda_environment_extras
-  lambda_log_retention_in_days  = var.lambda_log_retention_in_days
+  name_prefix                  = local.name_prefix
+  stage                        = local.stage
+  region                       = var.region
+  tags                         = local.default_tags
+  kms_key_arn                  = module.base.kms_key_arn
+  topics_table_name            = module.data.topics_table_name
+  nodes_table_name             = module.data.nodes_table_name
+  user_settings_table_name     = module.data.user_settings_table_name
+  nodes_gsi1_name              = module.data.nodes_gsi1_name
+  nodes_gsi2_name              = module.data.nodes_gsi2_name
+  cognito_user_pool_arn        = module.auth.user_pool_arn
+  cognito_user_pool_client_id  = module.auth.user_pool_client_id
+  cognito_user_pool_issuer     = module.auth.user_pool_issuer
+  allowed_origins              = var.allowed_origins
+  lambda_timeout_seconds       = var.lambda_timeout_seconds
+  lambda_memory_mb             = var.lambda_memory_mb
+  lambda_environment_extras    = var.lambda_environment_extras
+  lambda_log_retention_in_days = var.lambda_log_retention_in_days
 }

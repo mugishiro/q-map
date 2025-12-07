@@ -1,0 +1,10 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Build artifacts
+infra/terraform/modules/api/lambda.zip
+
+# Local var files (contains environment-specific URLs)
+infra/terraform/*.tfvars

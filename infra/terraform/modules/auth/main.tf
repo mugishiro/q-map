@@ -7,7 +7,6 @@ locals {
 resource "aws_cognito_user_pool" "this" {
   name = local.user_pool_name
 
-  alias_attributes         = ["email"]
   auto_verified_attributes = ["email"]
   username_attributes      = ["email"]
 
