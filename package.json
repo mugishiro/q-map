@@ -4,7 +4,7 @@
   "description": "QMap stack",
   "license": "MIT",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run backend/test",
     "build:lambda": "tsc -p backend/tsconfig.json"
   },
   "devDependencies": {
