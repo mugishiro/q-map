@@ -62,13 +62,16 @@ prod (`infra/terraform-prod`, backend key `qmap/prod/terraform.tfstate`)
 
 ## 進捗まとめ
 やったこと
+- ディレクトリを frontend/backend/infra に分離（frontend は Vite+React、backend は TypeScript Lambda）
 - dev/stg/prod の Terraform を分離し、S3+DynamoDB のステートで運用
-- Lambda を TypeScript にリライトし、`npm run build:lambda` → Terraform で `infra/lambda/dist` をデプロイ
+- Lambda を TypeScript にリライトし、`npm run build:lambda` → Terraform で `backend/dist` をデプロイ
 - 全環境で Terraform apply 済み（dev/stg/prod の Lambda コード更新）
+- フロントを追加（トピック一覧/ツリー/パス/チャット UI、JWT 手入力で API 呼び出し可）
 - 環境別のフロント `.env.*.example` を追加（API/Cognito 情報のサンプル）
 - リポジトリを GitHub (`git@github.com:mugishiro/q-map.git`) へ push 済み
 
 まだ未完了/今後やること
 - 本番/ステージ/開発の実ドメインが未確定（確定後 tfvars を差し替えて apply）
-- フロントソースはリポジトリ未同梱のため、ビルド/デプロイ確認は pending（ソース投入と Amplify 環境変数設定が必要）
+- フロントの認証フローは JWT 手入力の簡易版のため、Cognito Hosted UI 連携とトークン取得を実装する
+- Amplify 環境変数（VITE_〜）を環境ごとに設定し、CI/Amplify ビルドに組み込む
 - CI で環境別 plan/apply + フロントビルドを回すワークフローが未実装
