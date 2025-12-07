@@ -6,10 +6,14 @@ on:
   push:
     branches: [main]
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
 jobs:
   terraform:
     # Skip if AWS credentials are not configured
-    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
+    if: ${{ env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != '' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,8 +33,8 @@ jobs:
           terraform_version: 1.8.5
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
       - name: Terraform Init (dev)
         run: terraform init -backend-config="bucket=qmap-tfstate-710146154969-apne1" -backend-config="dynamodb_table=qmap-terraform-locks" -backend-config="key=qmap/dev/terraform.tfstate" -backend-config="region=ap-northeast-1"
