@@ -5,7 +5,7 @@
 - Lambda: TypeScript でリライト（Dynamo/KMS/LLM 連携、OpenAI/OpenRouter/Anthropic/Gemini）。`backend/` に集約し、`npm run build:lambda` で dist を生成。
 - ディレクトリ構成: `frontend`（Vite+React UI）、`backend`（Lambda）、`infra`（Terraform）に分割。Amplify は `appRoot: frontend`。
 - フロント: トピック一覧/ツリー/パス表示/チャット・あとでノード追加のUIを実装。JWT を手入力して API 呼び出し可能。
-- 環境別サンプル env: `.env.dev/.prod.example` に API/Cognito のサンプルを記載。
+- 環境別サンプル env: （ローカル用サンプルは削除済み。必要なら Terraform 出力をもとに自作）
 - リポジトリ: GitHub `git@github.com:mugishiro/q-map.git` に push 済み。
 
 ## 未完了・これからやること
