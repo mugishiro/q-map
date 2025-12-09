@@ -14,7 +14,7 @@ locals {
 resource "aws_amplify_app" "this" {
   name       = local.app_name
   platform   = "WEB"
-  repository = "git@github.com:mugishiro/q-map.git"
+  repository = "https://github.com/mugishiro/q-map.git"
   access_token = var.access_token
 
   custom_rule {
