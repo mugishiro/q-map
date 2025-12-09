@@ -3,7 +3,7 @@
 - IaC: Terraform（単一ディレクトリ: `infra/terraform`、環境切替は backend-*.hcl + tfvars）
 - 状態管理: S3 バケット `qmap-tfstate-710146154969-apne1` + DynamoDB ロックテーブル `qmap-terraform-locks`（backend-dev.hcl / backend-prod.hcl で key を dev/prod に分離）
 - デプロイ対象: Amplify（GitHub `git@github.com:mugishiro/q-map.git`）、API Gateway (HTTP API)、Cognito、DynamoDB、KMS、Lambda
-- Lambda 実装: `backend/src/index.ts`（TypeScript, Dynamo/KMS/LLM 連携。`npm run build:lambda` で `backend/dist` を生成）
+- Lambda 実装: `backend/src/index.ts`（TypeScript, Dynamo/KMS/LLM 連携。`./scripts/build-lambda.sh` で `backend/dist` を生成）
 
 ## 実施済み
 - Terraform コードを `infra/terraform` に集約し、backend-*.hcl で環境別 key を指定
@@ -27,7 +27,7 @@ prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 2. 変更があれば tfvars を修正（例: callback/logout/allowed_origins を実ドメインに差し替え）
 3. 実行例（dev）  
    ```bash
-   npm run build:lambda  # backend を dist にビルド（全環境で共通利用）
+   ./scripts/build-lambda.sh  # backend を dist にビルド（全環境で共通利用）
    cd infra/terraform
    TF_VAR_amplify_access_token="<GitHub_PAT>" terraform init -reconfigure -backend-config=backend-dev.hcl
    TF_VAR_amplify_access_token="<GitHub_PAT>" terraform apply -var-file=dev.tfvars

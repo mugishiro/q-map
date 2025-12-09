@@ -3,9 +3,5 @@
   "version": "0.1.0",
   "private": true,
   "description": "QMap root scripts (backend/frontend managed separately)",
-  "license": "MIT",
-  "scripts": {
-    "test": "cd backend && npm test",
-    "build:lambda": "cd backend && npm run build"
-  }
+  "license": "MIT"
 }
