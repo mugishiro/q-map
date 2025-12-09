@@ -9,7 +9,7 @@
   - 404/robots などは通常の SPA 設定に従う。`/api/*` は CDN キャッシュを無効化。
 - フロントの環境変数例（Amplify Hosting の環境変数で注入。秘匿情報は置かない）:
   - `VITE_API_BASE_URL=/api`（CloudFront→APIGW 経由を前提）
-  - `VITE_APP_STAGE=dev|stg|prod`
+  - `VITE_APP_STAGE=dev|prod`
 
 ## Lambda 環境変数・シークレットの扱い
 - 環境変数（例）:

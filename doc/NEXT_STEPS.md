@@ -11,7 +11,7 @@
   - ブランチ/PR ごとのプレビュー環境運用を決定。
 - IaC
   - API Gateway / Lambda / DynamoDB / KMS を CDK 等で定義。
-  - dev/stg/prod の環境分離と命名規則、デプロイ手順を固める。
+  - dev/prod の環境分離と命名規則、デプロイ手順を固める。
 - 認証統合
   - Cognito: ドメイン、クライアントID、リダイレクトURLを Amplify と合わせる。
   - API Gateway 側の JWT 検証設定値を確定。
