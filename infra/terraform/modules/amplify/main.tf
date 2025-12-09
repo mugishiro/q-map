@@ -24,7 +24,8 @@ resource "aws_amplify_app" "this" {
   }
 
   custom_rule {
-    source = "/<*>"
+    # Rewrite only SPA routes without file extensions to avoid hijacking static assets
+    source = "</^[^.]+$/>"
     target = "/index.html"
     status = "200"
   }
