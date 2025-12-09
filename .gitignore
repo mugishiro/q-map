@@ -15,6 +15,7 @@ infra/terraform/*.tfvars
 .env.local
 .env.*
 !.env.*.example
+.envrc
 
 # Node
 node_modules/

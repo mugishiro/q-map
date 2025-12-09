@@ -20,6 +20,9 @@ export const api = {
   setToken(token: string) {
     localStorage.setItem("qmap_token", token);
   },
+  clearToken() {
+    localStorage.removeItem("qmap_token");
+  },
   getToken(): string | null {
     return localStorage.getItem("qmap_token");
   },

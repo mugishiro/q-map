@@ -35,9 +35,19 @@ prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
    ※ prod は `backend-prod.hcl` と `prod.tfvars` に切り替えるだけ
 4. 出力の確認: `terraform output`
 
-## ドメイン未決の場合
-- 現状は仮の `*.qmap.example.com` とローカル `http://localhost:5173` を tfvars に設定済み
-- 本番/開発ドメインが決まり次第、各 tfvars を更新し再度 `terraform apply`
+### Amplify 用 PAT の渡し方を省力化する
+- direnv を利用する場合（おすすめ・ローカル専用）  
+  `infra/terraform/.envrc` を作成し、`export TF_VAR_amplify_access_token=<PAT>` を記載して gitignore。`direnv allow` 後はディレクトリに入るだけで PAT が反映される。
+- `.auto.tfvars` を使う場合  
+  `infra/terraform/secret.auto.tfvars` に `amplify_access_token = "<PAT>"` を書き、`chmod 600`。`.auto.tfvars` は自動読込されるため apply 時のフラグが不要。必ず gitignore されたファイル名にする。
+- チーム共有や CI で使う場合  
+  AWS SSM パラメータストア / Secrets Manager に PAT を格納し、Terraform で `data "aws_ssm_parameter"` 経由で参照する実装に移行する。state/S3 に値が残る点は考慮すること。
+
+## ドメイン
+- 現状は Amplify デフォルトドメインを callback/logout/origins に設定済み  
+  - dev: https://main.dxhqhxj18etwj.amplifyapp.com  
+  - prod: https://main.d3c16q2d8f1ppt.amplifyapp.com
+- 独自ドメインに切り替える場合は各 tfvars を変更して再度 `terraform apply`
 
 ## フロント連携メモ
 - 必要な環境変数（例）: `VITE_API_BASE_URL`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_DOMAIN`

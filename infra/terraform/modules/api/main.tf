@@ -17,6 +17,8 @@ locals {
     "PATCH ${local.api_prefix}/nodes/{nodeId}"       = "PATCH ${local.api_prefix}/nodes/{nodeId}"
     "POST ${local.api_prefix}/chat"                  = "POST ${local.api_prefix}/chat"
     "POST ${local.api_prefix}/topics/{topicId}/summary" = "POST ${local.api_prefix}/topics/{topicId}/summary"
+    "GET ${local.api_prefix}/me/settings"            = "GET ${local.api_prefix}/me/settings"
+    "POST ${local.api_prefix}/me/settings"           = "POST ${local.api_prefix}/me/settings"
   }
 }
 

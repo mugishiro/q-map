@@ -65,6 +65,7 @@ const NODES_TABLE = process.env.NODES_TABLE_NAME ?? "";
 const USER_SETTINGS_TABLE = process.env.USER_SETTINGS_TABLE_NAME ?? "";
 const NODES_GSI1 = process.env.NODES_GSI1_NAME ?? ""; // parentId/createdAt
 const NODES_GSI2 = process.env.NODES_GSI2_NAME ?? ""; // userId/updatedAt
+const KMS_KEY_ARN = process.env.KMS_KEY_ARN ?? "";
 
 const json = (status: number, payload: unknown): APIGatewayProxyResultV2 => ({
   statusCode: status,
@@ -109,6 +110,25 @@ const letterForDepth = (depth: number) => {
   const base = "A".charCodeAt(0);
   const code = Math.min(base + depth, "Z".charCodeAt(0));
   return String.fromCharCode(code);
+};
+
+const maskApiKey = (apiKey: string) => {
+  if (!apiKey) return null;
+  if (apiKey.length <= 6) return "******";
+  return `${apiKey.slice(0, 4)}****${apiKey.slice(-2)}`;
+};
+
+const encryptApiKey = async (apiKey: string) => {
+  if (!KMS_KEY_ARN) {
+    throw new AppError("KMS_KEY_MISSING", "KMS_KEY_ARN is not configured.", 500);
+  }
+  const res = await kms
+    .encrypt({
+      KeyId: KMS_KEY_ARN,
+      Plaintext: apiKey,
+    })
+    .promise();
+  return res.CiphertextBlob?.toString("base64") ?? "";
 };
 
 const countChildren = async (topicId: string, parentId: string | null, userId: string) => {
@@ -295,6 +315,32 @@ const mapMessagesForGemini = (messages: Message[]) =>
     parts: [{ text: m.content }],
   }));
 
+const ALLOWED_LLM_PROVIDERS: LLMProvider[] = ["openai", "openrouter", "anthropic", "gemini"];
+
+const saveUserSettings = async (userId: string, input: { llmProvider: LLMProvider; model: string; apiKey: string }) => {
+  if (!ALLOWED_LLM_PROVIDERS.includes(input.llmProvider)) {
+    throw new AppError("INVALID_PROVIDER", "Unsupported LLM provider", 400);
+  }
+  if (!input.model) throw new AppError("INVALID_MODEL", "model is required", 400);
+  if (!input.apiKey) throw new AppError("LLM_API_KEY_MISSING", "apiKey is required", 400);
+
+  const apiKeyEncrypted = await encryptApiKey(input.apiKey);
+  const now = nowIso();
+  await ddb
+    .put({
+      TableName: USER_SETTINGS_TABLE,
+      Item: {
+        userId,
+        llmProvider: input.llmProvider,
+        model: input.model,
+        apiKeyEncrypted,
+        updatedAt: now,
+      },
+    })
+    .promise();
+  return { llmProvider: input.llmProvider, model: input.model, apiKeyMasked: maskApiKey(input.apiKey) };
+};
+
 const callLLM = async (userId: string, messages: Message[]): Promise<Message> => {
   const settings = await readUserSettings(userId);
   if (!settings || !settings.apiKeyEncrypted) {
@@ -410,6 +456,30 @@ export const handler = async (
   }
 
   try {
+    // GET /v1/me/settings
+    if (method === "GET" && path === "/v1/me/settings") {
+      const settings = await readUserSettings(userId);
+      return json(200, {
+        llmProvider: settings?.llmProvider || null,
+        model: settings?.model || null,
+        apiKeyMasked: settings?.apiKeyEncrypted ? maskApiKey(await decryptApiKey(settings.apiKeyEncrypted)) : null,
+      });
+    }
+
+    // POST /v1/me/settings
+    if (method === "POST" && path === "/v1/me/settings") {
+      const body = parseBody<{ llmProvider?: LLMProvider; model?: string; apiKey?: string }>(event);
+      if (!ensureBody(body, ["llmProvider", "model", "apiKey"])) {
+        return error("VALIDATION_ERROR", "llmProvider, model, apiKey are required");
+      }
+      const result = await saveUserSettings(userId, {
+        llmProvider: body.llmProvider as LLMProvider,
+        model: body.model as string,
+        apiKey: body.apiKey as string,
+      });
+      return json(200, result);
+    }
+
     // GET /v1/topics
     if (method === "GET" && path === "/v1/topics") {
       const limit = parseInt(event?.queryStringParameters?.limit || "50", 10);

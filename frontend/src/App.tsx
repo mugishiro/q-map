@@ -6,6 +6,7 @@ import { PathView } from "./components/PathView";
 import ChatPanel from "./components/ChatPanel";
 import TokenBar from "./components/TokenBar";
 import { api } from "./api";
+import { auth } from "./auth";
 import { Node, Topic } from "./types";
 
 function App() {
@@ -35,6 +36,33 @@ function App() {
 
   useEffect(() => {
     refreshTopics();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    if (!code) return;
+
+    const cleanupQuery = () => {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    };
+
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const tokens = await auth.exchangeCodeForToken(code, state ?? undefined);
+        api.setToken(tokens.accessToken);
+        await refreshTopics();
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        cleanupQuery();
+        setLoading(false);
+      }
+    };
+    void run();
   }, []);
 
   const loadNodes = async (topicId: string) => {
