@@ -1,6 +1,8 @@
 # QMap REST API ドキュメント
 
-ベース URL: `https://api.qmap.example.com/v1`  
+ベース URL 例:  
+- dev: `https://14z0sascyi.execute-api.ap-northeast-1.amazonaws.com/dev`  
+- prod: `https://4s9u0m4qqh.execute-api.ap-northeast-1.amazonaws.com/prod`  
 フォーマット: `application/json`  
 認証: Cognito 等で発行された JWT を `Authorization: Bearer <JWT>` で送る。全リソースは JWT の `userId` に紐づく。
 
@@ -21,14 +23,14 @@ export type ChatMessage = {
 };
 
 export type Topic = {
-  id: string;
+  id: string;           // 実体は "topic#<uuid>"
   name: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type Node = {
-  id: string;             // ULID（内部 ID）
+  id: string;             // 実体は "node#<uuid>"
   label: string;          // UI 表示用ラベル（例: A1/B2）
   topicId: string;
   parentId: string | null;
@@ -44,8 +46,8 @@ export type NodeWithMessages = Node & {
 };
 
 export type UserSettings = {
-  llmProvider: "openai" | "anthropic" | "gemini" | "openrouter" | "local";
-  model: string;
+  llmProvider: "openai" | "anthropic" | "gemini" | "openrouter" | null;
+  model: string | null;
   apiKeyMasked: string | null; // 平文キーは返さない
 };
 ```

@@ -3,21 +3,22 @@
 `doc/NEXT_STEPS.md` の粒度を上げ、すぐ着手できるようにした具体化メモ。前提仕様は `SPEC.md` / `USER_FLOW.md` / `API.md` を踏襲する。
 
 ## Amplify Hosting / ルーティング
-- Rewrites & Redirects（優先順）:
-  - `/api/<*>` → `https://{api-domain}/{stage}/<*>` （200: rewrite）。API Gateway のカスタムドメインを設定し、Amplify 側では API ドメインを環境変数で差し替え。
-  - `/<*>` → `/index.html` （200: SPA fallback）。
-  - 404/robots などは通常の SPA 設定に従う。`/api/*` は CDN キャッシュを無効化。
-- フロントの環境変数例（Amplify Hosting の環境変数で注入。秘匿情報は置かない）:
-  - `VITE_API_BASE_URL=/api`（CloudFront→APIGW 経由を前提）
-  - `VITE_APP_STAGE=dev|prod`
+- 現状: Amplify デフォルトドメインを使用。フロントは `VITE_API_BASE_URL` に API Gateway の HTTPS エンドポイントを直接指定（例: `https://14z0sascyi.../dev`）。  
+- カスタムドメインを入れる場合:  
+  - Amplify に独自ドメイン + HTTPS 証明書を設定。  
+  - CloudFront の Rewrites で `/api/<*>` → `https://{api-domain}/{stage}/<*>` を 200 rewrite に設定し、`VITE_API_BASE_URL=/api` とする。  
+  - `/<*>` → `/index.html` で SPA fallback。`/api/*` はキャッシュ無効。
+- 環境変数（Amplify 環境に設定、秘匿情報は置かない）:
+  - `VITE_API_BASE_URL`（APIGW 直 or `/api`）、`VITE_APP_STAGE`
+  - `VITE_COGNITO_DOMAIN`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_REDIRECT_URI`
 
 ## Lambda 環境変数・シークレットの扱い
 - 環境変数（例）:
   - `TOPICS_TABLE_NAME`, `NODES_TABLE_NAME`, `USER_SETTINGS_TABLE_NAME`
   - `NODES_GSI1_NAME`（parentId/createdAt 用）, `NODES_GSI2_NAME`（任意: userId/updatedAt）
   - `KMS_KEY_ARN`
-  - `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`
-  - `LLM_REQUEST_TIMEOUT_MS`, `MAX_MESSAGE_CHARS`, `REQUEST_LOG_LEVEL`
+  - `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`（未実装の場合はコード側デフォルト openai/gpt-4o-mini を使用）
+  - `LLM_REQUEST_TIMEOUT_MS`, `MAX_MESSAGE_CHARS`, `REQUEST_LOG_LEVEL`（必要に応じて追加）
   - `STAGE`, `REGION`
 - シークレット:
   - ユーザーの LLM API キーは DynamoDB に暗号化保存し、復号は Lambda 実行時のみ（KMS）。
@@ -25,11 +26,11 @@
 
 ## CI/CD 方針
 - フロント（Amplify Hosting 接続）:
-  - main ブランチ: Amplify のビルド & デプロイ（`npm ci && npm run build` を想定）。環境変数は Amplify の環境ごとに設定。
-  - PR/ブランチ: Amplify の Preview 機能でプレビュー URL を自動発行し、main 以外はデプロイしない。
+  - main ブランチ: Amplify のビルド & デプロイ（`npm ci && npm run build`）。環境変数は Amplify の環境ごとに設定済み。Preview 有効化は要判断。
+  - PR/ブランチ: Amplify Preview を使うか、別環境を作成するか方針決定。
 - バックエンド（Terraform + GitHub Actions 想定）:
   - リモートステート: S3 バケット（例: `qmap-tfstate-<region>`）+ DynamoDB ロックテーブル（例: `qmap-terraform-locks`）を作成し、全環境で共有する。ステートはワークスペース or backend key を stage ごとに分離。
-  - ワークフロー例: `terraform fmt -check` → `terraform init -backend-config=...` → `terraform validate` → `terraform plan -var stage=$STAGE -out tfplan`。PR では plan までを出力、main/develop マージで `terraform apply tfplan`。
+  - ワークフロー例: `terraform fmt -check` → `terraform init -backend-config=...` → `terraform validate` → `terraform plan -var-file=dev|prod.tfvars`。PR では plan のみ、main マージ時に apply（prod は手動承認）。
   - main マージで `stage=prod`、develop 等で `stage=dev`。`stage` は `-var stage=...` で渡すか、`terraform workspace select dev|prod` で切替える。
   - デプロイ成果物（API エンドポイント/テーブル名/KMS ARN など）は `terraform output -json` を GitHub Actions の outputs に載せるか、SSM Parameter Store に書き出し、Amplify ビルドで参照。
 
@@ -49,28 +50,16 @@
 
 ## 認証統合（Cognito + API Gateway）
 - Cognito:
-  - Hosted UI + PKCE。ドメイン例: `auth-${stage}.qmap.example.com`。
-  - User Pool Client: public client, no client secret。リダイレクト URI は Amplify ドメインとローカル開発用（例: `http://localhost:5173/`）を登録。
-  - Scope: `openid email profile`。Access Token 1h、Refresh 30d 目安。
+  - Hosted UI + PKCE を実装済み（フロントで code パラメータを交換）。ドメイン例: `qmap-qmap-dev.auth.ap-northeast-1.amazoncognito.com`。
+  - User Pool Client: public client, callback/logout に Amplify ドメインと `http://localhost:5173/` を登録。Scope: `openid email profile`。Access Token 1h, Refresh 30d 目安（現状の Terraform 設定）。
 - API Gateway HTTP API:
-  - JWT オーソライザーで `issuer = https://cognito-idp.<region>.amazonaws.com/<userPoolId>`、`audience = <userPoolClientId>`。
-  - すべてのルートにオーソライザーを適用し、`Authorization: Bearer <AccessToken>` を必須にする。
-  - CORS は SPA ドメインのみに許可。`/api/*` で `GET/POST/PATCH/DELETE` と `Authorization,Content-Type` ヘッダを許可。
+  - JWT オーソライザーで issuer=各 UserPool, audience=ClientId。全ルートに適用。
+  - CORS は tfvars の `allowed_origins` で管理（現在は Amplify ドメインと localhost）。
 
-## バックエンド初期実装（ハッピーケースの流れ）
-- 技術スタック案: Lambda(Node.js/TypeScript) + API Gateway。`@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`, `@aws-sdk/client-kms`, `ulid`, `zod` を利用。
-- ルーティング実装メモ:
-  - `GET /topics`: userId で Topics を Query、`limit/cursor` を LastEvaluatedKey からエンコードして返す。
-  - `POST /topics`: name バリデーション → topicId/ULID 生成 → Topics に Put → 201 返却。
-  - `GET /topics/{id}`: GetItem(userId, topicId)。なければ 404。
-  - `DELETE /topics/{id}`: Topics + Nodes を削除（論理削除の場合は `deletedAt` を設定）。GSI1 で子ノードをたどって一括削除。
-  - `GET /topics/{id}/nodes`: Query by topicId。`includeMessages=true` の場合は messages も返却。
-  - `GET /nodes/{id}`: GetItem by nodeId（PK=topicId, SK=nodeId）。認可チェックで userId も検証。
-  - `GET /nodes/{id}/path`: 対象ノードから parentId を再帰し、ルートまで messages を含めて返却（先頭が古い順になるよう reverse）。
-  - `POST /nodes` (later): parentId 配下に type="later" ノードを作成。LLM 呼び出しなし、messages=[]。
-  - `PATCH /nodes/{id}`: title/summary のみ UpdateItem。label/ULID/messages は不変。
-  - `POST /chat`: baseNodeId からパスを構築し、messages を連結 + 現在の user 入力で LLM 呼び出し → 応答とともに type="chat" ノードを作成し保存。
-- ロギング: リクエスト ID, userId 短縮, topicId/nodeId, endpoint, latencyMs, tokenEstimateIn/Out, provider, model, LLM latency を構造化 JSON で出力。
+## バックエンド実装メモ（現状）
+- Lambda(Node.js/TypeScript, aws-sdk v2) + API Gateway HTTP API。ルートは `/v1/topics`, `/nodes`, `/chat`, `/me/settings` 等を実装済み。ID は `topic#uuid` / `node#uuid`、ラベルは階層＋通し番号で生成。
+- LLM 呼び出しは OpenAI / OpenRouter / Anthropic / Gemini に対応。ユーザー提供の API Key を KMS で暗号化保存し、復号して使用。
+- TODO: バリデーション拡充、レート制御、ログ/メトリクス強化、タイムアウト設定。
 
 ## 計測・トークン見積もり
 - LLM 呼び出し前後で `tokenEstimateIn`（送信メッセージ文字数/4 など簡易推定）と `tokenEstimateOut`（レスポンス文字数/4）を算出しログに載せる。将来的にプロバイダごとの正式カウンタに差し替え。

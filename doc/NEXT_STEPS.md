@@ -1,22 +1,15 @@
-# 次にやること（v1 着手タスク）
+# 次にやること（v1 以降の優先タスク）
 
-- Amplify 設定
-  - `/api/*` を API Gateway にフォワードするリライトルールを決めて記載。
-  - 環境変数とシークレット（API キーは KMS 経由 or Secrets Manager）をどう渡すか整理。
-- 環境変数/シークレット
-  - Lambda: TABLE 名、GSI 名、KMS KEY ARN、LLM エンドポイント/モデル上限などを環境変数化。
-  - 秘匿情報は KMS / Secrets Manager 経由で渡す。Amplify には平文キーを置かない。
-- CI/CD
-  - main への push で Amplify 自動ビルド・デプロイ。
-  - ブランチ/PR ごとのプレビュー環境運用を決定。
-- IaC
-  - API Gateway / Lambda / DynamoDB / KMS を CDK 等で定義。
-  - dev/prod の環境分離と命名規則、デプロイ手順を固める。
-- 認証統合
-  - Cognito: ドメイン、クライアントID、リダイレクトURLを Amplify と合わせる。
-  - API Gateway 側の JWT 検証設定値を確定。
-- バックエンド初期実装
-  - Lambda (BFF 単一) スタブ: `/topics`, `/topics/{id}/nodes`, `/nodes/{id}/path`, `/chat` のハッピーケース。
-  - DynamoDB テーブル作成（UserSettings/Topics/Nodes + GSI1 parentId/createdAt）。
-- 計測
-  - LLM 呼び出し前後でトークン見積もりをログ出力し、圧縮方針検討用のデータを溜める。
+- CI/CD 強化  
+  - GitHub Actions で Terraform plan/apply（prod は手動承認）とフロント build を自動化。plan 結果を PR にコメント。
+  - Amplify プレビュー（PR）を有効化するか方針決定。
+- ドメイン/配信まわり  
+  - 独自ドメインを使う場合、APIGW/Amplify へカスタムドメイン・証明書を設定し、tfvars を更新して再 apply。CloudFront 経由で `/api/*` リライトする場合の設定を決める。
+- バックエンドの堅牢化  
+  - バリデーション/エラー整備、メッセージ長やレート制限をサーバ側で enforce。構造化ログとメトリクス（LLM latency/token in/out）を出力。
+  - LLM 呼び出しのタイムアウト/リトライ、プロバイダごとのモデル選択 UI/API。
+- フロント改善  
+  - 設定画面で `/me/settings` を呼び出し、プロバイダ/モデル/API Key を保存できるようにする。ログイン状態の表示とエラー表示を整理。
+  - ツリー/チャットの UX 改善（ローディング表示、リトライ、メッセージ整形）。
+- シークレット運用  
+  - 平台固定の LLM キーを使う場合は Secrets Manager/SSM 経由で注入する設計に更新。Terraform state への露出を最小化。
