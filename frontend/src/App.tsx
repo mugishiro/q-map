@@ -194,15 +194,19 @@ function App() {
 
   const right = (
     <div className="stack gap-m">
-      <div className="label">選択中のトピック</div>
-      <div className="card">{selectedTopicName || "トピックを選択してください"}</div>
       <PathView path={path} onSelect={(id) => loadPath(id)} />
       <ChatPanel path={path} loading={loading} onSend={handleSend} onAddLater={handleLater} />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
     </div>
   );
 
-  const headerAction = <HeaderAuth onAuthChange={refreshTopics} />;
+  const headerAction = (
+    <HeaderAuth
+      onAuthChange={refreshTopics}
+      onLoginSuccess={() => setAuthenticated(true)}
+      onLogout={handleLogout}
+    />
+  );
 
   if (!authenticated) {
     const manualToken = api.getToken() || "";

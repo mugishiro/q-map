@@ -2,9 +2,13 @@ import { useMemo, useState } from "react";
 import { api } from "../api";
 import { auth } from "../auth";
 
-type Props = { onAuthChange: () => void };
+type Props = {
+  onAuthChange: () => void;
+  onLoginSuccess?: () => void;
+  onLogout?: () => void;
+};
 
-const HeaderAuth = ({ onAuthChange }: Props) => {
+const HeaderAuth = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
   const [token, setToken] = useState(api.getToken() || "");
   const [error, setError] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);
@@ -26,11 +30,13 @@ const HeaderAuth = ({ onAuthChange }: Props) => {
     auth.clearAuthArtifacts();
     setToken("");
     onAuthChange();
+    onLogout?.();
   };
 
   const saveManual = () => {
     api.setToken(token.trim());
     onAuthChange();
+    onLoginSuccess?.();
   };
 
   return (
