@@ -14,12 +14,22 @@ const base64UrlEncode = (input: ArrayBuffer | Uint8Array | string) => {
   return str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 };
 
+const normalizeDomain = (domain: string) => {
+  const region = import.meta.env.VITE_AWS_REGION || "ap-northeast-1";
+  if (domain.startsWith("http://") || domain.startsWith("https://")) return domain;
+  // If the value looks like a short prefix (no dot), append Cognito Hosted UI suffix.
+  if (!domain.includes(".")) {
+    return `https://${domain}.auth.${region}.amazoncognito.com`;
+  }
+  return `https://${domain.replace(/^https?:\/\//, "")}`;
+};
+
 const getConfig = (): CognitoConfig | null => {
   const domainRaw = import.meta.env.VITE_COGNITO_DOMAIN;
   const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
   if (!domainRaw || !clientId) return null;
   const redirectUri = import.meta.env.VITE_COGNITO_REDIRECT_URI || window.location.origin + "/";
-  const domain = domainRaw.startsWith("http") ? domainRaw : `https://${domainRaw}`;
+  const domain = normalizeDomain(domainRaw);
   return {
     domain: domain.replace(/\/$/, ""),
     clientId,
