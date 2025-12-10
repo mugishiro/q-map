@@ -78,6 +78,7 @@ resource "aws_iam_role_policy" "lambda_dynamo_kms" {
         Effect = "Allow"
         Action = [
           "kms:Decrypt",
+          "kms:Encrypt",
           "kms:GenerateDataKey",
           "kms:DescribeKey"
         ]
