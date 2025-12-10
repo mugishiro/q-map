@@ -5,6 +5,7 @@ import { TreeView } from "./components/TreeView";
 import { PathView } from "./components/PathView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderAuth from "./components/HeaderAuth";
+import SettingsPanel from "./components/SettingsPanel";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
@@ -194,6 +195,7 @@ function App() {
 
   const right = (
     <div className="stack gap-m">
+      <SettingsPanel />
       <PathView path={path} onSelect={(id) => loadPath(id)} />
       <ChatPanel path={path} loading={loading} onSend={handleSend} onAddLater={handleLater} />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
