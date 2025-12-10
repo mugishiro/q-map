@@ -63,6 +63,7 @@ resource "aws_iam_role_policy" "lambda_dynamo_kms" {
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
           "dynamodb:Query",
+          "dynamodb:Scan",
           "dynamodb:BatchGetItem",
           "dynamodb:BatchWriteItem"
         ]

@@ -207,20 +207,18 @@ body {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 10px;
-  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  padding: 4px 6px;
   text-align: left;
   cursor: pointer;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .tree-row:hover {
-  border-color: #cbd5e1;
+  background: #f8fafc;
 }
 .tree-row.active {
-  border-color: #2563eb;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.14);
+  background: #e0f2fe;
 }
 .tree-bullet {
   width: 10px;
@@ -230,6 +228,10 @@ body {
   border: 2px solid #cbd5e1;
   background: #e2e8f0;
   margin-top: 6px;
+}
+.tree-bullet.active {
+  border-color: #2563eb;
+  background: #2563eb;
 }
 .tree-bullet.later {
   background: #fff7ed;

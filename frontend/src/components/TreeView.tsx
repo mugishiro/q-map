@@ -28,10 +28,11 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
 
   const renderNode = (node: TreeNode, depth = 0) => {
     const hasChildren = node.children.length > 0;
+    const active = selectedNodeId === node.id;
     return (
       <div key={node.id} className="tree-node" style={{ marginLeft: depth * 12 }}>
-        <button className={`tree-row ${selectedNodeId === node.id ? "active" : ""}`} onClick={() => onSelect(node.id)}>
-          <div className={`tree-bullet ${node.type}`}>{node.label}</div>
+        <button className={`tree-row ${active ? "active" : ""}`} onClick={() => onSelect(node.id)}>
+          <div className={`tree-bullet ${node.type} ${active ? "active" : ""}`} />
           <div className="tree-body">
             <div className="tree-line">
               <span className="tree-title">{node.title}</span>
