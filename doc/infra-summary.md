@@ -13,9 +13,9 @@
 
 ## 環境別アウトプット
 dev (`backend-dev.hcl`, backend key `qmap/dev/terraform.tfstate`)
-- API: `https://14z0sascyi.execute-api.ap-northeast-1.amazonaws.com/dev`
-- Amplify: `dxhqhxj18etwj.amplifyapp.com`（main デフォルトドメイン）
-- Cognito: Pool `ap-northeast-1_uP4pDNBGE`, Client `5aj6jthq1nqu343j82qi2i99ug`, Domain `qmap-dev.auth.ap-northeast-1.amazoncognito.com`
+- API: `https://csdq8anoqk.execute-api.ap-northeast-1.amazonaws.com/dev`
+- Amplify: `d14omjgu63rhp8.amplifyapp.com`（main デフォルトドメイン）
+- Cognito: Pool `ap-northeast-1_lqWaVR5zJ`, Client `hu7sci88c77tphc38thskdtvj`, Domain `qmap-dev.auth.ap-northeast-1.amazoncognito.com`
 
 prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 - API: `https://4s9u0m4qqh.execute-api.ap-northeast-1.amazonaws.com/prod`
@@ -45,7 +45,7 @@ prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 
 ## ドメイン
 - 現状は Amplify デフォルトドメインを callback/logout/origins に設定済み  
-  - dev: https://main.dxhqhxj18etwj.amplifyapp.com  
+  - dev: https://main.d14omjgu63rhp8.amplifyapp.com  
   - prod: https://main.d3c16q2d8f1ppt.amplifyapp.com
 - 独自ドメインに切り替える場合は各 tfvars を変更して再度 `terraform apply`
 
