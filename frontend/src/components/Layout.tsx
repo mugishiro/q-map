@@ -1,14 +1,15 @@
 import { ReactNode } from "react";
 import "../styles.css";
 
-type Props = { left: ReactNode; center: ReactNode; right: ReactNode };
+type Props = { left: ReactNode; center: ReactNode; right: ReactNode; headerAction?: ReactNode };
 
-export const Layout = ({ left, center, right }: Props) => {
+export const Layout = ({ left, center, right, headerAction }: Props) => {
   return (
     <div className="shell">
       <header className="topbar">
         <div className="brand">QMap</div>
         <div className="tagline">Branch your conversations. Compare every path.</div>
+        {headerAction && <div className="topbar-actions">{headerAction}</div>}
       </header>
       <div className="grid">
         <aside className="panel left">{left}</aside>

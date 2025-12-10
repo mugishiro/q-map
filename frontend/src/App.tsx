@@ -4,7 +4,7 @@ import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
 import { PathView } from "./components/PathView";
 import ChatPanel from "./components/ChatPanel";
-import TokenBar from "./components/TokenBar";
+import HeaderAuth from "./components/HeaderAuth";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
@@ -146,15 +146,12 @@ function App() {
   };
 
   const left = (
-    <div className="stack gap-m">
-      <TokenBar onTokenSaved={refreshTopics} />
-      <TopicList
-        topics={topics}
-        selectedTopicId={selectedTopicId}
-        onSelect={handleSelectTopic}
-        onCreate={handleCreateTopic}
-      />
-    </div>
+    <TopicList
+      topics={topics}
+      selectedTopicId={selectedTopicId}
+      onSelect={handleSelectTopic}
+      onCreate={handleCreateTopic}
+    />
   );
 
   const center = (
@@ -175,7 +172,9 @@ function App() {
     </div>
   );
 
-  return <Layout left={left} center={center} right={right} />;
+  const headerAction = <HeaderAuth onAuthChange={refreshTopics} />;
+
+  return <Layout left={left} center={center} right={right} headerAction={headerAction} />;
 }
 
 export default App;
