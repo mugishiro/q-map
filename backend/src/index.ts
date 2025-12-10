@@ -448,7 +448,11 @@ export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
   const method = event?.requestContext?.http?.method ?? "UNKNOWN";
-  const path = event?.rawPath ?? "/";
+  const rawPath = event?.rawPath ?? "/";
+  const stagePrefix = process.env.STAGE ? `/${process.env.STAGE}` : "";
+  // Allow both /v1/... and /{stage}/v1/... (e.g., when API Gateway stage is part of the path)
+  const path =
+    stagePrefix && rawPath.startsWith(stagePrefix) ? rawPath.slice(stagePrefix.length) || "/" : rawPath;
   const userId = getUserId(event);
 
   if (!userId) {
