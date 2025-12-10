@@ -1,7 +1,8 @@
 locals {
-  user_pool_name  = "${var.name_prefix}-user-pool"
-  client_name     = "${var.name_prefix}-app-client"
-  domain_prefix   = "${var.domain_prefix}-${replace(var.name_prefix, "/", "-")}"
+  user_pool_name = "${var.name_prefix}-user-pool"
+  client_name    = "${var.name_prefix}-app-client"
+  # Prefer explicit domain_prefix; fallback to name_prefix (e.g., qmap-dev)
+  domain_prefix = var.domain_prefix != "" ? var.domain_prefix : replace(var.name_prefix, "/", "-")
 }
 
 resource "aws_cognito_user_pool" "this" {

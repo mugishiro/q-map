@@ -23,7 +23,7 @@ variable "default_tags" {
 variable "domain_prefix" {
   description = "Cognito Hosted UI 用のドメインプレフィックス（ユニークである必要あり）"
   type        = string
-  default     = "qmap"
+  default     = "" # 未指定なら name_prefix (例: qmap-dev) を使用
 }
 
 variable "callback_urls" {
