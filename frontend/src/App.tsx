@@ -205,11 +205,20 @@ function App() {
   const headerAction = <HeaderAuth onAuthChange={refreshTopics} />;
 
   if (!authenticated) {
+    const manualToken = api.getToken() || "";
     return (
       <div className="login-shell">
         <div className="login-card">
-          <div className="brand">QMap</div>
-          <div className="login-copy">まずはログインしてください。ログイン後にトピック/ツリー/チャットが表示されます。</div>
+          <div className="pill">Secure Access</div>
+          <div className="brand hero">QMap</div>
+          <div className="login-copy">
+            思考の枝分かれを地図化するワークスペース。まずはログインして、トピック・ツリー・チャットにアクセスしてください。
+          </div>
+          <ul className="login-bullets">
+            <li>GitHub Amplify ホスト + Cognito Hosted UI でサインイン</li>
+            <li>JWT はブラウザにのみ保存され、リロードで自動再利用</li>
+            <li>トークンがある場合は手動貼り付けも可能（デバッグ用）</li>
+          </ul>
           <div className="login-actions">
             <button className="btn solid" onClick={handleLoginStart}>
               ログイン
@@ -218,9 +227,8 @@ function App() {
               <input
                 className="input"
                 style={{ width: "240px" }}
-                placeholder="JWT を貼り付け"
-                value={api.getToken() || ""}
-                onChange={(e) => setAuthError(null)}
+                placeholder="JWT を貼り付け（任意）"
+                defaultValue={manualToken}
               />
               <button
                 className="btn"

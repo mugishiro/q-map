@@ -318,8 +318,32 @@ body {
   gap: 12px;
 }
 
+.login-card .hero {
+  font-size: 28px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0ea5e9;
+  font-size: 12px;
+  font-weight: 700;
+  width: fit-content;
+}
+
 .login-copy {
   color: #475569;
+}
+
+.login-bullets {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+}
+.login-bullets li {
+  margin: 4px 0;
 }
 
 .login-actions {
