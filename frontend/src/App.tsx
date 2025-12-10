@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import Layout from "./components/Layout";
 import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
-import { PathView } from "./components/PathView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderAuth from "./components/HeaderAuth";
 import SettingsPanel from "./components/SettingsPanel";
@@ -15,6 +14,7 @@ function App() {
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [path, setPath] = useState<Node[]>([]);
+  const [branchBaseId, setBranchBaseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean>(Boolean(api.getToken()));
@@ -113,11 +113,11 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      await api.postChat({ topicId: selectedTopicId, message, baseNodeId });
+      const targetBase = branchBaseId || baseNodeId || undefined;
+      const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
       await loadNodes(selectedTopicId);
-      if (baseNodeId) {
-        await loadPath(baseNodeId);
-      }
+      await loadPath(res.node.nodeId ?? res.node.id);
+      setBranchBaseId(null);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -147,6 +147,7 @@ function App() {
 
   const handleSelectTopic = async (id: string) => {
     setSelectedTopicId(id);
+    setBranchBaseId(null);
     await loadNodes(id);
   };
 
@@ -192,13 +193,15 @@ function App() {
     <TreeView
       nodes={nodes}
       selectedNodeId={path[path.length - 1]?.id ?? null}
-      onSelect={(nodeId) => loadPath(nodeId)}
+      onSelect={(nodeId) => {
+        setBranchBaseId(nodeId);
+        void loadPath(nodeId);
+      }}
     />
   );
 
   const right = (
     <div className="stack gap-m">
-      <PathView path={path} onSelect={(id) => loadPath(id)} />
       <ChatPanel path={path} loading={loading} onSend={handleSend} onAddLater={handleLater} />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
     </div>

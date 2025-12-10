@@ -254,7 +254,7 @@ const queryNodesByTopic = async (userId: string, topicId: string) => {
 };
 
 const findNodeById = async (userId: string, nodeId: string) => {
-  // Query GSI2: userId/updatedAt と FilterExpression で nodeId を絞り込み
+  // GSI2 で userId 絞り込み + nodeId フィルタ
   if (NODES_GSI2) {
     const res = await ddb
       .query({
@@ -269,17 +269,22 @@ const findNodeById = async (userId: string, nodeId: string) => {
     if (items[0]) return items[0];
   }
 
-  // フォールバック: テーブル全体をスキャンして一致を探す（データ量が小さい前提）
-  const scan = await ddb
-    .scan({
-      TableName: NODES_TABLE,
-      FilterExpression: "nodeId = :n AND userId = :u",
-      ExpressionAttributeValues: { ":n": nodeId, ":u": userId },
-      Limit: 1,
+  // フォールバック: topicId は分からないが nodeId はユニーク前提なので、Scan は避け BatchGet/Query を優先する。
+  // まず topics を取得し、それぞれの topicId + nodeId で Get を試みる。
+  const topicsRes = await ddb
+    .query({
+      TableName: TOPICS_TABLE,
+      KeyConditionExpression: "userId = :u",
+      ExpressionAttributeValues: { ":u": userId },
+      ProjectionExpression: "topicId",
     })
     .promise();
-  const items = (scan.Items as NodeItem[]) ?? [];
-  return items[0] || null;
+  const topics = (topicsRes.Items as TopicItem[]) ?? [];
+  for (const t of topics) {
+    const item = await getNode(t.topicId, nodeId);
+    if (item && item.userId === userId) return item;
+  }
+  return null;
 };
 
 const getNode = async (topicId: string, nodeId: string) => {
