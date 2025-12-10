@@ -16,6 +16,8 @@ function App() {
   const [path, setPath] = useState<Node[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState<boolean>(Boolean(api.getToken()));
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const selectedTopicName = useMemo(
     () => topics.find((t) => t.id === selectedTopicId)?.name ?? "",
@@ -23,6 +25,7 @@ function App() {
   );
 
   const refreshTopics = async () => {
+    if (!authenticated) return;
     try {
       const res = await api.listTopics();
       setTopics(res.items.map((t) => ({ ...t, id: t.topicId ?? t.id } as any)));
@@ -35,8 +38,10 @@ function App() {
   };
 
   useEffect(() => {
-    refreshTopics();
-  }, []);
+    if (authenticated) {
+      refreshTopics();
+    }
+  }, [authenticated]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -54,6 +59,7 @@ function App() {
       try {
         const tokens = await auth.exchangeCodeForToken(code, state ?? undefined);
         api.setToken(tokens.accessToken);
+        setAuthenticated(true);
         await refreshTopics();
       } catch (e) {
         setError((e as Error).message);
@@ -145,6 +151,30 @@ function App() {
     await refreshTopics();
   };
 
+  const handleManualToken = (token: string) => {
+    api.setToken(token);
+    setAuthenticated(true);
+    void refreshTopics();
+  };
+
+  const handleLogout = () => {
+    api.clearToken();
+    auth.clearAuthArtifacts();
+    setAuthenticated(false);
+    setTopics([]);
+    setNodes([]);
+    setPath([]);
+  };
+
+  const handleLoginStart = async () => {
+    setAuthError(null);
+    try {
+      await auth.startLogin();
+    } catch (e) {
+      setAuthError((e as Error).message);
+    }
+  };
+
   const left = (
     <TopicList
       topics={topics}
@@ -173,6 +203,45 @@ function App() {
   );
 
   const headerAction = <HeaderAuth onAuthChange={refreshTopics} />;
+
+  if (!authenticated) {
+    return (
+      <div className="login-shell">
+        <div className="login-card">
+          <div className="brand">QMap</div>
+          <div className="login-copy">まずはログインしてください。ログイン後にトピック/ツリー/チャットが表示されます。</div>
+          <div className="login-actions">
+            <button className="btn solid" onClick={handleLoginStart}>
+              ログイン
+            </button>
+            <div className="manual-auth">
+              <input
+                className="input"
+                style={{ width: "240px" }}
+                placeholder="JWT を貼り付け"
+                value={api.getToken() || ""}
+                onChange={(e) => setAuthError(null)}
+              />
+              <button
+                className="btn"
+                onClick={() => {
+                  const token = (document.querySelector(".manual-auth input") as HTMLInputElement | null)?.value;
+                  if (token) handleManualToken(token.trim());
+                }}
+              >
+                保存
+              </button>
+            </div>
+          </div>
+          <div className="helper-inline" style={{ marginTop: "8px" }}>
+            Hosted UI に遷移しない場合は環境変数（VITE_COGNITO_*）をご確認ください。
+          </div>
+          {authError && <div className="helper-inline" style={{ color: "#b91c1c" }}>{authError}</div>}
+          {error && <div className="helper-inline" style={{ color: "#b91c1c" }}>{error}</div>}
+        </div>
+      </div>
+    );
+  }
 
   return <Layout left={left} center={center} right={right} headerAction={headerAction} />;
 }
