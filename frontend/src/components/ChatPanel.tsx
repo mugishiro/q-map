@@ -63,7 +63,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
           placeholder="あとで聞く内容"
           value={laterText}
           onChange={(e) => setLaterText(e.target.value)}
-          disabled={loading || !latest}
+          disabled={loading}
         />
         <button className="btn ghost" onClick={addLater} disabled={!canAddLater}>
           {loading ? "追加中..." : "追加"}

@@ -444,6 +444,15 @@ const ensureBody = <T extends Record<string, unknown>>(body: T, keys: (keyof T)[
   return keys.every((k) => Boolean(body[k]));
 };
 
+const attachParentId = <T extends Record<string, any>>(item: T, parentId?: string | null) => {
+  if (parentId) {
+    item.parentId = parentId;
+  } else {
+    delete item.parentId;
+  }
+  return item;
+};
+
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
@@ -551,21 +560,21 @@ export const handler = async (
       const now = nowIso();
       const nodeId = `node#${newId()}`;
       const label = body.label || (await generateLabel(body.topicId!, body.parentId!, userId));
-      const item: NodeItem = {
-        topicId: body.topicId!,
-        nodeId,
-        userId,
-        label,
-        title: `あとで: ${body.summary}`,
-        summary: body.summary,
-        type: "later",
-        messages: [],
-        createdAt: now,
-        updatedAt: now,
-      };
-      if (body.parentId) {
-        item.parentId = body.parentId;
-      }
+      const item: NodeItem = attachParentId(
+        {
+          topicId: body.topicId!,
+          nodeId,
+          userId,
+          label,
+          title: `あとで: ${body.summary}`,
+          summary: body.summary,
+          type: "later",
+          messages: [],
+          createdAt: now,
+          updatedAt: now,
+        },
+        body.parentId
+      );
       await ddb.put({ TableName: NODES_TABLE, Item: item }).promise();
       const { messages, ...rest } = item;
       return json(201, rest);
@@ -658,24 +667,24 @@ export const handler = async (
       const nodeId = `node#${newId()}`;
       const parentId = body.baseNodeId || null;
       const label = body.label || (await generateLabel(body.topicId!, parentId, userId));
-      const nodeItem: NodeItem = {
-        topicId: body.topicId!,
-        nodeId,
-        userId,
-        label,
-        title: body.message,
-        summary: body.message,
-        type: "chat",
-        messages: [
-          { role: "user", content: body.message!, createdAt: now },
-          assistantMsg,
-        ],
-        createdAt: now,
-        updatedAt: now,
-      };
-      if (parentId) {
-        nodeItem.parentId = parentId;
-      }
+      const nodeItem: NodeItem = attachParentId(
+        {
+          topicId: body.topicId!,
+          nodeId,
+          userId,
+          label,
+          title: body.message,
+          summary: body.message,
+          type: "chat",
+          messages: [
+            { role: "user", content: body.message!, createdAt: now },
+            assistantMsg,
+          ],
+          createdAt: now,
+          updatedAt: now,
+        },
+        parentId
+      );
 
       await ddb.put({ TableName: NODES_TABLE, Item: nodeItem }).promise();
       return json(200, { node: nodeItem });
