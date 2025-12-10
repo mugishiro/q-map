@@ -21,6 +21,7 @@ const SettingsPanel = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [form, setForm] = useState<{ llmProvider: string; model: string; apiKey: string }>({
     llmProvider: "openai",
     model: "gpt-4o-mini",
@@ -121,10 +122,16 @@ const SettingsPanel = () => {
           <input
             className="input"
             placeholder="sk-..."
-            type="password"
+            type={showApiKey ? "text" : "password"}
             value={form.apiKey}
             onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
           />
+          <div className="helper-inline" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+              <input type="checkbox" checked={showApiKey} onChange={(e) => setShowApiKey(e.target.checked)} />
+              <span>キーを表示</span>
+            </label>
+          </div>
           {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
         </label>
         <div className="stack gap-xs" style={{ flexDirection: "row", gap: "8px" }}>
