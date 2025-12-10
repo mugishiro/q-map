@@ -40,7 +40,7 @@ const HeaderAuth = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
   };
 
   return (
-    <div className="topbar-actions">
+    <div className="auth-controls">
       <span className="auth-chip">{loggedIn ? "ログイン済み" : "未ログイン"}</span>
       <button className="btn solid" onClick={startLogin} disabled={!isConfigured}>
         ログイン

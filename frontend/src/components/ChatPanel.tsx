@@ -12,6 +12,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
   const [message, setMessage] = useState("");
   const [laterText, setLaterText] = useState("");
   const latest = path[path.length - 1];
+  const canAddLater = Boolean(latest) && !loading;
 
   const history: ChatMessage[] = [];
   path.forEach((n) => (n.messages || []).forEach((m) => history.push(m)));
@@ -62,11 +63,12 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
           placeholder="あとで聞く内容"
           value={laterText}
           onChange={(e) => setLaterText(e.target.value)}
-          disabled={loading}
+          disabled={loading || !latest}
         />
-        <button className="btn ghost" onClick={addLater} disabled={loading}>
+        <button className="btn ghost" onClick={addLater} disabled={!canAddLater}>
           {loading ? "追加中..." : "追加"}
         </button>
+        {!latest && <div className="helper-inline">追加するにはノードを選択してください。</div>}
       </div>
     </div>
   );

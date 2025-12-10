@@ -27,7 +27,7 @@ interface NodeItem {
   topicId: string;
   nodeId: string;
   userId: string;
-  parentId?: string | null;
+  parentId?: string;
   label?: string;
   title?: string;
   summary?: string;
@@ -165,7 +165,7 @@ const generateLabel = async (topicId: string, parentId: string | null, userId: s
       depth = path.length; // 0-based: root=0, child=1...
     }
   }
-  const siblings = await countChildren(topicId, parentId, userId);
+  const siblings = await countChildren(topicId, parentId ?? null, userId);
   const letter = letterForDepth(depth);
   const number = siblings + 1;
   return `${letter}${number}`;
@@ -555,7 +555,6 @@ export const handler = async (
         topicId: body.topicId!,
         nodeId,
         userId,
-        parentId: body.parentId,
         label,
         title: `あとで: ${body.summary}`,
         summary: body.summary,
@@ -564,6 +563,9 @@ export const handler = async (
         createdAt: now,
         updatedAt: now,
       };
+      if (body.parentId) {
+        item.parentId = body.parentId;
+      }
       await ddb.put({ TableName: NODES_TABLE, Item: item }).promise();
       const { messages, ...rest } = item;
       return json(201, rest);
@@ -654,12 +656,12 @@ export const handler = async (
 
       const now = nowIso();
       const nodeId = `node#${newId()}`;
-      const label = body.label || (await generateLabel(body.topicId!, body.baseNodeId || null, userId));
+      const parentId = body.baseNodeId || null;
+      const label = body.label || (await generateLabel(body.topicId!, parentId, userId));
       const nodeItem: NodeItem = {
         topicId: body.topicId!,
         nodeId,
         userId,
-        parentId: body.baseNodeId || null,
         label,
         title: body.message,
         summary: body.message,
@@ -671,6 +673,9 @@ export const handler = async (
         createdAt: now,
         updatedAt: now,
       };
+      if (parentId) {
+        nodeItem.parentId = parentId;
+      }
 
       await ddb.put({ TableName: NODES_TABLE, Item: nodeItem }).promise();
       return json(200, { node: nodeItem });

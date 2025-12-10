@@ -16,7 +16,12 @@ const providers = [
   { value: "local", label: "Local" },
 ] as const;
 
-const SettingsPanel = () => {
+type Props = {
+  variant?: "panel" | "header";
+};
+
+const SettingsPanel = ({ variant = "panel" }: Props) => {
+  const isHeader = variant === "header";
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +80,74 @@ const SettingsPanel = () => {
     }
   };
 
+  const formContent = (
+    <div className="stack gap-s">
+      <div className="label">LLM 設定</div>
+      <label className="stack gap-xs">
+        <span className="helper-inline">Provider</span>
+        <select
+          className="input"
+          value={form.llmProvider}
+          onChange={(e) => setForm((f) => ({ ...f, llmProvider: e.target.value }))}
+        >
+          {providerOptions.map((p) => (
+            <option key={p} value={p}>
+              {providers.find((v) => v.value === p)?.label ?? p}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="stack gap-xs">
+        <span className="helper-inline">Model</span>
+        <input
+          className="input"
+          placeholder="例: gpt-4o-mini"
+          value={form.model}
+          onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
+        />
+      </label>
+      <label className="stack gap-xs">
+        <span className="helper-inline">API Key</span>
+        <input
+          className="input"
+          placeholder="sk-..."
+          type={showApiKey ? "text" : "password"}
+          value={form.apiKey}
+          onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+        />
+        <div className="helper-inline" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+            <input type="checkbox" checked={showApiKey} onChange={(e) => setShowApiKey(e.target.checked)} />
+            <span>キーを表示</span>
+          </label>
+        </div>
+        {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
+      </label>
+      <div className="stack gap-xs" style={{ flexDirection: "row", gap: "8px" }}>
+        <button className="btn solid" onClick={save} disabled={loading}>
+          保存
+        </button>
+        <button className="btn ghost" onClick={() => setOpen(false)} disabled={loading}>
+          閉じる
+        </button>
+      </div>
+      {notice && <span className="helper-inline" style={{ color: "#0f766e" }}>{notice}</span>}
+      {error && <span className="helper-inline" style={{ color: "#b91c1c" }}>{error}</span>}
+    </div>
+  );
+
+  if (isHeader) {
+    return (
+      <div className="settings-header">
+        <button className="btn ghost" onClick={() => setOpen((v) => !v)}>
+          {open ? "設定を閉じる" : "LLM 設定"}
+        </button>
+        <div className="helper-inline">保存済み: {currentMasked || "なし"}</div>
+        {open && <div className="settings-popover card">{formContent}</div>}
+      </div>
+    );
+  }
+
   if (!open) {
     return (
       <div className="card">
@@ -90,63 +163,7 @@ const SettingsPanel = () => {
     );
   }
 
-  return (
-    <div className="card">
-      <div className="stack gap-s">
-        <div className="label">LLM 設定</div>
-        <label className="stack gap-xs">
-          <span className="helper-inline">Provider</span>
-          <select
-            className="input"
-            value={form.llmProvider}
-            onChange={(e) => setForm((f) => ({ ...f, llmProvider: e.target.value }))}
-          >
-            {providerOptions.map((p) => (
-              <option key={p} value={p}>
-                {providers.find((v) => v.value === p)?.label ?? p}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="stack gap-xs">
-          <span className="helper-inline">Model</span>
-          <input
-            className="input"
-            placeholder="例: gpt-4o-mini"
-            value={form.model}
-            onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-          />
-        </label>
-        <label className="stack gap-xs">
-          <span className="helper-inline">API Key</span>
-          <input
-            className="input"
-            placeholder="sk-..."
-            type={showApiKey ? "text" : "password"}
-            value={form.apiKey}
-            onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
-          />
-          <div className="helper-inline" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-              <input type="checkbox" checked={showApiKey} onChange={(e) => setShowApiKey(e.target.checked)} />
-              <span>キーを表示</span>
-            </label>
-          </div>
-          {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
-        </label>
-        <div className="stack gap-xs" style={{ flexDirection: "row", gap: "8px" }}>
-          <button className="btn solid" onClick={save} disabled={loading}>
-            保存
-          </button>
-          <button className="btn ghost" onClick={() => setOpen(false)} disabled={loading}>
-            閉じる
-          </button>
-        </div>
-        {notice && <span className="helper-inline" style={{ color: "#0f766e" }}>{notice}</span>}
-        {error && <span className="helper-inline" style={{ color: "#b91c1c" }}>{error}</span>}
-      </div>
-    </div>
-  );
+  return <div className="card">{formContent}</div>;
 };
 
 export default SettingsPanel;

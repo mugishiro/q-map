@@ -128,7 +128,10 @@ function App() {
   const handleLater = async ({ summary }: { summary: string }) => {
     if (!selectedTopicId) return;
     const parentId = path[path.length - 1]?.id ?? null;
-    if (!parentId) return;
+    if (!parentId) {
+      setError("ノードを選択してから追加してください。");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -195,7 +198,6 @@ function App() {
 
   const right = (
     <div className="stack gap-m">
-      <SettingsPanel />
       <PathView path={path} onSelect={(id) => loadPath(id)} />
       <ChatPanel path={path} loading={loading} onSend={handleSend} onAddLater={handleLater} />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
@@ -203,11 +205,14 @@ function App() {
   );
 
   const headerAction = (
-    <HeaderAuth
-      onAuthChange={refreshTopics}
-      onLoginSuccess={() => setAuthenticated(true)}
-      onLogout={handleLogout}
-    />
+    <>
+      <SettingsPanel variant="header" />
+      <HeaderAuth
+        onAuthChange={refreshTopics}
+        onLoginSuccess={() => setAuthenticated(true)}
+        onLogout={handleLogout}
+      />
+    </>
   );
 
   if (!authenticated) {
