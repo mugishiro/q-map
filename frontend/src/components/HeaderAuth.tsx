@@ -41,7 +41,6 @@ const HeaderAuth = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
 
   return (
     <div className="auth-controls">
-      <span className="auth-chip">{loggedIn ? "ログイン済み" : "未ログイン"}</span>
       <button className="btn solid" onClick={startLogin} disabled={!isConfigured}>
         ログイン
       </button>
@@ -50,9 +49,6 @@ const HeaderAuth = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
           ログアウト
         </button>
       )}
-      <button className="btn ghost" onClick={() => setShowManual((v) => !v)}>
-        トークン手動
-      </button>
       {showManual && (
         <div className="manual-auth">
           <input
@@ -67,7 +63,6 @@ const HeaderAuth = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
           </button>
         </div>
       )}
-      {!isConfigured && <span className="helper-inline">Cognito設定が不足しています</span>}
       {error && <span className="helper-inline" style={{ color: "#b91c1c" }}>{error}</span>}
     </div>
   );

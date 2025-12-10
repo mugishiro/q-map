@@ -308,6 +308,7 @@ body {
 .chat-input .input.large {
   border-radius: 12px;
   min-height: 120px;
+  resize: none;
 }
 .chat-actions {
   display: flex;
@@ -326,37 +327,6 @@ body {
   border-radius: 20px;
   padding: 6px 12px;
   cursor: pointer;
-}
-
-.chat-log {
-  max-height: 320px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.bubble {
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-}
-.bubble.assistant {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-}
-.bubble-role {
-  font-size: 12px;
-  color: #2563eb;
-  text-transform: uppercase;
-}
-.bubble-content {
-  margin: 4px 0;
-}
-.bubble-meta {
-  font-size: 12px;
-  color: #94a3b8;
 }
 
 .card {

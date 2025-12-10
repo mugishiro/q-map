@@ -26,14 +26,13 @@ export const TopicList = ({ topics, selectedTopicId, onSelect, onCreate }: Props
   };
 
   return (
-    <div className="stack gap-m">
-      <div className="stack gap-xs">
-        <div className="label">トピック</div>
+      <div className="stack gap-m">
         <div className="stack gap-xs">
-          <input
-            className="input"
-            placeholder="新規トピック名"
-            value={name}
+          <div className="stack gap-xs">
+            <input
+              className="input"
+              placeholder="新規トピック名"
+              value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             disabled={loading}
