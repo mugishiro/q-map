@@ -263,7 +263,6 @@ const findNodeById = async (userId: string, nodeId: string) => {
         KeyConditionExpression: "userId = :u",
         FilterExpression: "nodeId = :n",
         ExpressionAttributeValues: { ":u": userId, ":n": nodeId },
-        Limit: 1,
       })
       .promise();
     const items = (res.Items as NodeItem[]) ?? [];

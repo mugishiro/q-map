@@ -37,7 +37,6 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
             <div className="tree-line">
               <span className="tree-title">{node.title}</span>
             </div>
-            <div className="tree-summary">{node.summary}</div>
           </div>
         </button>
         {hasChildren && (
