@@ -50,8 +50,8 @@ prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 - 独自ドメインに切り替える場合は各 tfvars を変更して再度 `terraform apply`
 
 ## フロント連携メモ
-- 必要な環境変数（例）: `VITE_API_BASE_URL`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_DOMAIN`, `VITE_AWS_REGION`
-- 値は上記アウトプットを使用。Amplify コンソールの環境変数にも同様に設定
+- 必要な環境変数（例）: `VITE_API_BASE_URL`（基本 `/api`）、`VITE_API_PROXY_TARGET`（ローカル開発で APIGW にプロキシする場合）、`VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_DOMAIN`, `VITE_AWS_REGION`
+- 値は上記アウトプットを使用。Amplify は `/api` リライト + 環境変数、ローカルは Vite の proxy で `/api` → APIGW に転送
 
 ## テスト
 - Lambda ロジックの単体テスト: `npm test`（Vitest）
