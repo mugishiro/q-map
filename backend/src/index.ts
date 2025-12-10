@@ -596,7 +596,8 @@ export const handler = async (
     // GET /v1/nodes/{nodeId}
     const mNode = matchPath(path, "/v1/nodes/{nodeId}");
     if (method === "GET" && mNode && !path.endsWith("/path")) {
-      const node = await findNodeById(userId, mNode.nodeId);
+      const nodeId = decodeURIComponent(mNode.nodeId);
+      const node = await findNodeById(userId, nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
       return json(200, node);
     }
@@ -604,7 +605,8 @@ export const handler = async (
     // GET /v1/nodes/{nodeId}/path
     const mNodePath = matchPath(path, "/v1/nodes/{nodeId}/path");
     if (method === "GET" && mNodePath) {
-      const node = await findNodeById(userId, mNodePath.nodeId);
+      const nodeId = decodeURIComponent(mNodePath.nodeId);
+      const node = await findNodeById(userId, nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
       const pathArr = await buildPath(userId, node);
       return json(200, { topicId: node.topicId, path: pathArr });
