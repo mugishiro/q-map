@@ -255,17 +255,31 @@ const queryNodesByTopic = async (userId: string, topicId: string) => {
 
 const findNodeById = async (userId: string, nodeId: string) => {
   // Query GSI2: userId/updatedAt と FilterExpression で nodeId を絞り込み
-  const res = await ddb
-    .query({
+  if (NODES_GSI2) {
+    const res = await ddb
+      .query({
+        TableName: NODES_TABLE,
+        IndexName: NODES_GSI2,
+        KeyConditionExpression: "userId = :u",
+        FilterExpression: "nodeId = :n",
+        ExpressionAttributeValues: { ":u": userId, ":n": nodeId },
+        Limit: 1,
+      })
+      .promise();
+    const items = (res.Items as NodeItem[]) ?? [];
+    if (items[0]) return items[0];
+  }
+
+  // フォールバック: テーブル全体をスキャンして一致を探す（データ量が小さい前提）
+  const scan = await ddb
+    .scan({
       TableName: NODES_TABLE,
-      IndexName: NODES_GSI2,
-      KeyConditionExpression: "userId = :u",
-      FilterExpression: "nodeId = :n",
-      ExpressionAttributeValues: { ":u": userId, ":n": nodeId },
+      FilterExpression: "nodeId = :n AND userId = :u",
+      ExpressionAttributeValues: { ":n": nodeId, ":u": userId },
       Limit: 1,
     })
     .promise();
-  const items = (res.Items as NodeItem[]) ?? [];
+  const items = (scan.Items as NodeItem[]) ?? [];
   return items[0] || null;
 };
 
