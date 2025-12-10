@@ -1,6 +1,22 @@
 import { useState } from "react";
 import { ChatMessage, Node } from "../types";
 
+const escapeHtml = (text: string) =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const renderMarkdown = (text: string) => {
+  let safe = escapeHtml(text);
+  safe = safe.replace(/^###\s*(.+)$/gm, "<strong>$1</strong>");
+  safe = safe.replace(/^##\s*(.+)$/gm, "<strong>$1</strong>");
+  safe = safe.replace(/^\s*-\s+/gm, "• ");
+  safe = safe.replace(/\n{2,}/g, "</p><p>");
+  safe = safe.replace(/\n/g, "<br/>");
+  return `<p>${safe}</p>`;
+};
+
 type Props = {
   path: Node[];
   loading: boolean;
@@ -35,7 +51,10 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
         {history.length === 0 && <div className="empty">会話がありません</div>}
         {history.map((m, idx) => (
           <div key={`${m.role}-${idx}`} className={`bubble-flat ${m.role}`}>
-            <div className="bubble-content">{m.content}</div>
+            <div
+              className="bubble-content"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
+            />
           </div>
         ))}
       </div>

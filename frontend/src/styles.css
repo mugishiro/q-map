@@ -242,6 +242,7 @@ body {
   flex-direction: column;
   gap: 4px;
   width: 100%;
+  position: relative;
 }
 .tree-line {
   display: flex;
@@ -263,6 +264,55 @@ body {
   border-left: 2px solid #e2e8f0;
   margin-left: 8px;
   padding-left: 10px;
+}
+
+.bubble-style {
+  background: #f4f5fb;
+  border-radius: 14px;
+  padding: 12px;
+  max-height: 420px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bubble-flat {
+  padding: 10px 12px;
+  border-radius: 14px;
+  max-width: 100%;
+  word-wrap: break-word;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+.bubble-flat.assistant {
+  background: #e6f7ed;
+  border-color: #c5ead5;
+}
+.bubble-content {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.bubble-content p {
+  margin: 0 0 6px 0;
+}
+.bubble-content p:last-child {
+  margin-bottom: 0;
+}
+.chat-input {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  gap: 10px;
+}
+.chat-input .input.large {
+  border-radius: 12px;
+  min-height: 120px;
+}
+.chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .path {
