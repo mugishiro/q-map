@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
             "/api": {
               target: proxyTarget,
               changeOrigin: true,
-              rewrite: (path) => path.replace(/^\\/api/, ""),
+              // Strip leading /api before forwarding to API Gateway
+              rewrite: (path) => path.replace(/^\/api/, ""),
             },
           }
         : undefined,
