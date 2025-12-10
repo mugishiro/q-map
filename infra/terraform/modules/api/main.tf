@@ -24,7 +24,8 @@ locals {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.root}/../../backend/dist"
+  # dist_bundle is built by scripts/build-lambda.sh and contains compiled JS + aws-sdk dependency
+  source_dir  = "${path.root}/../../backend/dist_bundle"
   output_path = "${path.module}/lambda.zip"
 }
 

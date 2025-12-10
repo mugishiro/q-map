@@ -3,14 +3,14 @@
 `doc/NEXT_STEPS.md` の粒度を上げ、すぐ着手できるようにした具体化メモ。前提仕様は `SPEC.md` / `USER_FLOW.md` / `API.md` を踏襲する。
 
 ## Amplify Hosting / ルーティング
-- 現状: Amplify デフォルトドメインを使用。フロントは `VITE_API_BASE_URL` に API Gateway の HTTPS エンドポイントを直接指定（例: `https://14z0sascyi.../dev`）。  
+- 現状: Amplify デフォルトドメインを使用。`modules/amplify` で `/api/<*>` → APIGW (`https://{api}/{stage}/<*>`) の rewrite を設定済み。Amplify 環境では `VITE_API_BASE_URL=/api` を渡し、ローカル開発は `.env.dev` で APIGW 直叩き（例: `https://14z0sascyi.../dev`）。  
 - カスタムドメインを入れる場合:  
   - Amplify に独自ドメイン + HTTPS 証明書を設定。  
   - CloudFront の Rewrites で `/api/<*>` → `https://{api-domain}/{stage}/<*>` を 200 rewrite に設定し、`VITE_API_BASE_URL=/api` とする。  
   - `/<*>` → `/index.html` で SPA fallback。`/api/*` はキャッシュ無効。
 - 環境変数（Amplify 環境に設定、秘匿情報は置かない）:
-  - `VITE_API_BASE_URL`（APIGW 直 or `/api`）、`VITE_APP_STAGE`
-  - `VITE_COGNITO_DOMAIN`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_REDIRECT_URI`
+  - `VITE_API_BASE_URL`（Amplify は `/api`, ローカルは APIGW 直）、`VITE_APP_STAGE`
+  - `VITE_COGNITO_DOMAIN`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_REDIRECT_URI`, `VITE_AWS_REGION`
 
 ## Lambda 環境変数・シークレットの扱い
 - 環境変数（例）:
@@ -50,8 +50,8 @@
 
 ## 認証統合（Cognito + API Gateway）
 - Cognito:
-  - Hosted UI + PKCE を実装済み（フロントで code パラメータを交換）。ドメイン例: `qmap-qmap-dev.auth.ap-northeast-1.amazoncognito.com`。
-  - User Pool Client: public client, callback/logout に Amplify ドメインと `http://localhost:5173/` を登録。Scope: `openid email profile`。Access Token 1h, Refresh 30d 目安（現状の Terraform 設定）。
+  - Hosted UI + PKCE を実装済み（フロントで code パラメータを交換）。ドメイン例: `qmap-dev.auth.ap-northeast-1.amazoncognito.com` / `qmap-prod.auth.ap-northeast-1.amazoncognito.com`。
+  - User Pool Client: public client, callback/logout に Amplify ドメイン（`/` と `/callback`/`/logout`）と `http://localhost:5173/` を登録。Scope: `openid email profile`。Access Token 1h, Refresh 30d 目安（現状の Terraform 設定）。
 - API Gateway HTTP API:
   - JWT オーソライザーで issuer=各 UserPool, audience=ClientId。全ルートに適用。
   - CORS は tfvars の `allowed_origins` で管理（現在は Amplify ドメインと localhost）。

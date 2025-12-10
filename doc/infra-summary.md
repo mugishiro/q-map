@@ -3,7 +3,7 @@
 - IaC: Terraform（単一ディレクトリ: `infra/terraform`、環境切替は backend-*.hcl + tfvars）
 - 状態管理: S3 バケット `qmap-tfstate-710146154969-apne1` + DynamoDB ロックテーブル `qmap-terraform-locks`（backend-dev.hcl / backend-prod.hcl で key を dev/prod に分離）
 - デプロイ対象: Amplify（GitHub `https://github.com/mugishiro/q-map.git`）、API Gateway (HTTP API)、Cognito、DynamoDB、KMS、Lambda
-- Lambda 実装: `backend/src/index.ts`（TypeScript, Dynamo/KMS/LLM 連携。`./scripts/build-lambda.sh` で `backend/dist` を生成）
+- Lambda 実装: `backend/src/index.ts`（TypeScript, Dynamo/KMS/LLM 連携。`./scripts/build-lambda.sh` で `backend/dist_bundle` を作り Lambda 依存込みで zip）
 
 ## 実施済み
 - Terraform コードを `infra/terraform` に集約し、backend-*.hcl で環境別 key を指定
@@ -14,20 +14,20 @@
 ## 環境別アウトプット
 dev (`backend-dev.hcl`, backend key `qmap/dev/terraform.tfstate`)
 - API: `https://14z0sascyi.execute-api.ap-northeast-1.amazonaws.com/dev`
-- Amplify: `dxhqhxj18etwj.amplifyapp.com`
-- Cognito: Pool `ap-northeast-1_gVMXb6uCj`, Client `29cvjr5vsgkf52l735gadvev6c`, Domain `qmap-qmap-dev`
+- Amplify: `dxhqhxj18etwj.amplifyapp.com`（main デフォルトドメイン）
+- Cognito: Pool `ap-northeast-1_uP4pDNBGE`, Client `5aj6jthq1nqu343j82qi2i99ug`, Domain `qmap-dev.auth.ap-northeast-1.amazoncognito.com`
 
 prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 - API: `https://4s9u0m4qqh.execute-api.ap-northeast-1.amazonaws.com/prod`
-- Amplify: `d3c16q2d8f1ppt.amplifyapp.com`
-- Cognito: Pool `ap-northeast-1_FBspriqA4`, Client `2abc2a87nrgd9elom60k609054`, Domain `qmap-qmap-prod`
+- Amplify: `d3c16q2d8f1ppt.amplifyapp.com`（main デフォルトドメイン）
+- Cognito: Pool `ap-northeast-1_n1bgtdkW7`, Client `2kubshj1c0jnpkq2s0hbitovhn`, Domain `qmap-prod.auth.ap-northeast-1.amazoncognito.com`
 
 ## 運用フロー（Terraform）
 1. コードは `infra/terraform` のみを使用（環境切替は backend-*.hcl と tfvars で指定）
 2. 変更があれば tfvars を修正（例: callback/logout/allowed_origins を実ドメインに差し替え）
 3. 実行例（dev）  
    ```bash
-   ./scripts/build-lambda.sh  # backend を dist にビルド（全環境で共通利用）
+   ./scripts/build-lambda.sh  # backend を dist_bundle にビルド（aws-sdk など実行時依存込み）
    cd infra/terraform
    TF_VAR_amplify_access_token="<GitHub_PAT>" terraform init -reconfigure -backend-config=backend-dev.hcl
    TF_VAR_amplify_access_token="<GitHub_PAT>" terraform apply -var-file=dev.tfvars
@@ -50,7 +50,7 @@ prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 - 独自ドメインに切り替える場合は各 tfvars を変更して再度 `terraform apply`
 
 ## フロント連携メモ
-- 必要な環境変数（例）: `VITE_API_BASE_URL`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_DOMAIN`
+- 必要な環境変数（例）: `VITE_API_BASE_URL`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_DOMAIN`, `VITE_AWS_REGION`
 - 値は上記アウトプットを使用。Amplify コンソールの環境変数にも同様に設定
 
 ## テスト
@@ -63,16 +63,15 @@ prod (`backend-prod.hcl`, backend key `qmap/prod/terraform.tfstate`)
 
 ## 進捗まとめ
 やったこと
-- ディレクトリを frontend/backend/infra に分離（frontend は Vite+React、backend は TypeScript Lambda）
+- frontend/backend/infra に分離（frontend は Vite+React、backend は TypeScript Lambda）
 - Terraform を単一ディレクトリに集約し、backend-*.hcl で dev/prod のステートを分離
-- Lambda を TypeScript にリライトし、`npm run build:lambda` → Terraform で `backend/dist` をデプロイ
-- dev/prod で Terraform apply 済み（Lambda コード更新）
-- フロントを追加（トピック一覧/ツリー/パス/チャット UI、JWT 手入力で API 呼び出し可）
-- 環境別のフロント `.env.*.example` を追加（API/Cognito 情報のサンプル）
+- Lambda を TypeScript で実装し、`./scripts/build-lambda.sh` で dist_bundle を生成して依存込みでデプロイ
+- dev/prod で Terraform apply 済み（Hosted UI callback/logout/allowed_origins を Amplify ドメインへ更新、Lambda 500 の原因だった aws-sdk を同梱）
+- フロントは Cognito Hosted UI ベースのログイン画面に変更（未ログイン時はログイン専用表示、デバッグ用に手動トークン入力欄も残置）
+- 環境別のフロント `.env.*.example` を整備し、Amplify に VITE_* を流し込む設計に更新
 - リポジトリを GitHub (`git@github.com:mugishiro/q-map.git`) へ push 済み
 
 まだ未完了/今後やること
 - 本番/開発の実ドメインが未確定（確定後 tfvars を差し替えて apply）
-- フロントの認証フローは JWT 手入力の簡易版のため、Cognito Hosted UI 連携とトークン取得を実装する
-- Amplify 環境変数（VITE_〜）を環境ごとに設定し、CI/Amplify ビルドに組み込む
+- Hosted UI のブランド調整（Cognito 標準のカスタマイズ範囲内でロゴ/色設定を検討）
 - CI で環境別 plan/apply + フロントビルドを回すワークフローが未実装（dev/prod）
