@@ -1,7 +1,7 @@
 # QMap REST API ドキュメント
 
-ベース URL 例:  
-- dev: `https://14z0sascyi.execute-api.ap-northeast-1.amazonaws.com/dev`  
+ベース URL 例（ステージパス付き）:  
+- dev: `https://csdq8anoqk.execute-api.ap-northeast-1.amazonaws.com/dev`  
 - prod: `https://4s9u0m4qqh.execute-api.ap-northeast-1.amazonaws.com/prod`  
 フォーマット: `application/json`  
 認証: Cognito 等で発行された JWT を `Authorization: Bearer <JWT>` で送る。全リソースは JWT の `userId` に紐づく。
@@ -23,20 +23,20 @@ export type ChatMessage = {
 };
 
 export type Topic = {
-  id: string;           // 実体は "topic#<uuid>"
+  topicId: string;        // 実体は "topic#<uuid>"。一部レスポンスでは `id` エイリアスを併記
   name: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type Node = {
-  id: string;             // 実体は "node#<uuid>"
-  label: string;          // UI 表示用ラベル（例: A1/B2）
+  nodeId: string;         // 実体は "node#<uuid>"。一部レスポンスでは `id` エイリアスを併記
+  label?: string;         // UI 表示用ラベル（例: A1/B2）
   topicId: string;
-  parentId: string | null;
-  title: string;          // UI の短い表示名
-  summary: string;        // 質問や要約
-  type: "chat" | "later"; // 通常チャット / あとで聞く
+  parentId?: string;      // ルートは null/undefined
+  title?: string;         // UI の短い表示名
+  summary?: string;       // 質問や要約
+  type?: "chat" | "later";
   createdAt: string;
   updatedAt: string;
 };
@@ -63,6 +63,9 @@ export type UserSettings = {
 ```json
 { "llmProvider": null, "model": null, "apiKeyMasked": null }
 ```
+備考:
+- 現状サーバ側で許可するプロバイダは `openai` / `openrouter` / `anthropic` / `gemini` のみ。
+- API キーは保存時に KMS で暗号化し、レスポンスでは復号してマスクした文字列を返す。
 
 ### POST /me/settings
 - 用途: LLM 設定を保存。`apiKey` は平文で受け、サーバ側で KMS 暗号化。
@@ -84,7 +87,7 @@ export type UserSettings = {
 ```json
 {
   "items": [
-    { "id": "t-web-sec", "name": "Webセキュリティ", "createdAt": "2025-12-07T12:00:00Z", "updatedAt": "2025-12-07T12:10:00Z" }
+    { "topicId": "topic#web-sec", "name": "Webセキュリティ", "createdAt": "2025-12-07T12:00:00Z", "updatedAt": "2025-12-07T12:10:00Z" }
   ],
   "nextCursor": null
 }
@@ -95,13 +98,13 @@ export type UserSettings = {
 ```json
 { "name": "Webセキュリティ" }
 ```
-- レスポンス 201: `Topic`
+- レスポンス 201: `Topic`（`id` と `topicId` の両方を返す）
 
 ### GET /topics/{topicId}
 - 用途: メタ情報取得。レスポンスは `Topic`。
 
 ### DELETE /topics/{topicId}
-- 用途: Topic と配下ノードの削除（論理削除可）。
+- 用途: Topic と配下ノードの削除。
 - レスポンス: 204 No Content（または 200 で削除結果）。
 
 ## Node / Tree API
@@ -114,7 +117,7 @@ export type UserSettings = {
 {
   "items": [
     {
-      "id": "01HF...A1",
+      "nodeId": "01HF...A1",
       "label": "A1",
       "topicId": "t-web-sec",
       "parentId": null,
@@ -125,7 +128,7 @@ export type UserSettings = {
       "updatedAt": "2025-12-07T12:01:10Z"
     },
     {
-      "id": "01HF...B1",
+      "nodeId": "01HF...B1",
       "label": "B1",
       "topicId": "t-web-sec",
       "parentId": "01HF...A1",
@@ -136,7 +139,7 @@ export type UserSettings = {
       "updatedAt": "2025-12-07T12:05:08Z"
     },
     {
-      "id": "01HF...B2",
+      "nodeId": "01HF...B2",
       "label": "B2",
       "topicId": "t-web-sec",
       "parentId": "01HF...A1",
@@ -155,7 +158,7 @@ export type UserSettings = {
 - レスポンス 200 例:
 ```json
 {
-  "id": "01HF...B1",
+  "nodeId": "01HF...B1",
   "label": "B1",
   "topicId": "t-web-sec",
   "parentId": "01HF...A1",
@@ -179,7 +182,7 @@ export type UserSettings = {
   "topicId": "t-web-sec",
   "path": [
     {
-      "id": "01HF...A1",          // ULID
+      "nodeId": "01HF...A1",          // ULID
       "label": "A1",
       "title": "XSSって何？",
       "summary": "XSSって何？",
@@ -190,7 +193,7 @@ export type UserSettings = {
       ]
     },
     {
-      "id": "01HF...B1",
+      "nodeId": "01HF...B1",
       "label": "B1",
       "title": "具体例を教えて",
       "summary": "XSSの具体例について質問",
@@ -238,12 +241,11 @@ export type UserSettings = {
   - `topicId` (必須)
   - `baseNodeId` (null または ノード ID) — null はルート作成
   - `message` (必須) — ユーザー入力
-  - `options` (任意) — 将来の拡張 (`maxTokens`, `temperature` など)
 - レスポンス 200:
 ```json
 {
   "node": {
-    "id": "01HF...B1",
+    "nodeId": "01HF...B1",
     "label": "B1",
     "topicId": "t-web-sec",
     "parentId": "01HF...A1",
@@ -266,18 +268,20 @@ export type UserSettings = {
   4) UserSettings で LLM クライアントを構築し呼び出し。  
   5) 応答とともに新ノード（type="chat"）を作成し保存。  
   6) 新ノードをレスポンスする。
+- LLM 実行には `/me/settings` に保存された API キーが必須。プロバイダ未設定やキーなしの場合は `LLM_API_KEY_MISSING` を返す。
+- ラベルは深さと兄弟数から `A1/B2/...` を自動採番する。
 
 ## まとめビュー API
 ### POST /topics/{topicId}/summary
-- 用途: Topic 内のノードを集計し、LLM で「学びのまとめ」を生成して返す（同期版）。
+- 用途: Topic 内のノードを集計し、サーバ側で簡易整形した文字列を返す（現状は LLM 呼び出しなし）。
 - レスポンス 200:
 ```json
 {
   "topicId": "t-web-sec",
-  "summary": "このトピックでは主に XSS について学びました。最初にXSSの概要を確認し、その後、具体例と対策について議論しました..."
+  "summary": "- A1: XSSって何？\n- B1: 具体例を教えて\n- B2: あとで: SQL Injection について"
 }
 ```
-- 将来拡張案: 非同期ジョブ版 (`/topics/{topicId}/summary-jobs` → `/topics/{topicId}/summary-jobs/{jobId}`)。
+- 将来拡張案: LLM での要約生成や非同期ジョブ版 (`/topics/{topicId}/summary-jobs` → `/topics/{topicId}/summary-jobs/{jobId}`)。
 
 ## エラーレスポンス共通形式
 ```json
