@@ -46,11 +46,13 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
     const sorted = [...items].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
     sorted.forEach((node, idx) => {
       const isLast = idx === sorted.length - 1;
-      const linesForRow = [...active];
-      if (depth > 0) {
-        // 直前の親とこのノードを結ぶ縦線は必ず表示する
-        linesForRow[depth - 1] = true;
-      }
+      const linesForRow = active.map((isLastAncestor, ancestorIdx) => {
+        // 祖先の列は、祖先が最後の子でなければ継続する
+        // 親列（depth-1）は親が最後でも、このノードへの接続のために継続させる
+        if (ancestorIdx === depth - 1) return true;
+        return !isLastAncestor;
+      });
+
       rows.push({
         id: node.id,
         title: formatLabel(node),
@@ -61,7 +63,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
       });
 
       const nextActive = [...active];
-      nextActive[depth] = !isLast;
+      nextActive[depth] = isLast;
       if (node.children.length) {
         walk(node.children, depth + 1, nextActive);
       }
@@ -94,21 +96,19 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
                 <div className="graph-left">
                   {Array.from({ length: row.depth }).map((_, idx) => {
                     const showLine = row.lines[idx];
-                    return showLine ? (
+                    return (
                       <span
                         key={`${row.id}-v-${idx}`}
-                        className="graph-conn vertical"
-                        style={{ left: `${idx * 18}px` }}
+                        className={`graph-conn vertical ${showLine ? "on" : ""}`}
+                        style={{ left: `${idx * 20}px` }}
                       />
-                    ) : (
-                      <span key={`${row.id}-v-${idx}`} className="graph-conn placeholder" />
                     );
                   })}
                   <span
                     className="graph-node-col"
                     data-parent={row.hasParent}
                     data-children={row.hasChildren}
-                    style={{ left: `${row.depth * 18}px` }}
+                    style={{ left: `${row.depth * 20}px` }}
                   >
                     <span className={`graph-dot ${selectedNodeId === row.id ? "active" : ""}`} />
                   </span>
