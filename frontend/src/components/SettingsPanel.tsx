@@ -113,6 +113,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
           <option value="light">Light</option>
           <option value="dark">Dark</option>
         </select>
+        <span className="helper-inline">切り替えで即時反映（保存不要）</span>
       </label>
     </div>
   );
@@ -158,6 +159,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
             <span>キーを表示</span>
           </label>
         </div>
+        <span className="helper-inline">「保存」で適用されます</span>
         {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
       </label>
       <div className="stack gap-xs" style={{ flexDirection: "row", gap: "8px" }}>
