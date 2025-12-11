@@ -276,104 +276,72 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: "Inter", "SFMono-Regular", Consolas, monospace;
   background: var(--secondary);
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
 }
-.graph-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  column-gap: 12px;
-  padding: 6px 8px;
-  border-radius: 10px;
+.tree-graph-list {
+  list-style: none;
+  padding-left: 16px;
+  margin: 0;
+  border-left: 2px solid var(--border);
 }
-.graph-row.node:hover {
+.tree-graph-list.root {
+  border-left: none;
+  padding-left: 0;
+}
+.tree-item {
+  position: relative;
+  padding-left: 10px;
+  margin: 2px 0;
+}
+.tree-item.last::before {
+  height: 12px;
+}
+.tree-item::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--border);
+}
+.tree-row-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.tree-row-new:hover {
   background: var(--ghost-bg);
 }
-.graph-row.node.active {
+.tree-row-new.active {
   background: var(--bubble-user);
 }
-.graph-left {
-  position: relative;
-  width: calc((var(--depth) * 20px) + 24px);
-  min-width: calc((var(--depth) * 20px) + 24px);
-  height: 32px;
-}
-.graph-conn {
+.tree-connector {
   position: absolute;
-  background: var(--border);
-}
-.graph-conn.vertical {
-  display: none;
-  top: -32px;
-  bottom: -32px;
-  width: 2px;
-}
-.graph-conn.vertical.on {
-  display: block;
-}
-.graph-conn.horizontal {
-  top: 50%;
+  left: -12px;
+  top: 12px;
   width: 12px;
   height: 2px;
-  transform: translateY(-50%);
-}
-.graph-conn.placeholder {
-  display: inline-block;
-  width: 2px;
-  height: 2px;
-}
-.graph-node-col {
-  position: absolute;
-  top: 0;
-  width: 18px;
-  height: 32px;
-}
-.graph-node-col::before {
-  content: "";
-  position: absolute;
-  left: 8px;
-  top: -32px;
-  width: 2px;
-  height: 32px;
   background: var(--border);
-  display: none;
 }
-.graph-node-col::after {
-  content: "";
-  position: absolute;
-  left: 8px;
-  top: 16px;
-  width: 2px;
-  height: 32px;
-  background: var(--border);
-  display: none;
-}
-.graph-node-col[data-parent="true"]::before {
-  display: block;
-}
-.graph-node-col[data-children="true"]::after {
-  display: block;
-}
-.graph-dot {
-  position: absolute;
-  left: 4px;
-  top: 10px;
-  width: 12px;
-  height: 12px;
+.tree-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 0 3px var(--ghost-bg);
 }
-.graph-row.node.active .graph-dot {
+.tree-dot.active {
   background: var(--accent-2);
   box-shadow: 0 0 0 3px var(--ghost-border);
 }
-.graph-title {
-  justify-self: start;
+.tree-title-btn {
   border: none;
   background: transparent;
   text-align: left;
@@ -381,20 +349,10 @@ body {
   color: var(--text);
   cursor: pointer;
   word-break: break-word;
+  padding: 0;
 }
-.graph-title:hover {
+.tree-title-btn:hover {
   text-decoration: underline;
-}
-
-/* legacy tree styles (kept for reference) */
-.graph-col.cross::after {
-  content: "";
-  position: absolute;
-  left: 2px;
-  top: 8px;
-  width: 12px;
-  height: 2px;
-  background: var(--subtle);
 }
 
 .tree-node {
