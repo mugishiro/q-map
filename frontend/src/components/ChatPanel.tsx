@@ -69,10 +69,10 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
         />
         <div className="chat-actions">
           <button className="btn ghost" onClick={addLater} disabled={!canAddLater}>
-            {loading ? "追加中..." : "あとで聞くに追加"}
+            {loading ? "追加中..." : "🔖 あとで聞くに追加"}
           </button>
           <button className="btn solid" onClick={send} disabled={loading}>
-            {loading ? "送信中..." : "送信"}
+            {loading ? "送信中..." : "✈️ 送信"}
           </button>
         </div>
         {!latest && <div className="helper-inline">追加するにはノードを選択してください。</div>}
