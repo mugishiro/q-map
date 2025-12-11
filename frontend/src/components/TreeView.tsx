@@ -78,28 +78,34 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
               <div
                 key={row.id}
                 className={`graph-row node ${selectedNodeId === row.id ? "active" : ""}`}
-                style={{ ["--cols" as string]: cols } as React.CSSProperties}
+                style={
+                  {
+                    ["--cols" as string]: cols,
+                    ["--depth" as string]: row.depth,
+                  } as React.CSSProperties
+                }
               >
                 <div className="graph-left">
-                  {Array.from({ length: cols }).map((_, idx) => {
-                    const showLine = idx < row.depth ? row.lines[idx] : false;
-                    const isNode = idx === row.depth;
+                  {Array.from({ length: row.depth }).map((_, idx) => {
+                    const showLine = row.lines[idx];
                     return (
                       <span
-                        key={`${row.id}-col-${idx}`}
-                        className={[
-                          "graph-seg",
-                          showLine ? "vertical" : "",
-                          isNode ? "node-col" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        data-has-parent={row.hasParent && isNode ? "true" : "false"}
-                      >
-                        {isNode && <span className="graph-dot" />}
-                      </span>
+                        key={`${row.id}-v-${idx}`}
+                        className={`graph-conn vertical ${showLine ? "on" : ""}`}
+                        style={{ left: `${idx * 18}px` }}
+                      />
                     );
                   })}
+                  {row.hasParent && (
+                    <span
+                      className="graph-conn horizontal"
+                      style={{ left: `${Math.max(0, row.depth * 18 - 12)}px` }}
+                    />
+                  )}
+                  <span
+                    className={`graph-dot ${selectedNodeId === row.id ? "active" : ""}`}
+                    style={{ left: `${row.depth * 18}px` }}
+                  />
                 </div>
                 <button className="graph-title" onClick={() => onSelect(row.id)}>
                   {row.title}
