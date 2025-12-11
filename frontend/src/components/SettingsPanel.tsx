@@ -100,7 +100,24 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
     }
   };
 
-  const formContent = (
+  const themeSection = (
+    <div className="stack gap-s">
+      <div className="label">表示</div>
+      <label className="stack gap-xs">
+        <span className="helper-inline">テーマ</span>
+        <select
+          className="input"
+          value={theme}
+          onChange={(e) => applyTheme(e.target.value as "light" | "dark")}
+        >
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+    </div>
+  );
+
+  const llmSection = (
     <div className="stack gap-s">
       <div className="label">LLM 設定</div>
       <label className="stack gap-xs">
@@ -125,17 +142,6 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
           value={form.model}
           onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
         />
-      </label>
-      <label className="stack gap-xs">
-        <span className="helper-inline">テーマ</span>
-        <select
-          className="input"
-          value={theme}
-          onChange={(e) => applyTheme(e.target.value as "light" | "dark")}
-        >
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
       </label>
       <label className="stack gap-xs">
         <span className="helper-inline">API Key</span>
@@ -164,6 +170,13 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
       </div>
       {notice && <span className="helper-inline" style={{ color: "#0f766e" }}>{notice}</span>}
       {error && <span className="helper-inline" style={{ color: "#b91c1c" }}>{error}</span>}
+    </div>
+  );
+
+  const formContent = (
+    <div className="stack gap-m">
+      {themeSection}
+      {llmSection}
     </div>
   );
 
