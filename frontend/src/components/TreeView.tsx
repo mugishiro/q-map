@@ -45,11 +45,16 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
     const sorted = [...items].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
     sorted.forEach((node, idx) => {
       const isLast = idx === sorted.length - 1;
+      const linesForRow = [...active];
+      if (depth > 0) {
+        // 直前の親とこのノードを結ぶ縦線は必ず表示する
+        linesForRow[depth - 1] = true;
+      }
       rows.push({
         id: node.id,
         title: formatLabel(node),
         depth,
-        lines: [...active],
+        lines: linesForRow.slice(0, depth),
         hasParent: depth > 0,
       });
 
