@@ -307,9 +307,13 @@ body {
   background: var(--border);
 }
 .graph-conn.vertical {
+  display: none;
   top: -32px;
   bottom: -32px;
   width: 2px;
+}
+.graph-conn.vertical.on {
+  display: block;
 }
 .graph-conn.horizontal {
   top: 50%;

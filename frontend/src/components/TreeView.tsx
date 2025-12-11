@@ -46,11 +46,11 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
     const sorted = [...items].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
     sorted.forEach((node, idx) => {
       const isLast = idx === sorted.length - 1;
-      const linesForRow = active.map((isLastAncestor, ancestorIdx) => {
-        // 祖先の列は、祖先が最後の子でなければ継続する
-        // 親列（depth-1）は親が最後でも、このノードへの接続のために継続させる
+      // active は各深さで「その深さのノードが最後かどうか」を保持する
+      // 描画時は「最後でない祖先」は縦線を継続し、親列は必ず継続して子に繋ぐ
+      const linesForRow = active.map((ancestorIsLast, ancestorIdx) => {
         if (ancestorIdx === depth - 1) return true;
-        return !isLastAncestor;
+        return !ancestorIsLast;
       });
 
       rows.push({
