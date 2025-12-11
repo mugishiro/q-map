@@ -207,30 +207,78 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
 }
-.tree-graph-row {
+.graph-row {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 16px) 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 8px;
+}
+.graph-row.node:hover {
+  background: #e2e8f0;
+}
+.graph-row.node.active {
+  background: #dbeafe;
+}
+.graph-cols {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 16px);
+  grid-column: 1 / span var(--cols);
+  height: 20px;
+  position: relative;
+}
+.graph-col {
+  position: relative;
+  width: 16px;
+  height: 20px;
+}
+.graph-col.line::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: -2px;
+  width: 2px;
+  height: 24px;
+  background: #94a3b8;
+}
+.graph-col.cross::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 12px;
+  height: 2px;
+  background: #94a3b8;
+}
+.graph-col.node-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.graph-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 0 0 0 3px #e0f2fe;
+}
+.graph-row.node.active .graph-dot {
+  background: #0ea5e9;
+  box-shadow: 0 0 0 3px #bae6fd;
+}
+.graph-title {
+  grid-column: var(--cols) / span 1;
+  justify-self: start;
   border: none;
   background: transparent;
   text-align: left;
-  padding: 4px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: pre;
-  font-size: 13px;
+  font-size: 14px;
   color: #0f172a;
-  transition: background 0.08s ease, color 0.08s ease;
+  cursor: pointer;
 }
-.tree-graph-row:hover {
-  background: #e2e8f0;
-}
-.tree-graph-row.active {
-  background: #2563eb;
-  color: #fff;
-}
-.tree-graph-branch {
-  white-space: pre;
-  font-size: 13px;
-  padding: 2px 6px;
-  color: #475569;
+.graph-title:hover {
+  text-decoration: underline;
 }
 
 .tree-node {
