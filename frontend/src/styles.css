@@ -200,8 +200,8 @@ body {
 .tree-graph {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  gap: 4px;
+  font-family: "Inter", "SFMono-Regular", Consolas, monospace;
   background: #f8fafc;
   padding: 10px;
   border: 1px solid #e2e8f0;
@@ -209,11 +209,11 @@ body {
 }
 .graph-row {
   display: grid;
-  grid-template-columns: repeat(var(--cols), 16px) 1fr;
+  grid-template-columns: repeat(var(--cols), 20px) 1fr;
   align-items: center;
-  gap: 6px;
-  padding: 2px 4px;
-  border-radius: 8px;
+  column-gap: 8px;
+  padding: 4px 6px;
+  border-radius: 10px;
 }
 .graph-row.node:hover {
   background: #e2e8f0;
@@ -221,42 +221,45 @@ body {
 .graph-row.node.active {
   background: #dbeafe;
 }
-.graph-cols {
+.graph-left {
   display: grid;
-  grid-template-columns: repeat(var(--cols), 16px);
+  grid-template-columns: repeat(var(--cols), 20px);
   grid-column: 1 / span var(--cols);
-  height: 20px;
-  position: relative;
-}
-.graph-col {
-  position: relative;
-  width: 16px;
-  height: 20px;
-}
-.graph-col.line::before {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: -2px;
-  width: 2px;
   height: 24px;
-  background: #94a3b8;
+  position: relative;
 }
-.graph-col.cross::after {
+.graph-seg {
+  position: relative;
+  width: 20px;
+  height: 24px;
+}
+.graph-seg.vertical::before {
   content: "";
   position: absolute;
-  left: 2px;
-  top: 8px;
-  width: 12px;
-  height: 2px;
-  background: #94a3b8;
+  left: 9px;
+  top: -12px;
+  width: 2px;
+  height: 48px;
+  background: #cbd5e1;
 }
-.graph-col.node-col {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.graph-seg.node-col::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  width: 20px;
+  height: 2px;
+  background: #cbd5e1;
+  transform: translateY(-50%);
+  display: none;
+}
+.graph-seg.node-col[data-has-parent="true"]::before {
+  display: block;
 }
 .graph-dot {
+  position: absolute;
+  left: 4px;
+  top: 6px;
   width: 12px;
   height: 12px;
   border-radius: 999px;
@@ -279,6 +282,17 @@ body {
 }
 .graph-title:hover {
   text-decoration: underline;
+}
+
+/* legacy tree styles (kept for reference) */
+.graph-col.cross::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 12px;
+  height: 2px;
+  background: #94a3b8;
 }
 
 .tree-node {

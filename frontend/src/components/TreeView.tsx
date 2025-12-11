@@ -24,22 +24,13 @@ type Props = {
   onSelect: (nodeId: string) => void;
 };
 
-type GraphLine =
-  | {
-      kind: "node";
-      id: string;
-      title: string;
-      columns: number;
-      nodeColumn: number;
-      activeColumns: number[];
-    }
-  | {
-      kind: "branch";
-      columns: number;
-      activeColumns: number[];
-      mainColumn: number;
-      branchEnd: number;
-    };
+type GraphRow = {
+  id: string;
+  title: string;
+  depth: number;
+  lines: boolean[];
+  hasParent: boolean;
+};
 
 export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
   const tree = buildTree(nodes);
@@ -48,118 +39,74 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
     return node.title || node.summary || "(no title)";
   };
 
-  const lines: GraphLine[] = [];
+  const rows: GraphRow[] = [];
 
-  const renderGraph = (node: TreeNode, activeColumns: number[], columnIndex: number) => {
-    lines.push({
-      kind: "node",
-      id: node.id,
-      title: formatLabel(node),
-      columns: activeColumns.length,
-      nodeColumn: columnIndex,
-      activeColumns: [...activeColumns],
-    });
+  const walk = (items: TreeNode[], depth: number, active: boolean[]) => {
+    const sorted = [...items].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+    sorted.forEach((node, idx) => {
+      const isLast = idx === sorted.length - 1;
+      rows.push({
+        id: node.id,
+        title: formatLabel(node),
+        depth,
+        lines: [...active],
+        hasParent: depth > 0,
+      });
 
-    const children = [...node.children].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
-    if (!children.length) return;
-
-    if (children.length === 1) {
-      renderGraph(children[0], activeColumns, columnIndex);
-      return;
-    }
-
-    const branchLineColumns = [...activeColumns];
-    const extra = children.length - 1;
-    for (let i = 0; i < extra; i += 1) {
-      branchLineColumns.splice(columnIndex + 1 + i, 0, 1);
-    }
-    const start = columnIndex + 1;
-    const end = columnIndex + extra;
-    lines.push({
-      kind: "branch",
-      columns: branchLineColumns.length,
-      activeColumns: branchLineColumns.map((_, idx) => idx),
-      mainColumn: columnIndex,
-      branchEnd: end,
-    });
-
-    children.forEach((child, idx) => {
-      const childCol = columnIndex + idx;
-      renderGraph(child, branchLineColumns.slice(), childCol);
+      const nextActive = [...active];
+      nextActive[depth] = !isLast;
+      if (node.children.length) {
+        walk(node.children, depth + 1, nextActive);
+      }
     });
   };
 
-  tree
-    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-    .forEach((root) => renderGraph(root, [1], 0));
+  walk(
+    tree.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)),
+    0,
+    []
+  );
 
   return (
     <div className="stack gap-m">
       <div className="label">ツリー</div>
       <div className="tree tree-graph">
-        {lines.length ? (
-          lines.map((line, idx) =>
-            line.kind === "node" ? (
+        {rows.length ? (
+          rows.map((row) => {
+            const cols = row.depth + 1;
+            return (
               <div
-                key={line.id}
-                className={`graph-row node ${selectedNodeId === line.id ? "active" : ""}`}
-                style={{ ["--cols" as string]: line.columns } as React.CSSProperties}
+                key={row.id}
+                className={`graph-row node ${selectedNodeId === row.id ? "active" : ""}`}
+                style={{ ["--cols" as string]: cols } as React.CSSProperties}
               >
-                <div className="graph-cols">
-                  {Array.from({ length: line.columns }).map((_, colIdx) => {
-                    const isNodeCol = colIdx === line.nodeColumn;
-                    const isLine = line.activeColumns.includes(colIdx);
+                <div className="graph-left">
+                  {Array.from({ length: cols }).map((_, idx) => {
+                    const showLine = idx < row.depth ? row.lines[idx] : false;
+                    const isNode = idx === row.depth;
                     return (
                       <span
-                        key={`${line.id}-col-${colIdx}`}
+                        key={`${row.id}-col-${idx}`}
                         className={[
-                          "graph-col",
-                          isLine ? "line" : "gap",
-                          isNodeCol ? "node-col" : "",
-                          selectedNodeId === line.id ? "active" : "",
+                          "graph-seg",
+                          showLine ? "vertical" : "",
+                          isNode ? "node-col" : "",
                         ]
                           .filter(Boolean)
                           .join(" ")}
+                        data-has-parent={row.hasParent && isNode ? "true" : "false"}
                       >
-                        {isNodeCol && <span className="graph-dot" />}
+                        {isNode && <span className="graph-dot" />}
                       </span>
                     );
                   })}
                 </div>
-                <button className="graph-title" onClick={() => onSelect(line.id)}>
-                  {line.title}
+                <button className="graph-title" onClick={() => onSelect(row.id)}>
+                  {row.title}
                 </button>
               </div>
-            ) : (
-              <div
-                key={`branch-${idx}`}
-                className="graph-row branch"
-                style={{ ["--cols" as string]: line.columns } as React.CSSProperties}
-              >
-                <div className="graph-cols">
-                  {Array.from({ length: line.columns }).map((_, colIdx) => {
-                    const isLine = line.activeColumns.includes(colIdx);
-                    const isCross = colIdx > line.mainColumn && colIdx <= line.branchEnd;
-                    const isMain = colIdx === line.mainColumn;
-                    return (
-                      <span
-                        key={`branch-${idx}-col-${colIdx}`}
-                        className={[
-                          "graph-col",
-                          isLine ? "line" : "gap",
-                          isCross ? "cross" : "",
-                          isMain ? "branch-main" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="graph-branch-label" />
-              </div>
-            )
-          )
+            );
+          })
         ) : (
           <div className="empty">ノードなし</div>
         )}
