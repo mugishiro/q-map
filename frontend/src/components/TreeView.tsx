@@ -30,6 +30,7 @@ type GraphRow = {
   depth: number;
   lines: boolean[];
   hasParent: boolean;
+  hasChildren: boolean;
 };
 
 export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
@@ -56,6 +57,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
         depth,
         lines: linesForRow.slice(0, depth),
         hasParent: depth > 0,
+        hasChildren: node.children.length > 0,
       });
 
       const nextActive = [...active];
@@ -93,24 +95,24 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
                 <div className="graph-left">
                   {Array.from({ length: row.depth }).map((_, idx) => {
                     const showLine = row.lines[idx];
-                    return (
+                    return showLine ? (
                       <span
                         key={`${row.id}-v-${idx}`}
-                        className={`graph-conn vertical ${showLine ? "on" : ""}`}
+                        className="graph-conn vertical"
                         style={{ left: `${idx * 18}px` }}
                       />
+                    ) : (
+                      <span key={`${row.id}-v-${idx}`} className="graph-conn placeholder" />
                     );
                   })}
-                  {row.hasParent && (
-                    <span
-                      className="graph-conn horizontal"
-                      style={{ left: `${Math.max(0, row.depth * 18 - 12)}px` }}
-                    />
-                  )}
                   <span
-                    className={`graph-dot ${selectedNodeId === row.id ? "active" : ""}`}
+                    className="graph-node-col"
+                    data-parent={row.hasParent}
+                    data-children={row.hasChildren}
                     style={{ left: `${row.depth * 18}px` }}
-                  />
+                  >
+                    <span className={`graph-dot ${selectedNodeId === row.id ? "active" : ""}`} />
+                  </span>
                 </div>
                 <button className="graph-title" onClick={() => onSelect(row.id)}>
                   {row.title}

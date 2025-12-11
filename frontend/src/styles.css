@@ -223,17 +223,17 @@ body {
 }
 .graph-left {
   position: relative;
-  width: calc((var(--depth) * 18px) + 18px);
-  min-width: calc((var(--depth) * 18px) + 18px);
-  height: 28px;
+  width: calc((var(--depth) * 18px) + 24px);
+  min-width: calc((var(--depth) * 18px) + 24px);
+  height: 32px;
 }
 .graph-conn {
   position: absolute;
   background: #cbd5e1;
 }
 .graph-conn.vertical {
-  top: -14px;
-  bottom: -14px;
+  top: -32px;
+  bottom: -32px;
   width: 2px;
 }
 .graph-conn.horizontal {
@@ -242,10 +242,47 @@ body {
   height: 2px;
   transform: translateY(-50%);
 }
+.graph-conn.placeholder {
+  display: inline-block;
+  width: 2px;
+  height: 2px;
+}
+.graph-node-col {
+  position: absolute;
+  top: 0;
+  width: 18px;
+  height: 32px;
+}
+.graph-node-col::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: -32px;
+  width: 2px;
+  height: 32px;
+  background: #cbd5e1;
+  display: none;
+}
+.graph-node-col::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  width: 2px;
+  height: 32px;
+  background: #cbd5e1;
+  display: none;
+}
+.graph-node-col[data-parent="true"]::before {
+  display: block;
+}
+.graph-node-col[data-children="true"]::after {
+  display: block;
+}
 .graph-dot {
   position: absolute;
   left: 4px;
-  top: 6px;
+  top: 10px;
   width: 12px;
   height: 12px;
   border-radius: 999px;
