@@ -61,6 +61,10 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
     if (open) void loadSettings();
   }, [open]);
 
+  useEffect(() => {
+    if (embedded) void loadSettings();
+  }, [embedded]);
+
   const save = async () => {
     setLoading(true);
     setError(null);
