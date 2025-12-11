@@ -26,34 +26,45 @@ type Props = {
 export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
   const tree = buildTree(nodes);
 
-  const renderNode = (node: TreeNode, depth = 0) => {
-    const hasChildren = node.children.length > 0;
-    const active = selectedNodeId === node.id;
-    return (
-      <div key={node.id} className="tree-node" style={{ marginLeft: depth * 12 }}>
-        <button className={`tree-row ${active ? "active" : ""}`} onClick={() => onSelect(node.id)}>
-          <div className={`tree-bullet ${node.type} ${active ? "active" : ""}`} />
-          <div className="tree-body">
-            <div className="tree-line">
-              <span className="tree-title">{node.title}</span>
-            </div>
-          </div>
-        </button>
-        {hasChildren && (
-          <div className="tree-children">
-            {node.children
-              .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-              .map((child) => renderNode(child, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
+  const formatLabel = (node: TreeNode) => {
+    const base = node.title || node.summary || "(no title)";
+    return node.label ? `${node.label} ${base}` : base;
   };
+
+  const lines: { id: string; text: string }[] = [];
+  const walk = (items: TreeNode[], prefix: string) => {
+    const sorted = [...items].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+    sorted.forEach((node, idx) => {
+      const isLast = idx === sorted.length - 1;
+      const connector = isLast ? "└── " : "├── ";
+      const line = `${prefix}${connector}${formatLabel(node)}`;
+      lines.push({ id: node.id, text: line });
+      const nextPrefix = prefix + (isLast ? "    " : "│   ");
+      if (node.children.length) {
+        walk(node.children, nextPrefix);
+      }
+    });
+  };
+  walk(tree, "");
 
   return (
     <div className="stack gap-m">
       <div className="label">ツリー</div>
-      <div className="tree">{tree.length ? tree.map((n) => renderNode(n)) : <div className="empty">ノードなし</div>}</div>
+      <div className="tree tree-text">
+        {lines.length ? (
+          lines.map((line) => (
+            <button
+              key={line.id}
+              className={`tree-text-row ${selectedNodeId === line.id ? "active" : ""}`}
+              onClick={() => onSelect(line.id)}
+            >
+              {line.text}
+            </button>
+          ))
+        ) : (
+          <div className="empty">ノードなし</div>
+        )}
+      </div>
     </div>
   );
 };
