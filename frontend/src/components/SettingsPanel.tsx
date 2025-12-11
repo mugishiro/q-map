@@ -34,8 +34,26 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
     apiKey: "",
   });
   const [currentMasked, setCurrentMasked] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   const providerOptions = useMemo(() => providers.map((p) => p.value), []);
+
+  const applyTheme = (t: "light" | "dark") => {
+    setTheme(t);
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem("qmap_theme", t);
+    }
+  };
+
+  useEffect(() => {
+    const stored = localStorage.getItem("qmap_theme");
+    if (stored === "dark" || stored === "light") {
+      applyTheme(stored);
+    } else {
+      applyTheme("light");
+    }
+  }, []);
 
   const loadSettings = async () => {
     setLoading(true);
@@ -106,6 +124,17 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
           value={form.model}
           onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
         />
+      </label>
+      <label className="stack gap-xs">
+        <span className="helper-inline">テーマ</span>
+        <select
+          className="input"
+          value={theme}
+          onChange={(e) => applyTheme(e.target.value as "light" | "dark")}
+        >
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
       </label>
       <label className="stack gap-xs">
         <span className="helper-inline">API Key</span>

@@ -68,7 +68,13 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
           disabled={loading}
         />
         <div className="chat-actions">
-          <button className="btn ghost" onClick={addLater} disabled={!canAddLater}>
+          <button
+            className="btn ghost"
+            onClick={addLater}
+            disabled={!canAddLater}
+            aria-label="あとで聞くに追加"
+            title="あとで聞くに追加"
+          >
             <span className="btn-icon" aria-hidden="true">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
@@ -80,9 +86,8 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
                 />
               </svg>
             </span>
-            <span>{loading ? "追加中..." : "あとで聞くに追加"}</span>
           </button>
-          <button className="btn solid" onClick={send} disabled={loading}>
+          <button className="btn solid" onClick={send} disabled={loading} aria-label="送信" title="送信">
             <span className="btn-icon" aria-hidden="true">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
@@ -94,7 +99,6 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
                 />
               </svg>
             </span>
-            <span>{loading ? "送信中..." : "送信"}</span>
           </button>
         </div>
         {!latest && <div className="helper-inline">追加するにはノードを選択してください。</div>}

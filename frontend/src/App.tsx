@@ -3,8 +3,6 @@ import Layout from "./components/Layout";
 import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
-import HeaderAuth from "./components/HeaderAuth";
-import SettingsPanel from "./components/SettingsPanel";
 import HeaderMenu from "./components/HeaderMenu";
 import { api } from "./api";
 import { auth } from "./auth";
@@ -183,9 +181,22 @@ function App() {
   };
 
   const left = (
-    <div className="stack gap-s">
-      <button className="btn ghost" onClick={() => setTopicsCollapsed((v) => !v)}>
-        {topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+    <div className="stack gap-s" style={{ alignItems: "flex-start" }}>
+      <button
+        className="icon-btn"
+        aria-label={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+        title={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+        onClick={() => setTopicsCollapsed((v) => !v)}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path
+            d={topicsCollapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"}
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
       {!topicsCollapsed && (
         <TopicList
@@ -271,7 +282,15 @@ function App() {
     );
   }
 
-  return <Layout left={left} center={center} right={right} headerAction={headerAction} />;
+  return (
+    <Layout
+      left={left}
+      center={center}
+      right={right}
+      headerAction={headerAction}
+      leftCollapsed={topicsCollapsed}
+    />
+  );
 }
 
 export default App;

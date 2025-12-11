@@ -1,9 +1,15 @@
 import { ReactNode } from "react";
 import "../styles.css";
 
-type Props = { left: ReactNode; center: ReactNode; right: ReactNode; headerAction?: ReactNode };
+type Props = {
+  left: ReactNode;
+  center: ReactNode;
+  right: ReactNode;
+  headerAction?: ReactNode;
+  leftCollapsed?: boolean;
+};
 
-export const Layout = ({ left, center, right, headerAction }: Props) => {
+export const Layout = ({ left, center, right, headerAction, leftCollapsed = false }: Props) => {
   return (
     <div className="shell">
       <header className="topbar">
@@ -11,8 +17,8 @@ export const Layout = ({ left, center, right, headerAction }: Props) => {
         <div className="tagline">Branch your conversations. Compare every path.</div>
         {headerAction && <div className="topbar-actions">{headerAction}</div>}
       </header>
-      <div className="grid">
-        <aside className="panel left">{left}</aside>
+      <div className={`grid ${leftCollapsed ? "collapsed-left" : ""}`}>
+        <aside className={`panel left ${leftCollapsed ? "collapsed" : ""}`}>{left}</aside>
         <main className="panel center">{center}</main>
         <section className="panel right">{right}</section>
       </div>
