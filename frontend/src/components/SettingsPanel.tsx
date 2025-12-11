@@ -42,6 +42,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
     setTheme(t);
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-theme", t);
+      document.body?.setAttribute("data-theme", t);
       localStorage.setItem("qmap_theme", t);
     }
   };

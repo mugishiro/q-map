@@ -1,14 +1,42 @@
 :root {
   font-family: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
-  color: #0f172a;
-  background: #f7f9fb;
+  color: var(--text);
+  background: var(--bg);
+  --bg: #f7f9fb;
+  --panel-bg: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --subtle: #94a3b8;
+  --border: #e2e8f0;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  --secondary: #f8fafc;
+  --accent: #2563eb;
+  --accent-2: #0ea5e9;
+  --ghost-bg: #e0f2fe;
+  --ghost-border: #bae6fd;
+  --bubble-user: #e0f2fe;
+  --bubble-assist: #e6f7ed;
 }
 :root[data-theme="dark"] {
-  color: #e2e8f0;
-  background: #0f172a;
+  --bg: #0f172a;
+  --panel-bg: #111827;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --subtle: #94a3b8;
+  --border: #1f2937;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --secondary: #0b1220;
+  --accent: #60a5fa;
+  --accent-2: #38bdf8;
+  --ghost-bg: #1f2937;
+  --ghost-border: #334155;
+  --bubble-user: #1e3a8a;
+  --bubble-assist: #0f766e;
 }
-body[data-theme="dark"], :root[data-theme="dark"] body {
-  background: #0f172a;
+body[data-theme="dark"],
+:root[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--text);
 }
 
 * {
@@ -17,7 +45,8 @@ body[data-theme="dark"], :root[data-theme="dark"] body {
 
 body {
   margin: 0;
-  background: #f7f9fb;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .shell {
@@ -31,8 +60,8 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  background: var(--secondary);
 }
 
 .brand {
@@ -41,7 +70,7 @@ body {
 }
 
 .tagline {
-  color: #475569;
+  color: var(--muted);
   font-size: 14px;
 }
 
@@ -105,17 +134,12 @@ body {
 }
 
 .panel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow);
   overflow: hidden;
-}
-:root[data-theme="dark"] .panel {
-  background: #111827;
-  border-color: #1f2937;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 .panel.left.collapsed {
   padding: 8px;
@@ -142,22 +166,23 @@ body {
 .label {
   font-size: 12px;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--muted);
   letter-spacing: 0.08em;
 }
 
 .input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
-  background: #fff;
+  background: var(--panel-bg);
+  color: var(--text);
 }
 
 .btn {
-  border: 1px solid #0ea5e9;
-  color: #0ea5e9;
+  border: 1px solid var(--accent-2);
+  color: var(--accent-2);
   background: transparent;
   border-radius: 10px;
   padding: 10px 14px;
@@ -170,14 +195,14 @@ body {
   cursor: not-allowed;
 }
 .btn.solid {
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
   color: #fff;
   border: none;
   box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
 }
 .btn.ghost {
-  background: #e0f2fe;
-  border-color: #bae6fd;
+  background: var(--ghost-bg);
+  border-color: var(--ghost-border);
 }
 .icon-btn {
   border: 1px solid #cbd5e1;
@@ -203,8 +228,8 @@ body {
 .list-item {
   width: 100%;
   text-align: left;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--border);
+  background: var(--secondary);
   border-radius: 10px;
   padding: 10px;
   cursor: pointer;
@@ -214,8 +239,8 @@ body {
   transform: translateY(-1px);
 }
 .list-item.active {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: var(--accent);
+  background: var(--ghost-bg);
 }
 .list-title {
   font-weight: 600;
@@ -235,9 +260,9 @@ body {
   flex-direction: column;
   gap: 4px;
   font-family: "Inter", "SFMono-Regular", Consolas, monospace;
-  background: #f8fafc;
+  background: var(--secondary);
   padding: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 .graph-row {
@@ -249,10 +274,10 @@ body {
   border-radius: 10px;
 }
 .graph-row.node:hover {
-  background: #e2e8f0;
+  background: var(--ghost-bg);
 }
 .graph-row.node.active {
-  background: #dbeafe;
+  background: var(--bubble-user);
 }
 .graph-left {
   position: relative;
@@ -262,7 +287,7 @@ body {
 }
 .graph-conn {
   position: absolute;
-  background: #cbd5e1;
+  background: var(--border);
 }
 .graph-conn.vertical {
   top: -32px;
@@ -293,7 +318,7 @@ body {
   top: -32px;
   width: 2px;
   height: 32px;
-  background: #cbd5e1;
+  background: var(--border);
   display: none;
 }
 .graph-node-col::after {
@@ -303,7 +328,7 @@ body {
   top: 16px;
   width: 2px;
   height: 32px;
-  background: #cbd5e1;
+  background: var(--border);
   display: none;
 }
 .graph-node-col[data-parent="true"]::before {
@@ -319,12 +344,12 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: #2563eb;
-  box-shadow: 0 0 0 3px #e0f2fe;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--ghost-bg);
 }
 .graph-row.node.active .graph-dot {
-  background: #0ea5e9;
-  box-shadow: 0 0 0 3px #bae6fd;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 3px var(--ghost-border);
 }
 .graph-title {
   justify-self: start;
@@ -332,7 +357,7 @@ body {
   background: transparent;
   text-align: left;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text);
   cursor: pointer;
   word-break: break-word;
 }
@@ -434,18 +459,18 @@ body {
   border-radius: 14px;
   max-width: 100%;
   word-wrap: break-word;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
 }
 .bubble-flat.user {
   margin-left: auto;
-  background: #e0f2fe;
-  border-color: #bae6fd;
+  background: var(--bubble-user);
+  border-color: var(--ghost-border);
   max-width: 80%;
 }
 .bubble-flat.assistant {
-  background: #e6f7ed;
-  border-color: #c5ead5;
+  background: var(--bubble-assist);
+  border-color: var(--ghost-border);
 }
 .bubble-content {
   white-space: pre-wrap;
@@ -498,10 +523,10 @@ body {
 }
 
 .card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
-  background: #fff;
+  background: var(--panel-bg);
 }
 
 .empty {
