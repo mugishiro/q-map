@@ -76,7 +76,6 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
 
   return (
     <div className="stack gap-m">
-      <div className="label">ツリー</div>
       <div className="tree tree-graph">
         {rows.length ? (
           rows.map((row) => {

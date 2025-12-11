@@ -5,6 +5,7 @@ import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderAuth from "./components/HeaderAuth";
 import SettingsPanel from "./components/SettingsPanel";
+import HeaderMenu from "./components/HeaderMenu";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
@@ -15,6 +16,7 @@ function App() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [path, setPath] = useState<Node[]>([]);
   const [branchBaseId, setBranchBaseId] = useState<string | null>(null);
+  const [topicsCollapsed, setTopicsCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean>(Boolean(api.getToken()));
@@ -181,12 +183,19 @@ function App() {
   };
 
   const left = (
-    <TopicList
-      topics={topics}
-      selectedTopicId={selectedTopicId}
-      onSelect={handleSelectTopic}
-      onCreate={handleCreateTopic}
-    />
+    <div className="stack gap-s">
+      <button className="btn ghost" onClick={() => setTopicsCollapsed((v) => !v)}>
+        {topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+      </button>
+      {!topicsCollapsed && (
+        <TopicList
+          topics={topics}
+          selectedTopicId={selectedTopicId}
+          onSelect={handleSelectTopic}
+          onCreate={handleCreateTopic}
+        />
+      )}
+    </div>
   );
 
   const center = (
@@ -208,14 +217,11 @@ function App() {
   );
 
   const headerAction = (
-    <>
-      <SettingsPanel variant="header" />
-      <HeaderAuth
-        onAuthChange={refreshTopics}
-        onLoginSuccess={() => setAuthenticated(true)}
-        onLogout={handleLogout}
-      />
-    </>
+    <HeaderMenu
+      onAuthChange={refreshTopics}
+      onLoginSuccess={() => setAuthenticated(true)}
+      onLogout={handleLogout}
+    />
   );
 
   if (!authenticated) {

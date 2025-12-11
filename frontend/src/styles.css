@@ -404,6 +404,12 @@ body {
   background: #ffffff;
   border: 1px solid #e2e8f0;
 }
+.bubble-flat.user {
+  margin-left: auto;
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  max-width: 80%;
+}
 .bubble-flat.assistant {
   background: #e6f7ed;
   border-color: #c5ead5;

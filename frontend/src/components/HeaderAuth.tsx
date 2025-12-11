@@ -40,15 +40,20 @@ const HeaderAuth = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
   };
 
   return (
-    <div className="auth-controls">
-      <button className="btn solid" onClick={startLogin} disabled={!isConfigured}>
-        ログイン
-      </button>
-      {loggedIn && (
-        <button className="btn ghost" onClick={logout}>
-          ログアウト
+    <div className="auth-controls stack gap-s">
+      <div className="stack gap-xs" style={{ flexDirection: "row", gap: "8px" }}>
+        <button className="btn solid" onClick={startLogin} disabled={!isConfigured}>
+          ログイン
         </button>
-      )}
+        {loggedIn && (
+          <button className="btn ghost" onClick={logout}>
+            ログアウト
+          </button>
+        )}
+        <button className="btn ghost" onClick={() => setShowManual((v) => !v)}>
+          手動入力
+        </button>
+      </div>
       {showManual && (
         <div className="manual-auth">
           <input

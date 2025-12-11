@@ -18,9 +18,10 @@ const providers = [
 
 type Props = {
   variant?: "panel" | "header";
+  embedded?: boolean;
 };
 
-const SettingsPanel = ({ variant = "panel" }: Props) => {
+const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
   const isHeader = variant === "header";
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -136,13 +137,16 @@ const SettingsPanel = ({ variant = "panel" }: Props) => {
     </div>
   );
 
+  if (embedded) {
+    return <div className="card">{formContent}</div>;
+  }
+
   if (isHeader) {
     return (
       <div className="settings-header">
         <button className="btn ghost" onClick={() => setOpen((v) => !v)}>
           {open ? "設定を閉じる" : "LLM 設定"}
         </button>
-        <div className="helper-inline">保存済み: {currentMasked || "なし"}</div>
         {open && <div className="settings-popover card">{formContent}</div>}
       </div>
     );
