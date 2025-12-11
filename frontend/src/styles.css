@@ -197,34 +197,40 @@ body {
   overflow: auto;
   padding-right: 6px;
 }
-.tree-text {
+.tree-graph {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
   background: #f8fafc;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
 }
-.tree-text-row {
+.tree-graph-row {
   border: none;
   background: transparent;
   text-align: left;
-  padding: 6px 8px;
-  border-radius: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
   cursor: pointer;
   white-space: pre;
   font-size: 13px;
   color: #0f172a;
   transition: background 0.08s ease, color 0.08s ease;
 }
-.tree-text-row:hover {
+.tree-graph-row:hover {
   background: #e2e8f0;
 }
-.tree-text-row.active {
+.tree-graph-row.active {
   background: #2563eb;
   color: #fff;
+}
+.tree-graph-branch {
+  white-space: pre;
+  font-size: 13px;
+  padding: 2px 6px;
+  color: #475569;
 }
 
 .tree-node {

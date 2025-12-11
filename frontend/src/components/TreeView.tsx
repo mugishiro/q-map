@@ -23,6 +23,8 @@ type Props = {
   onSelect: (nodeId: string) => void;
 };
 
+type GraphLine = { id?: string; text: string; kind: "node" | "branch" };
+
 export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
   const tree = buildTree(nodes);
 
@@ -31,36 +33,67 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
     return node.label ? `${node.label} ${base}` : base;
   };
 
-  const lines: { id: string; text: string }[] = [];
-  const walk = (items: TreeNode[], prefix: string) => {
-    const sorted = [...items].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
-    sorted.forEach((node, idx) => {
-      const isLast = idx === sorted.length - 1;
-      const connector = isLast ? "└── " : "├── ";
-      const line = `${prefix}${connector}${formatLabel(node)}`;
-      lines.push({ id: node.id, text: line });
-      const nextPrefix = prefix + (isLast ? "    " : "│   ");
-      if (node.children.length) {
-        walk(node.children, nextPrefix);
-      }
+  const lines: GraphLine[] = [];
+
+  const renderGraph = (node: TreeNode, activeColumns: number[], columnIndex: number) => {
+    const branchChars = activeColumns.map((_, idx) => (idx === columnIndex ? "o" : "|")).join(" ");
+    lines.push({ id: node.id, text: `${branchChars}  ${formatLabel(node)}`, kind: "node" });
+
+    const children = [...node.children].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+    if (!children.length) return;
+
+    if (children.length === 1) {
+      renderGraph(children[0], activeColumns, columnIndex);
+      return;
+    }
+
+    // 複数子ノードの場合は git graph の分岐ラインを描く
+    const branchLineColumns = [...activeColumns];
+    const extra = children.length - 1;
+    for (let i = 0; i < extra; i += 1) {
+      branchLineColumns.splice(columnIndex + 1 + i, 0, 1);
+    }
+    const start = columnIndex + 1;
+    const end = columnIndex + extra;
+    const branchLine = branchLineColumns
+      .map((_, idx) => {
+        if (idx === columnIndex) return "|";
+        if (idx >= start && idx <= end) return "\\";
+        return "|";
+      })
+      .join(" ");
+    lines.push({ text: branchLine, kind: "branch" });
+
+    children.forEach((child, idx) => {
+      const childCol = columnIndex + idx;
+      renderGraph(child, branchLineColumns.slice(), childCol);
     });
   };
-  walk(tree, "");
+
+  tree
+    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
+    .forEach((root) => renderGraph(root, [1], 0));
 
   return (
     <div className="stack gap-m">
       <div className="label">ツリー</div>
-      <div className="tree tree-text">
+      <div className="tree tree-graph">
         {lines.length ? (
-          lines.map((line) => (
-            <button
-              key={line.id}
-              className={`tree-text-row ${selectedNodeId === line.id ? "active" : ""}`}
-              onClick={() => onSelect(line.id)}
-            >
-              {line.text}
-            </button>
-          ))
+          lines.map((line, idx) =>
+            line.kind === "node" ? (
+              <button
+                key={line.id}
+                className={`tree-graph-row ${selectedNodeId === line.id ? "active" : ""}`}
+                onClick={() => line.id && onSelect(line.id)}
+              >
+                {line.text}
+              </button>
+            ) : (
+              <div key={`branch-${idx}`} className="tree-graph-branch">
+                {line.text}
+              </div>
+            )
+          )
         ) : (
           <div className="empty">ノードなし</div>
         )}
