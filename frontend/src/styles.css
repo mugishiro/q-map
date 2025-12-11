@@ -129,9 +129,6 @@ body {
   padding: 12px;
   flex: 1;
 }
-.grid.collapsed-left {
-  grid-template-columns: 52px 1fr 420px;
-}
 
 .panel {
   background: var(--panel-bg);
@@ -140,12 +137,6 @@ body {
   padding: 14px;
   box-shadow: var(--shadow);
   overflow: hidden;
-}
-.panel.left.collapsed {
-  padding: 8px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
 }
 
 .stack {

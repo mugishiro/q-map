@@ -191,23 +191,25 @@ function App() {
   };
 
   const left = (
-    <div className="stack gap-s" style={{ alignItems: "flex-start" }}>
-      <button
-        className="icon-btn"
-        aria-label={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
-        title={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
-        onClick={() => setTopicsCollapsed((v) => !v)}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path
-            d={topicsCollapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"}
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
+    <div className="stack gap-s">
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          className="icon-btn"
+          aria-label={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+          title={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+          onClick={() => setTopicsCollapsed((v) => !v)}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d={topicsCollapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"}
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
       {!topicsCollapsed && (
         <TopicList
           topics={topics}
@@ -216,6 +218,7 @@ function App() {
           onCreate={handleCreateTopic}
         />
       )}
+      {topicsCollapsed && <div className="helper-inline">トピックは非表示です</div>}
     </div>
   );
 
