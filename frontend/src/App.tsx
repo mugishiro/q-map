@@ -7,6 +7,7 @@ import HeaderMenu from "./components/HeaderMenu";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
+import { initTheme } from "./theme";
 
 function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -21,13 +22,7 @@ function App() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("qmap_theme");
-    const theme = stored === "dark" || stored === "light" ? stored : "light";
-    document.documentElement.setAttribute("data-theme", theme);
-    document.body?.setAttribute("data-theme", theme);
-    if (!stored) {
-      localStorage.setItem("qmap_theme", theme);
-    }
+    initTheme();
   }, []);
 
   const selectedTopicName = useMemo(

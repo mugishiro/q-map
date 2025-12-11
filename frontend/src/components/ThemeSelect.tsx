@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
+import { getStoredTheme, setTheme, type ThemeOption } from "../theme";
 
 export const ThemeSelect = () => {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<ThemeOption>("light");
 
-  const applyTheme = (t: "light" | "dark") => {
+  const applyTheme = (t: ThemeOption) => {
+    setThemeState(t);
     setTheme(t);
-    document.documentElement.setAttribute("data-theme", t);
-    document.body?.setAttribute("data-theme", t);
-    localStorage.setItem("qmap_theme", t);
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem("qmap_theme");
-    const t = stored === "dark" || stored === "light" ? stored : "light";
-    applyTheme(t);
+    applyTheme(getStoredTheme());
   }, []);
 
   return (
