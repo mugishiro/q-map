@@ -14,11 +14,10 @@ export const Layout = ({ left, center, right, headerAction, leftCollapsed = fals
     <div className="shell">
       <header className="topbar">
         <div className="brand">QMap</div>
-        <div className="tagline">Branch your conversations. Compare every path.</div>
         {headerAction && <div className="topbar-actions">{headerAction}</div>}
       </header>
-      <div className="grid">
-        <aside className="panel left">{left}</aside>
+      <div className={`grid ${leftCollapsed ? "collapsed-left" : ""}`}>
+        <aside className={`panel left ${leftCollapsed ? "collapsed" : ""}`}>{left}</aside>
         <main className="panel center">{center}</main>
         <section className="panel right">{right}</section>
       </div>

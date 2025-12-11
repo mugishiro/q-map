@@ -101,7 +101,6 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
             </span>
           </button>
         </div>
-        {!latest && <div className="helper-inline">追加するにはノードを選択してください。</div>}
       </div>
     </div>
   );

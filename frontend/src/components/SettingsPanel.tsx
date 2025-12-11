@@ -19,6 +19,7 @@ const providers = [
 type Props = {
   variant?: "panel" | "header";
   embedded?: boolean;
+  hideTheme?: boolean;
 };
 
 const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
@@ -34,27 +35,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
     apiKey: "",
   });
   const [currentMasked, setCurrentMasked] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
   const providerOptions = useMemo(() => providers.map((p) => p.value), []);
-
-  const applyTheme = (t: "light" | "dark") => {
-    setTheme(t);
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("data-theme", t);
-      document.body?.setAttribute("data-theme", t);
-      localStorage.setItem("qmap_theme", t);
-    }
-  };
-
-  useEffect(() => {
-    const stored = localStorage.getItem("qmap_theme");
-    if (stored === "dark" || stored === "light") {
-      applyTheme(stored);
-    } else {
-      applyTheme("light");
-    }
-  }, []);
 
   const loadSettings = async () => {
     setLoading(true);
@@ -99,24 +80,6 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
       setLoading(false);
     }
   };
-
-  const themeSection = (
-    <div className="stack gap-s">
-      <div className="label">表示</div>
-      <label className="stack gap-xs">
-        <span className="helper-inline">テーマ</span>
-        <select
-          className="input"
-          value={theme}
-          onChange={(e) => applyTheme(e.target.value as "light" | "dark")}
-        >
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-        <span className="helper-inline">切り替えで即時反映（保存不要）</span>
-      </label>
-    </div>
-  );
 
   const llmSection = (
     <div className="stack gap-s">
@@ -175,12 +138,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
     </div>
   );
 
-  const formContent = (
-    <div className="stack gap-m">
-      {themeSection}
-      {llmSection}
-    </div>
-  );
+  const formContent = <div className="stack gap-m">{llmSection}</div>;
 
   if (embedded) {
     return <div className="card">{formContent}</div>;

@@ -191,7 +191,7 @@ function App() {
   };
 
   const left = (
-    <div className="stack gap-s">
+    <div className="stack gap-s" style={{ height: "100%" }}>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button
           className="icon-btn"
@@ -218,7 +218,6 @@ function App() {
           onCreate={handleCreateTopic}
         />
       )}
-      {topicsCollapsed && <div className="helper-inline">トピックは非表示です</div>}
     </div>
   );
 
