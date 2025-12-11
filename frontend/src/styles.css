@@ -435,6 +435,15 @@ body {
   justify-content: flex-end;
   gap: 8px;
 }
+.btn .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+}
+.btn .btn-icon svg {
+  display: block;
+}
 
 .path {
   display: flex;

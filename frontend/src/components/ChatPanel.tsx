@@ -69,10 +69,32 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
         />
         <div className="chat-actions">
           <button className="btn ghost" onClick={addLater} disabled={!canAddLater}>
-            {loading ? "追加中..." : "🔖 あとで聞くに追加"}
+            <span className="btn-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5v15.38a.5.5 0 0 1-.79.41L12 16l-5.21 4.29a.5.5 0 0 1-.79-.41V4.5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span>{loading ? "追加中..." : "あとで聞くに追加"}</span>
           </button>
           <button className="btn solid" onClick={send} disabled={loading}>
-            {loading ? "送信中..." : "✈️ 送信"}
+            <span className="btn-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M3.5 12.5 19.5 5 15 19 12.5 13.5 7 11z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span>{loading ? "送信中..." : "送信"}</span>
           </button>
         </div>
         {!latest && <div className="helper-inline">追加するにはノードを選択してください。</div>}
