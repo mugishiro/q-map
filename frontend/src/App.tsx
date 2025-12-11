@@ -20,6 +20,16 @@ function App() {
   const [authenticated, setAuthenticated] = useState<boolean>(Boolean(api.getToken()));
   const [authError, setAuthError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const stored = localStorage.getItem("qmap_theme");
+    const theme = stored === "dark" || stored === "light" ? stored : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    document.body?.setAttribute("data-theme", theme);
+    if (!stored) {
+      localStorage.setItem("qmap_theme", theme);
+    }
+  }, []);
+
   const selectedTopicName = useMemo(
     () => topics.find((t) => t.id === selectedTopicId)?.name ?? "",
     [topics, selectedTopicId]
