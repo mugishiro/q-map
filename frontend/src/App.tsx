@@ -118,7 +118,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const targetBase = branchBaseId || baseNodeId || undefined;
+      const targetBase = branchBaseId || baseNodeId || path[path.length - 1]?.id || undefined;
       const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
       await loadNodes(selectedTopicId);
       await loadPath(res.node.nodeId ?? res.node.id);
