@@ -9,6 +9,20 @@ import { auth } from "./auth";
 import { Node, Topic } from "./types";
 import { initTheme } from "./theme";
 
+const buildPathLocal = (nodeId: string, nodes: Node[]): Node[] => {
+  const map = new Map<string, Node>();
+  nodes.forEach((n) => map.set(n.id, n));
+  const chain: Node[] = [];
+  let current: string | null = nodeId;
+  while (current) {
+    const node = map.get(current);
+    if (!node) break;
+    chain.push(node);
+    current = node.parentId;
+  }
+  return chain.reverse();
+};
+
 function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -77,31 +91,22 @@ function App() {
     void run();
   }, []);
 
-  const loadNodes = async (topicId: string) => {
+  const loadNodes = async (topicId: string, selectNodeId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.listNodes(topicId, false);
+      const res = await api.listNodes(topicId, true);
       const mapped = res.items.map((n: any) => ({
         id: n.nodeId ?? n.id,
         ...n,
       }));
       setNodes(mapped);
-      setPath([]);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadPath = async (nodeId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.getNodePath(nodeId);
-      const mapped = res.path.map((n: any) => ({ id: n.nodeId ?? n.id, ...n }));
-      setPath(mapped);
+      if (selectNodeId) {
+        setPath(buildPathLocal(selectNodeId, mapped));
+      } else {
+        setPath([]);
+      }
+      return mapped;
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -110,7 +115,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (selectedTopicId) loadNodes(selectedTopicId);
+    if (selectedTopicId) void loadNodes(selectedTopicId);
   }, [selectedTopicId]);
 
   const handleSend = async ({ message, baseNodeId }: { message: string; baseNodeId?: string }) => {
@@ -120,8 +125,7 @@ function App() {
     try {
       const targetBase = branchBaseId || baseNodeId || path[path.length - 1]?.id || undefined;
       const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
-      await loadNodes(selectedTopicId);
-      await loadPath(res.node.nodeId ?? res.node.id);
+      await loadNodes(selectedTopicId, res.node.nodeId ?? res.node.id);
       setBranchBaseId(null);
     } catch (e) {
       setError((e as Error).message);
@@ -141,8 +145,7 @@ function App() {
     setError(null);
     try {
       await api.createLaterNode({ topicId: selectedTopicId, parentId, summary });
-      await loadNodes(selectedTopicId);
-      await loadPath(parentId);
+      await loadNodes(selectedTopicId, parentId);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -222,8 +225,10 @@ function App() {
       selectedNodeId={path[path.length - 1]?.id ?? null}
       onSelect={(nodeId) => {
         setBranchBaseId(nodeId);
-        void loadPath(nodeId);
+        const localPath = buildPathLocal(nodeId, nodes);
+        setPath(localPath);
       }}
+      mainRef="main"
     />
   );
 
