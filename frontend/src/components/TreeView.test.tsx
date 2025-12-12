@@ -149,7 +149,27 @@ describe("TreeView", () => {
 
     const secondRow = screen.getByRole("button", { name: /Second child/ }).closest(".git-row")!;
     const secondAncestorRail = secondRow.querySelectorAll(".git-rail")[0];
-    expect(secondAncestorRail?.querySelector(".git-line.bottom")).toBeNull();
+    expect(secondAncestorRail?.querySelector(".git-line.bottom")).not.toBeNull();
+  });
+
+  it("draws a connector from root to a single child", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root", label: "A1", title: "Root" }),
+      buildNode({
+        id: "child",
+        label: "B1",
+        title: "Child",
+        parentId: "root",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
+
+    const childRow = screen.getByRole("button", { name: /Child/ }).closest(".git-row")!;
+    const rails = childRow.querySelectorAll(".git-rail");
+    expect(rails[0]?.querySelector(".git-line.top")).not.toBeNull();
+    expect(rails[0]?.querySelector(".git-line.bottom")).not.toBeNull();
   });
 
   it("allocates rail columns based on the deepest node", () => {

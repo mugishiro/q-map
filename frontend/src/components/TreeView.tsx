@@ -67,8 +67,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
                       const isNodeColumn = colIdx === row.depth;
                       const hasAncestor = colIdx < row.depth;
                       const showTop = hasAncestor || (isNodeColumn && row.depth > 0);
-                      const showBottom =
-                        (hasAncestor && row.connectors[colIdx]) || (isNodeColumn && row.node.children.length > 0);
+                      const showBottom = hasAncestor || (isNodeColumn && row.node.children.length > 0);
                       const showDiagonal = isNodeColumn && row.depth > 0;
                       return (
                         <div className="git-rail" key={`${row.node.id}-${colIdx}`}>
