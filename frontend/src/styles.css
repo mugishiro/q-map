@@ -320,12 +320,16 @@ body {
   bottom: 0;
   height: 50%;
 }
-.git-line.horizontal {
+.git-curve {
+  position: absolute;
   top: 50%;
-  left: -50%;
-  width: 100%;
+  left: -10px;
+  width: 18px;
   height: 2px;
-  transform: translateY(-50%);
+  background: var(--border);
+  transform: translateY(-50%) rotate(45deg);
+  transform-origin: left center;
+  border-radius: 2px;
 }
 .git-dot {
   position: absolute;

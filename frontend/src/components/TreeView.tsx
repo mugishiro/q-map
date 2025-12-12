@@ -50,6 +50,7 @@ const buildRows = (tree: TreeNode[], depth = 0, connectors: boolean[] = []): Ren
 export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
   const tree = buildTree(nodes);
   const rows = buildRows(tree);
+  console.log('rows: ', rows);
   const maxDepth = rows.reduce((acc, r) => Math.max(acc, r.depth), 0);
   const columns = Math.max(1, maxDepth + 1);
   return (
@@ -68,12 +69,12 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
                       const showTop = hasAncestor || (isNodeColumn && row.depth > 0);
                       const showBottom =
                         (hasAncestor && row.connectors[colIdx]) || (isNodeColumn && row.node.children.length > 0);
-                      const showHorizontal = isNodeColumn && row.depth > 0;
+                      const showDiagonal = isNodeColumn && row.depth > 0;
                       return (
                         <div className="git-rail" key={`${row.node.id}-${colIdx}`}>
                           {showTop && <span className="git-line top" />}
                           {showBottom && <span className="git-line bottom" />}
-                          {showHorizontal && <span className="git-line horizontal" />}
+                          {showDiagonal && <span className="git-curve" />}
                           {isNodeColumn && (
                             <span
                               className={`git-dot ${selected ? "active" : ""} ${
