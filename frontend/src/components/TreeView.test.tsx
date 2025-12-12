@@ -97,4 +97,85 @@ describe("TreeView", () => {
     expect(dot).not.toBeNull();
     expect(dot).toHaveClass("ghost");
   });
+
+  it("treats nodes with missing parents as roots and preserves createdAt ordering", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root-1", label: "A1", title: "First root", createdAt: "2024-01-01T00:00:00Z" }),
+      buildNode({
+        id: "orphan",
+        label: "B1",
+        title: "Orphan node",
+        parentId: "missing",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
+
+    const labels = screen.getAllByRole("button").map((btn) => ({
+      label: btn.querySelector(".git-label")?.textContent,
+      title: btn.querySelector(".git-title-text")?.textContent,
+    }));
+    expect(labels).toEqual([
+      { label: "A1", title: "First root" },
+      { label: "B1", title: "Orphan node" },
+    ]);
+  });
+
+  it("keeps connector lines for middle siblings and stops at the last sibling", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root", label: "A1", title: "Root" }),
+      buildNode({
+        id: "child-1",
+        label: "B1",
+        title: "First child",
+        parentId: "root",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+      buildNode({
+        id: "child-2",
+        label: "B2",
+        title: "Second child",
+        parentId: "root",
+        createdAt: "2024-01-03T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
+
+    const firstRow = screen.getByRole("button", { name: /First child/ }).closest(".git-row")!;
+    const firstAncestorRail = firstRow.querySelectorAll(".git-rail")[0];
+    expect(firstAncestorRail?.querySelector(".git-line.bottom")).not.toBeNull();
+
+    const secondRow = screen.getByRole("button", { name: /Second child/ }).closest(".git-row")!;
+    const secondAncestorRail = secondRow.querySelectorAll(".git-rail")[0];
+    expect(secondAncestorRail?.querySelector(".git-line.bottom")).toBeNull();
+  });
+
+  it("allocates rail columns based on the deepest node", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root", label: "A1", title: "Root" }),
+      buildNode({
+        id: "child",
+        label: "B1",
+        title: "Child",
+        parentId: "root",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+      buildNode({
+        id: "grand",
+        label: "C1",
+        title: "Grandchild",
+        parentId: "child",
+        createdAt: "2024-01-03T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId="grand" onSelect={() => {}} />);
+
+    const grandRow = screen.getByRole("button", { name: /Grandchild/ }).closest(".git-row")!;
+    const rails = grandRow.querySelectorAll(".git-rail");
+    expect(rails.length).toBe(3); // depth=2 => columns = 3
+    expect(grandRow.classList.contains("active")).toBe(true);
+  });
 });

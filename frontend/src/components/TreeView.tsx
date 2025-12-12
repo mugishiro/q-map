@@ -37,9 +37,12 @@ const buildRows = (tree: TreeNode[], depth = 0, connectors: boolean[] = []): Ren
     .sort(sortByCreatedAt)
     .flatMap((node, idx, arr) => {
       const isLast = idx === arr.length - 1;
-      const row: RenderRow = { node, depth, connectors };
-      const nextConnectors = [...connectors, !isLast];
-      const childrenRows = buildRows(node.children, depth + 1, nextConnectors);
+      const rowConnectors = [...connectors];
+      if (depth > 0) {
+        rowConnectors[depth - 1] = !isLast;
+      }
+      const row: RenderRow = { node, depth, connectors: rowConnectors };
+      const childrenRows = buildRows(node.children, depth + 1, rowConnectors);
       return [row, ...childrenRows];
     });
 };
