@@ -272,72 +272,77 @@ body {
   overflow: auto;
   padding-right: 6px;
 }
-.tree-graph {
+.git-graph {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   background: var(--secondary);
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
 }
-.tree-graph-list {
-  list-style: none;
-  padding-left: 16px;
-  margin: 0;
-  border-left: 2px solid var(--border);
-}
-.tree-graph-list.root {
-  border-left: none;
-  padding-left: 0;
-}
-.tree-item {
-  position: relative;
-  padding-left: 10px;
-  margin: 2px 0;
-}
-.tree-item.last::before {
-  height: 12px;
-}
-.tree-item::before {
-  content: "";
-  position: absolute;
-  left: -2px;
-  top: 0;
-  width: 2px;
-  height: 100%;
-  background: var(--border);
-}
-.tree-row-new {
-  display: flex;
+.git-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 8px;
-  position: relative;
-  padding: 4px 6px;
-  border-radius: 8px;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: background 0.1s ease;
 }
-.tree-row-new:hover {
+.git-row:hover {
   background: var(--ghost-bg);
 }
-.tree-row-new.active {
+.git-row.active {
   background: var(--bubble-user);
 }
-.tree-connector {
-  position: absolute;
-  left: -12px;
-  top: 12px;
-  width: 12px;
-  height: 2px;
-  background: var(--border);
+.git-rails {
+  display: grid;
+  column-gap: 0;
 }
-.tree-dot {
-  width: 10px;
-  height: 10px;
+.git-rail {
+  position: relative;
+  width: 24px;
+  height: 32px;
+}
+.git-line {
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  background: var(--border);
+  transform: translateX(-50%);
+}
+.git-line.top {
+  top: 0;
+  height: 50%;
+}
+.git-line.bottom {
+  bottom: 0;
+  height: 50%;
+}
+.git-line.horizontal {
+  top: 50%;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+.git-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 0 3px var(--ghost-bg);
 }
-.tree-dot.active {
+.git-dot.ghost {
+  background: var(--border);
+  box-shadow: 0 0 0 3px var(--secondary);
+}
+.git-dot.active {
   background: var(--accent-2);
   box-shadow: 0 0 0 3px var(--ghost-border);
 }
@@ -351,76 +356,23 @@ body {
   word-break: break-word;
   padding: 0;
 }
+.tree-title-btn.git {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+}
 .tree-title-btn:hover {
   text-decoration: underline;
 }
-
-.tree-node {
-  position: relative;
-}
-
-.tree-row {
-  width: 100%;
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  border: none;
-  background: transparent;
-  padding: 2px 4px;
-  text-align: left;
-  cursor: pointer;
-  margin-bottom: 2px;
-}
-.tree-row:hover {
-  background: var(--ghost-bg);
-}
-.tree-row.active {
-  background: var(--ghost-bg);
-}
-.tree-bullet {
-  width: 8px;
-  min-width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  border: 2px solid var(--border);
-  background: var(--ghost-bg);
-  margin-top: 4px;
-}
-.tree-bullet.active {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-.tree-bullet.later {
-  background: var(--ghost-bg);
-  border-color: var(--border);
-}
-.tree-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  position: relative;
-}
-.tree-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-}
-.tree-title {
-  font-weight: 600;
+.git-label {
+  font-weight: 700;
   font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.git-title-text {
   color: var(--text);
-}
-.tree-meta {
-  font-size: 12px;
-  color: var(--subtle);
-  white-space: nowrap;
-}
-.tree-children {
-  border-left: 2px solid var(--border);
-  margin-left: 8px;
-  padding-left: 10px;
 }
 
 .bubble-style {

@@ -23,65 +23,77 @@ type Props = {
   onSelect: (nodeId: string) => void;
 };
 
-const TreeItem = ({
-  node,
-  isLast,
-  selected,
-  onSelect,
-}: {
+const sortByCreatedAt = (a: Node, b: Node) => (a.createdAt < b.createdAt ? -1 : 1);
+
+type RenderRow = {
   node: TreeNode;
-  isLast: boolean;
-  selected: boolean;
-  onSelect: (id: string) => void;
-}) => {
-  const hasChildren = node.children.length > 0;
-  return (
-    <li className={`tree-item ${isLast ? "last" : ""}`}>
-      <div className={`tree-row-new ${selected ? "active" : ""}`}>
-        <span className="tree-connector" />
-        <span className={`tree-dot ${selected ? "active" : ""}`} />
-        <button className="tree-title-btn" onClick={() => onSelect(node.id)}>
-          {node.title || node.summary || "(no title)"}
-        </button>
-      </div>
-      {hasChildren && (
-        <ul className="tree-graph-list">
-          {node.children
-            .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-            .map((child, idx, arr) => (
-              <TreeItem
-                key={child.id}
-                node={child}
-                isLast={idx === arr.length - 1}
-                selected={child.id === selected}
-                onSelect={onSelect}
-              />
-            ))}
-        </ul>
-      )}
-    </li>
-  );
+  depth: number;
+  connectors: boolean[]; // which ancestor columns should continue downward
+};
+
+const buildRows = (tree: TreeNode[], depth = 0, connectors: boolean[] = []): RenderRow[] => {
+  return tree
+    .slice()
+    .sort(sortByCreatedAt)
+    .flatMap((node, idx, arr) => {
+      const isLast = idx === arr.length - 1;
+      const row: RenderRow = { node, depth, connectors };
+      const nextConnectors = [...connectors, !isLast];
+      const childrenRows = buildRows(node.children, depth + 1, nextConnectors);
+      return [row, ...childrenRows];
+    });
 };
 
 export const TreeView = ({ nodes, selectedNodeId, onSelect }: Props) => {
   const tree = buildTree(nodes);
+  const rows = buildRows(tree);
+  const maxDepth = rows.reduce((acc, r) => Math.max(acc, r.depth), 0);
+  const columns = Math.max(1, maxDepth + 1);
   return (
     <div className="stack gap-m">
-      <div className="tree tree-graph">
-        {tree.length ? (
-          <ul className="tree-graph-list root">
-            {tree
-              .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-              .map((node, idx, arr) => (
-                <TreeItem
-                  key={node.id}
-                  node={node}
-                  isLast={idx === arr.length - 1}
-                  selected={selectedNodeId === node.id}
-                  onSelect={onSelect}
-                />
-              ))}
-          </ul>
+      <div className="tree">
+        {rows.length ? (
+          <div className="git-graph">
+            {rows.map((row) => {
+              const selected = selectedNodeId === row.node.id;
+              return (
+                <div key={row.node.id} className={`git-row ${selected ? "active" : ""}`}>
+                  <div className="git-rails" style={{ gridTemplateColumns: `repeat(${columns}, 24px)` }}>
+                    {Array.from({ length: columns }).map((_, colIdx) => {
+                      const isNodeColumn = colIdx === row.depth;
+                      const hasAncestor = colIdx < row.depth;
+                      const showTop = hasAncestor || (isNodeColumn && row.depth > 0);
+                      const showBottom =
+                        (hasAncestor && row.connectors[colIdx]) || (isNodeColumn && row.node.children.length > 0);
+                      const showHorizontal = isNodeColumn && row.depth > 0;
+                      return (
+                        <div className="git-rail" key={`${row.node.id}-${colIdx}`}>
+                          {showTop && <span className="git-line top" />}
+                          {showBottom && <span className="git-line bottom" />}
+                          {showHorizontal && <span className="git-line horizontal" />}
+                          {isNodeColumn && (
+                            <span
+                              className={`git-dot ${selected ? "active" : ""} ${
+                                row.node.type === "later" ? "ghost" : ""
+                              }`}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    className="tree-title-btn git"
+                    onClick={() => onSelect(row.node.id)}
+                    title={row.node.summary || row.node.title}
+                  >
+                    <span className="git-label">{row.node.label || ""}</span>
+                    <span className="git-title-text">{row.node.title || row.node.summary || "(no title)"}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="empty">ノードなし</div>
         )}
