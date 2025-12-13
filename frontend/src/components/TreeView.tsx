@@ -23,9 +23,9 @@ type Props = {
 };
 
 const ROW_HEIGHT = 70;
-const LANE_GAP = 44;
+const LANE_GAP = 64;
 const DOT_RADIUS = 8;
-const PADDING_X = 24;
+const PADDING_X = 90;
 const PADDING_Y = 32;
 
 const byCreatedAt = (a: Node, b: Node) => (a.createdAt < b.createdAt ? -1 : 1);

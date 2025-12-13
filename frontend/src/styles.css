@@ -278,7 +278,7 @@ body {
   border-radius: 12px;
   background: var(--secondary);
   overflow: auto;
-  padding: 12px;
+  padding: 12px 12px 12px 24px;
 }
 .gitk-svg {
   position: absolute;
@@ -291,6 +291,10 @@ body {
 }
 .gitk-edge.main {
   stroke: var(--accent);
+}
+.gitk-edge.path {
+  stroke: #22c55e;
+  stroke-width: 3;
 }
 .gitk-node {
   position: absolute;
@@ -312,6 +316,10 @@ body {
 .gitk-node.ghost {
   opacity: 0.8;
 }
+.gitk-node.path {
+  border-color: #22c55e;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.25);
+}
 .gitk-dot-btn {
   width: 18px;
   height: 18px;
@@ -330,6 +338,10 @@ body {
 }
 .gitk-node.ghost .gitk-dot-btn {
   background: var(--border);
+}
+.gitk-node.path .gitk-dot-btn {
+  background: #22c55e;
+  border-color: #16a34a;
 }
 .gitk-dot {
   width: 8px;
