@@ -90,7 +90,7 @@ describe("TreeView (git-style graph)", () => {
     expect(child.classList.contains("active")).toBe(true);
 
     const user = userEvent.setup();
-    await user.click(child.querySelector("button")!);
+    await user.click(child);
     expect(onSelect).toHaveBeenCalledWith("child");
   });
 

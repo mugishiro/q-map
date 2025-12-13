@@ -277,7 +277,8 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--secondary);
-  overflow: hidden;
+  overflow: auto;
+  padding: 12px;
 }
 .gitk-svg {
   position: absolute;
@@ -302,6 +303,7 @@ body {
   padding: 6px 10px;
   border-radius: 12px;
   box-shadow: var(--shadow);
+  cursor: pointer;
 }
 .gitk-node.active {
   border-color: var(--accent);
@@ -342,13 +344,8 @@ body {
 }
 .gitk-label {
   display: flex;
-  gap: 6px;
   align-items: baseline;
   font-size: 13px;
-}
-.gitk-label-id {
-  font-weight: 700;
-  color: var(--muted);
 }
 .gitk-label-title {
   color: var(--text);

@@ -169,7 +169,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
           const x = laneX(n.lane);
           const isSelected = selectedNodeId === n.id;
           return (
-            <div
+            <button
               key={n.id}
               className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "ghost" : ""}`}
               style={{ top: n.y, left: x }}
@@ -177,17 +177,18 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
               data-lane={n.lane}
               data-testid="gitk-node"
               title={n.title || n.summary || ""}
+              onClick={() => onSelect(n.id)}
+              type="button"
             >
-              <button className="gitk-dot-btn" onClick={() => onSelect(n.id)} title={n.title || n.summary || ""}>
+              <span className="gitk-dot-btn">
                 <span className="gitk-dot" />
-              </button>
+              </span>
               <div className="gitk-labels">
                 <div className="gitk-label">
-                  <span className="gitk-label-id">{n.label}</span>
                   <span className="gitk-label-title">{n.title || n.summary || "(no title)"}</span>
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
