@@ -23,9 +23,9 @@ type Props = {
 };
 
 const ROW_HEIGHT = 70;
-const LANE_GAP = 64;
+const LANE_GAP = 72;
 const DOT_RADIUS = 8;
-const PADDING_X = 90;
+const PADDING_X = 120;
 const PADDING_Y = 32;
 
 const byCreatedAt = (a: Node, b: Node) => (a.createdAt < b.createdAt ? -1 : 1);
@@ -57,19 +57,10 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
 
   const processedChildCount = new Map<string, number>();
   const laneById = new Map<string, number>();
-  const activeLanes: (string | null)[] = [];
+  let laneCounter = -1;
 
   const graphNodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
-
-  const findFreeLane = (start: number) => {
-    for (let i = start; i < activeLanes.length; i++) {
-      if (activeLanes[i] === null) return i;
-    }
-    const idx = activeLanes.length;
-    activeLanes.push(null);
-    return idx;
-  };
 
   sorted.forEach((node, idx) => {
     const parents = ((node as any).parentIds as string[] | undefined) ?? (node.parentId ? [node.parentId] : []);
@@ -84,29 +75,19 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
 
     if (isMainRef && laneById.has(node.id)) {
       lane = laneById.get(node.id)!;
-    } else if (primaryParent && parentLane !== undefined && totalChildren <= 1) {
-      lane = parentLane;
-    } else if (primaryParent && parentLane !== undefined && totalChildren > 1) {
-      if (processedCount === 0) {
-        lane = parentLane;
-      } else {
-        lane = findFreeLane(parentLane + processedCount);
-      }
+    } else if (primaryParent && parentLane !== undefined) {
+      lane = processedCount === 0 ? parentLane : ++laneCounter;
     } else if (isMainRef) {
       lane = 0;
-      if (activeLanes.length === 0) activeLanes.push(null);
-    } else if (!primaryParent && activeLanes.length === 0) {
-      lane = 0;
-      activeLanes.push(null);
     } else {
-      lane = findFreeLane(0);
+      lane = ++laneCounter;
     }
 
     laneById.set(node.id, lane);
+    laneCounter = Math.max(laneCounter, lane);
     if (primaryParent) {
       processedChildCount.set(primaryParent, processedCount + 1);
     }
-    activeLanes[lane] = node.id;
 
     const y = PADDING_Y + idx * ROW_HEIGHT;
     const gNode: GraphNode = { ...node, lane, y, parents };
@@ -123,16 +104,11 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
           to: { lane, y },
           isMain: pLane === 0,
         });
-        const remaining = (remainingChildren.get(pid) ?? 0) - 1;
-        remainingChildren.set(pid, remaining);
-        if (remaining <= 0 && pLane !== lane) {
-          activeLanes[pLane] = null;
-        }
       }
     });
   });
 
-  const laneCount = Math.max(1, activeLanes.length, ...graphNodes.map((n) => n.lane + 1));
+  const laneCount = Math.max(1, ...graphNodes.map((n) => n.lane + 1));
   const height = PADDING_Y * 2 + Math.max(0, graphNodes.length - 1) * ROW_HEIGHT;
   const width = PADDING_X * 2 + laneCount * LANE_GAP;
 
