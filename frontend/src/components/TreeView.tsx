@@ -8,6 +8,8 @@ type GraphNode = Node & {
 };
 
 type GraphEdge = {
+  parentId: string;
+  childId: string;
   from: { lane: number; y: number };
   to: { lane: number; y: number };
   isMain: boolean;
@@ -60,12 +62,13 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
   const graphNodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
-  const findFreeLane = () => {
-    for (let i = 0; i < activeLanes.length; i++) {
+  const findFreeLane = (start: number) => {
+    for (let i = start; i < activeLanes.length; i++) {
       if (activeLanes[i] === null) return i;
     }
+    const idx = activeLanes.length;
     activeLanes.push(null);
-    return activeLanes.length - 1;
+    return idx;
   };
 
   sorted.forEach((node, idx) => {
@@ -75,15 +78,20 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
     let lane: number;
     const parentLane = primaryParent ? laneById.get(primaryParent) : undefined;
     const processedCount = primaryParent ? processedChildCount.get(primaryParent) ?? 0 : 0;
+    const totalChildren = primaryParent ? childrenMap.get(primaryParent)?.length ?? 0 : 0;
 
     const isMainRef = mainRef ? node.label === mainRef || node.id === mainRef : false;
 
     if (isMainRef && laneById.has(node.id)) {
       lane = laneById.get(node.id)!;
-    } else if (primaryParent && parentLane !== undefined && processedCount === 0) {
+    } else if (primaryParent && parentLane !== undefined && totalChildren <= 1) {
       lane = parentLane;
-    } else if (primaryParent && parentLane !== undefined && processedCount > 0) {
-      lane = findFreeLane();
+    } else if (primaryParent && parentLane !== undefined && totalChildren > 1) {
+      if (processedCount === 0) {
+        lane = parentLane;
+      } else {
+        lane = findFreeLane(parentLane + processedCount);
+      }
     } else if (isMainRef) {
       lane = 0;
       if (activeLanes.length === 0) activeLanes.push(null);
@@ -91,7 +99,7 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
       lane = 0;
       activeLanes.push(null);
     } else {
-      lane = findFreeLane();
+      lane = findFreeLane(0);
     }
 
     laneById.set(node.id, lane);
@@ -109,6 +117,8 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
       const pNode = graphNodes.find((n) => n.id === pid);
       if (pNode && pLane !== undefined) {
         edges.push({
+          parentId: pid,
+          childId: node.id,
           from: { lane: pLane, y: pNode.y },
           to: { lane, y },
           isMain: pLane === 0,
@@ -143,6 +153,19 @@ const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: numb
 export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) => {
   const { graphNodes, edges, laneCount, height, width } = useMemo(() => buildGraph(nodes, mainRef), [nodes, mainRef]);
 
+  const pathSet = useMemo(() => {
+    const map = new Map<string, Node>();
+    nodes.forEach((n) => map.set(n.id, n));
+    const set = new Set<string>();
+    let cur: string | null | undefined = selectedNodeId;
+    while (cur) {
+      if (set.has(cur)) break;
+      set.add(cur);
+      cur = map.get(cur)?.parentId ?? null;
+    }
+    return set;
+  }, [nodes, selectedNodeId]);
+
   if (!graphNodes.length) {
     return (
       <div className="stack gap-m">
@@ -157,21 +180,27 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
     <div className="stack gap-m">
       <div className="tree gitk-shell" style={{ height, minWidth: width }}>
         <svg className="gitk-svg" width={width} height={height}>
-          {edges.map((e, idx) => (
-            <path
-              key={`${e.from.lane}-${e.to.lane}-${idx}`}
-              d={edgePath(e.from, e.to)}
-              className={`gitk-edge ${e.isMain ? "main" : ""}`}
-            />
-          ))}
+          {edges.map((e, idx) => {
+            const isPathEdge = pathSet.has(e.parentId) && pathSet.has(e.childId);
+            return (
+              <path
+                key={`${e.from.lane}-${e.to.lane}-${idx}`}
+                d={edgePath(e.from, e.to)}
+                className={`gitk-edge ${e.isMain ? "main" : ""} ${isPathEdge ? "path" : ""}`}
+              />
+            );
+          })}
         </svg>
         {graphNodes.map((n) => {
           const x = laneX(n.lane);
           const isSelected = selectedNodeId === n.id;
+          const onPath = pathSet.has(n.id);
           return (
             <button
               key={n.id}
-              className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "ghost" : ""}`}
+              className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "ghost" : ""} ${
+                onPath ? "path" : ""
+              }`}
               style={{ top: n.y, left: x }}
               data-node-id={n.id}
               data-lane={n.lane}
