@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap");
+
 :root {
   font-family: "Noto Sans JP", "Inter", "Space Grotesk", system-ui, -apple-system, sans-serif;
   color: var(--text);
@@ -146,6 +148,12 @@ body {
   display: flex;
   justify-content: flex-end;
   align-items: flex-start;
+}
+.panel.right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 70vh;
 }
 
 .stack {
@@ -378,8 +386,9 @@ body {
   background: var(--secondary);
   border-radius: 14px;
   padding: 12px;
-  max-height: calc(100vh - 260px);
-  min-height: 360px;
+  flex: 1;
+  max-height: none;
+  min-height: 480px;
   overflow: auto;
   display: flex;
   flex-direction: column;
