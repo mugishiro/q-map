@@ -409,8 +409,10 @@ body {
   max-width: 80%;
 }
 .bubble-flat.assistant {
-  background: var(--bubble-assist);
-  border-color: var(--border);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 .bubble-flat.pending {
   opacity: 0.9;

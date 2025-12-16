@@ -7,14 +7,68 @@ const escapeHtml = (text: string) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-const renderMarkdown = (text: string) => {
+const inlineFormat = (text: string) => {
   let safe = escapeHtml(text);
-  safe = safe.replace(/^###\s*(.+)$/gm, "<strong>$1</strong>");
-  safe = safe.replace(/^##\s*(.+)$/gm, "<strong>$1</strong>");
-  safe = safe.replace(/^\s*-\s+/gm, "• ");
-  safe = safe.replace(/\n{2,}/g, "</p><p>");
-  safe = safe.replace(/\n/g, "<br/>");
-  return `<p>${safe}</p>`;
+  // bold **text**
+  safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  return safe;
+};
+
+const renderMarkdown = (text: string) => {
+  const lines = text.split(/\r?\n/);
+  const html: string[] = [];
+  let inOl = false;
+  let inUl = false;
+
+  const closeLists = () => {
+    if (inOl) {
+      html.push("</ol>");
+      inOl = false;
+    }
+    if (inUl) {
+      html.push("</ul>");
+      inUl = false;
+    }
+  };
+
+  lines.forEach((line) => {
+    const ordered = line.match(/^\s*\d+\.\s+(.*)/);
+    if (ordered) {
+      if (inUl) {
+        html.push("</ul>");
+        inUl = false;
+      }
+      if (!inOl) {
+        html.push("<ol>");
+        inOl = true;
+      }
+      html.push(`<li>${inlineFormat(ordered[1])}</li>`);
+      return;
+    }
+
+    const bullet = line.match(/^\s*[-*]\s+(.*)/);
+    if (bullet) {
+      if (inOl) {
+        html.push("</ol>");
+        inOl = false;
+      }
+      if (!inUl) {
+        html.push("<ul>");
+        inUl = true;
+      }
+      html.push(`<li>${inlineFormat(bullet[1])}</li>`);
+      return;
+    }
+
+    // paragraph or empty
+    closeLists();
+    if (line.trim().length) {
+      html.push(`<p>${inlineFormat(line)}</p>`);
+    }
+  });
+
+  closeLists();
+  return html.join("") || `<p>${inlineFormat(text)}</p>`;
 };
 
 type Props = {
