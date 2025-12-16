@@ -24,14 +24,20 @@ type Props = {
   onAddLater: (input: { summary: string }) => Promise<void>;
 };
 
+type ChatMessageView = ChatMessage & { pending?: boolean };
+
 export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
   const [message, setMessage] = useState("");
   const [laterText, setLaterText] = useState("");
   const latest = path[path.length - 1];
   const canAddLater = Boolean(latest) && !loading;
 
-  const history: ChatMessage[] = [];
-  path.forEach((n) => (n.messages || []).forEach((m) => history.push(m)));
+  const history: ChatMessageView[] = [];
+  path.forEach((n) =>
+    (n.messages || []).forEach((m) =>
+      history.push({ ...m, pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…" })
+    )
+  );
 
   const send = async () => {
     if (!message.trim()) return;
@@ -50,11 +56,22 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
       <div className="chat-log bubble-style">
         {history.length === 0 && <div className="empty">会話がありません</div>}
         {history.map((m, idx) => (
-          <div key={`${m.role}-${idx}`} className={`bubble-flat ${m.role}`}>
-            <div
-              className="bubble-content"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
-            />
+          <div key={`${m.role}-${idx}`} className={`bubble-flat ${m.role} ${m.pending ? "pending" : ""}`}>
+            {m.pending ? (
+              <div className="bubble-content">
+                <span className="loader-dots" aria-label="考え中…">
+                  <span className="loader-dot" />
+                  <span className="loader-dot" />
+                  <span className="loader-dot" />
+                </span>
+                <span style={{ marginLeft: "8px" }}>考え中…</span>
+              </div>
+            ) : (
+              <div
+                className="bubble-content"
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
+              />
+            )}
           </div>
         ))}
       </div>

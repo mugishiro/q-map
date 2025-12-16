@@ -23,6 +23,25 @@ const buildPathLocal = (nodeId: string, nodes: Node[]): Node[] => {
   return chain.reverse();
 };
 
+const generateLocalLabel = (parentId: string | null, nodes: Node[]): string => {
+  const map = new Map<string, Node>();
+  nodes.forEach((n) => map.set(n.id, n));
+
+  const depthFor = (id: string | null, depth = 0, seen = new Set<string>()): number => {
+    if (!id) return depth;
+    if (seen.has(id)) return depth;
+    const node = map.get(id);
+    if (!node || !node.parentId) return depth;
+    seen.add(id);
+    return depthFor(node.parentId, depth + 1, seen);
+  };
+
+  const depth = depthFor(parentId);
+  const letter = String.fromCharCode(Math.min("A".charCodeAt(0) + depth, "Z".charCodeAt(0)));
+  const siblings = nodes.filter((n) => n.parentId === parentId).length + 1;
+  return `${letter}${siblings}`;
+};
+
 function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -120,14 +139,40 @@ function App() {
 
   const handleSend = async ({ message, baseNodeId }: { message: string; baseNodeId?: string }) => {
     if (!selectedTopicId) return;
+    const prevNodes = nodes;
+    const prevPath = path;
     setLoading(true);
     setError(null);
     try {
       const targetBase = branchBaseId || baseNodeId || path[path.length - 1]?.id || undefined;
+      const now = new Date().toISOString();
+      const tempId = `temp-${Date.now()}`;
+      const optimisticLabel = generateLocalLabel(targetBase ?? null, nodes);
+      const optimisticNode: Node = {
+        id: tempId,
+        label: optimisticLabel,
+        topicId: selectedTopicId,
+        parentId: targetBase ?? null,
+        title: message,
+        summary: message,
+        type: "chat",
+        createdAt: now,
+        updatedAt: now,
+        messages: [
+          { role: "user", content: message, createdAt: now },
+          { role: "assistant", content: "考え中…", createdAt: now },
+        ],
+      };
+      const optimisticList = [...nodes, optimisticNode];
+      setNodes(optimisticList);
+      setPath(buildPathLocal(tempId, optimisticList));
+      setBranchBaseId(null);
+
       const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
       await loadNodes(selectedTopicId, res.node.nodeId ?? res.node.id);
-      setBranchBaseId(null);
     } catch (e) {
+      setNodes(prevNodes);
+      setPath(prevPath);
       setError((e as Error).message);
     } finally {
       setLoading(false);
