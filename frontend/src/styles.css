@@ -624,3 +624,55 @@ body {
     min-height: 200px;
   }
 }
+
+/* Mobile adjustments */
+@media (max-width: 900px) {
+  .mobile-nav {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--secondary);
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-tab {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+    background: var(--panel-bg);
+    font-weight: 600;
+  }
+  .mobile-tab.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .shell[data-mobile="true"] .grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 8px;
+  }
+  .shell[data-mobile="true"] .panel {
+    min-height: auto;
+  }
+  .shell[data-mobile="true"] .panel.left,
+  .shell[data-mobile="true"] .panel.center,
+  .shell[data-mobile="true"] .panel.right {
+    display: none;
+  }
+  .shell[data-mobile="true"][data-section="topics"] .panel.left {
+    display: block;
+  }
+  .shell[data-mobile="true"][data-section="tree"] .panel.center {
+    display: block;
+  }
+  .shell[data-mobile="true"][data-section="chat"] .panel.right {
+    display: block;
+  }
+  .bubble-style {
+    min-height: 240px;
+    max-height: calc(100vh - 220px);
+  }
+  .chat-input .input.large {
+    min-height: 80px;
+  }
+}

@@ -53,9 +53,22 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean>(Boolean(api.getToken()));
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSection, setMobileSection] = useState<"topics" | "tree" | "chat">("tree");
 
   useEffect(() => {
     initTheme();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+    };
+    handler(mq);
+    const listener = (e: MediaQueryListEvent) => handler(e);
+    mq.addEventListener("change", listener);
+    return () => mq.removeEventListener("change", listener);
   }, []);
 
   const selectedTopicName = useMemo(
@@ -201,6 +214,7 @@ function App() {
   const handleSelectTopic = async (id: string) => {
     setSelectedTopicId(id);
     setBranchBaseId(null);
+    if (isMobile) setMobileSection("tree");
     await loadNodes(id);
   };
 
@@ -346,6 +360,9 @@ function App() {
       right={right}
       headerAction={headerAction}
       leftCollapsed={topicsCollapsed}
+      isMobile={isMobile}
+      mobileSection={mobileSection}
+      onMobileSectionChange={setMobileSection}
     />
   );
 }
