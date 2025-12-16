@@ -62,7 +62,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .topbar {
@@ -154,7 +154,12 @@ body {
   min-height: 0;
 }
 .panel.right {
-  overflow: visible;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.panel.right > .stack {
+  height: 100%;
 }
 .panel.left.collapsed {
   padding: 10px;
@@ -415,9 +420,9 @@ body {
   background: var(--secondary);
   border-radius: 14px;
   padding: 12px;
-  flex: 0 1 auto;
-  min-height: 240px;
-  overflow: visible;
+  flex: 1 1 auto;
+  min-height: 180px;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
