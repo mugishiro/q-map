@@ -150,10 +150,6 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
 
   return (
     <div className="stack gap-m">
-      <div className="chat-header">
-        <div className="chat-title">チャット</div>
-        <div className="chat-subtle">選択中ノードの会話履歴</div>
-      </div>
       <div className="chat-log bubble-style" ref={logRef}>
         {history.length === 0 && <div className="empty">会話がありません</div>}
         {history.map((m, idx) => (

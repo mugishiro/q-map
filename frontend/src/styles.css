@@ -153,6 +153,9 @@ body {
   overflow: hidden;
   min-height: 0;
 }
+.panel.right {
+  overflow: visible;
+}
 .panel.left.collapsed {
   padding: 10px;
   display: flex;
@@ -413,9 +416,8 @@ body {
   border-radius: 14px;
   padding: 12px;
   flex: 0 1 auto;
-  max-height: calc(100vh - 260px);
-  min-height: 360px;
-  overflow: auto;
+  min-height: 240px;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: 12px;
