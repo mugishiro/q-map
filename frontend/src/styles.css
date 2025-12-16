@@ -49,10 +49,13 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  height: 100%;
+  overflow: hidden;
 }
 
 .shell {
   min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -130,6 +133,7 @@ body {
   gap: 12px;
   padding: 12px;
   flex: 1;
+  min-height: 0;
 }
 .grid.collapsed-left {
   grid-template-columns: 60px 1fr 420px;
@@ -142,6 +146,7 @@ body {
   padding: 14px;
   box-shadow: var(--shadow);
   overflow: hidden;
+  min-height: 0;
 }
 .panel.left.collapsed {
   padding: 10px;
