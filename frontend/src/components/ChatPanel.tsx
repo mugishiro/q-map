@@ -121,7 +121,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
     if (target) {
       const el = container.querySelectorAll<HTMLElement>("[data-chat-item]")[target.idx];
       if (el) {
-        const top = el.offsetTop - container.clientHeight / 2;
+        const top = el.offsetTop;
         container.scrollTo({ top, behavior: "smooth" });
         return;
       }
