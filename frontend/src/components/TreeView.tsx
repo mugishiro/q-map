@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Node } from "../types";
 
 type GraphNode = Node & {
   lane: number;
   y: number;
   parents: string[];
+  isPlaceholder?: boolean;
+  hiddenCount?: number;
 };
 
 type GraphEdge = {
@@ -27,10 +29,13 @@ const LANE_GAP = 240;
 const DOT_RADIUS = 8;
 const PADDING_X = 120;
 const PADDING_Y = 32;
+const MAX_VISIBLE_SIBLINGS = 3;
 
 const byCreatedAt = (a: Node, b: Node) => (a.createdAt < b.createdAt ? -1 : 1);
 
-const buildGraph = (nodes: Node[], mainRef?: string) => {
+const parentKey = (id: string | null | undefined) => id ?? "__root__";
+
+const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: number })[], mainRef?: string) => {
   const sorted = nodes.slice().sort(byCreatedAt);
 
   const nodeMap = new Map<string, Node>();
@@ -149,11 +154,61 @@ const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: numb
 };
 
 export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) => {
-  const { graphNodes, edges, laneCount, height, width } = useMemo(() => buildGraph(nodes, mainRef), [nodes, mainRef]);
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+
+  const visibleNodes = useMemo(() => {
+    const sorted = nodes.slice().sort(byCreatedAt) as (Node & { isPlaceholder?: boolean; hiddenCount?: number })[];
+    const childrenMap = new Map<string, (Node & { isPlaceholder?: boolean; hiddenCount?: number })[]>();
+    sorted.forEach((n) => {
+      const key = parentKey(n.parentId);
+      if (!childrenMap.has(key)) childrenMap.set(key, []);
+      childrenMap.get(key)!.push(n);
+    });
+
+    const autoExpand = new Set(expandedParents);
+    if (selectedNodeId) {
+      childrenMap.forEach((list, key) => {
+        const idx = list.findIndex((n) => n.id === selectedNodeId);
+        if (idx >= MAX_VISIBLE_SIBLINGS) {
+          autoExpand.add(key);
+        }
+      });
+    }
+
+    const seen = new Map<string, number>();
+    const visible: (Node & { isPlaceholder?: boolean; hiddenCount?: number })[] = [];
+    sorted.forEach((n) => {
+      const key = parentKey(n.parentId);
+      const total = childrenMap.get(key)?.length ?? 0;
+      const expanded = autoExpand.has(key);
+      const count = (seen.get(key) ?? 0) + 1;
+      seen.set(key, count);
+      if (expanded || count <= MAX_VISIBLE_SIBLINGS) {
+        visible.push(n);
+      } else if (count === MAX_VISIBLE_SIBLINGS + 1 && total > MAX_VISIBLE_SIBLINGS) {
+        const hiddenCount = total - MAX_VISIBLE_SIBLINGS;
+        visible.push({
+          ...n,
+          id: `__collapsed-${key}`,
+          label: "…",
+          title: `+${hiddenCount} ノードを表示`,
+          summary: "",
+          isPlaceholder: true,
+          hiddenCount,
+        });
+      }
+    });
+    return visible;
+  }, [nodes, selectedNodeId, expandedParents]);
+
+  const { graphNodes, edges, laneCount, height, width } = useMemo(
+    () => buildGraph(visibleNodes, mainRef),
+    [visibleNodes, mainRef]
+  );
 
   const pathSet = useMemo(() => {
     const map = new Map<string, Node>();
-    nodes.forEach((n) => map.set(n.id, n));
+    visibleNodes.forEach((n) => map.set(n.id, n));
     const set = new Set<string>();
     let cur: string | null | undefined = selectedNodeId;
     while (cur) {
@@ -162,7 +217,17 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
       cur = map.get(cur)?.parentId ?? null;
     }
     return set;
-  }, [nodes, selectedNodeId]);
+  }, [visibleNodes, selectedNodeId]);
+
+  const toggleParent = (parentId: string | null | undefined) => {
+    const key = parentKey(parentId);
+    setExpandedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   if (!graphNodes.length) {
     return (
@@ -193,18 +258,25 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
           const x = laneX(n.lane);
           const isSelected = selectedNodeId === n.id;
           const onPath = pathSet.has(n.id);
+          const isPlaceholder = Boolean((n as any).isPlaceholder);
           return (
             <button
               key={n.id}
               className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "ghost" : ""} ${
                 onPath ? "path" : ""
-              }`}
+              } ${isPlaceholder ? "placeholder" : ""}`}
               style={{ top: n.y, left: x }}
               data-node-id={n.id}
               data-lane={n.lane}
               data-testid="gitk-node"
               title={n.title || n.summary || ""}
-              onClick={() => onSelect(n.id)}
+              onClick={() => {
+                if (isPlaceholder) {
+                  toggleParent(n.parentId);
+                } else {
+                  onSelect(n.id);
+                }
+              }}
               type="button"
             >
               <span className="gitk-dot-btn">
@@ -212,7 +284,9 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
               </span>
               <div className="gitk-labels">
                 <div className="gitk-label">
-                  <span className="gitk-label-title">{n.title || n.summary || "(no title)"}</span>
+                  <span className="gitk-label-title">
+                    {isPlaceholder ? `+${(n as any).hiddenCount || ""}件` : n.title || n.summary || "(no title)"}
+                  </span>
                 </div>
               </div>
             </button>
