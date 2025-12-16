@@ -103,15 +103,31 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
   const history: ChatMessageView[] = [];
   path.forEach((n) =>
     (n.messages || []).forEach((m) =>
-      history.push({ ...m, pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…" })
+      history.push({
+        ...m,
+        nodeId: n.id,
+        pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…",
+      } as ChatMessageView & { nodeId: string })
     )
   );
 
   useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
+    if (!logRef.current) return;
+    const target = history
+      .map((m, idx) => ({ m, idx }))
+      .reverse()
+      .find((item) => item.m.nodeId === (path[path.length - 1]?.id ?? null) && item.m.role === "user");
+    const container = logRef.current;
+    if (target) {
+      const el = container.querySelectorAll<HTMLElement>("[data-chat-item]")[target.idx];
+      if (el) {
+        const top = el.offsetTop - container.clientHeight / 2;
+        container.scrollTo({ top, behavior: "smooth" });
+        return;
+      }
     }
-  }, [path]);
+    container.scrollTop = container.scrollHeight;
+  }, [path, history]);
 
   const send = async () => {
     if (!message.trim()) return;
@@ -134,7 +150,11 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
       <div className="chat-log bubble-style" ref={logRef}>
         {history.length === 0 && <div className="empty">会話がありません</div>}
         {history.map((m, idx) => (
-          <div key={`${m.role}-${idx}`} className={`bubble-flat ${m.role} ${m.pending ? "pending" : ""}`}>
+          <div
+            key={`${m.role}-${idx}`}
+            className={`bubble-flat ${m.role} ${m.pending ? "pending" : ""}`}
+            data-chat-item
+          >
             {m.pending ? (
               <div className="bubble-content">
                 <span className="loader-dots" aria-label="考え中…">
