@@ -32,7 +32,16 @@ const renderMarkdown = (text: string) => {
   };
 
   lines.forEach((line) => {
-    const ordered = line.match(/^\s*\d+\.\s+(.*)/);
+    const heading = line.match(/^\s*(#{1,6})\s+(.*)/);
+    if (heading) {
+      closeLists();
+      const level = Math.min(6, heading[1].length);
+      const tag = level <= 3 ? `h${level + 2}` : "h5";
+      html.push(`<${tag}>${inlineFormat(heading[2].trim())}</${tag}>`);
+      return;
+    }
+
+    const ordered = line.match(/^\s*\d+[\.．]\s+(.*)/);
     if (ordered) {
       if (inUl) {
         html.push("</ul>");
