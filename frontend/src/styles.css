@@ -312,12 +312,12 @@ body {
   align-items: center;
   background: var(--panel-bg);
   border: 1px solid var(--border);
-  padding: 6px 10px;
+  padding: 4px 10px;
   border-radius: 12px;
   box-shadow: var(--shadow);
   cursor: pointer;
-  width: 220px;
-  max-width: 220px;
+  width: 200px;
+  max-width: 200px;
 }
 .gitk-node.active {
   border-color: var(--accent);

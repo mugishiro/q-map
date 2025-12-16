@@ -25,7 +25,8 @@ type Props = {
 };
 
 const ROW_HEIGHT = 70;
-const LANE_GAP = 240;
+const BASE_LANE_GAP = 220;
+const LANE_GAP_MIN = 140;
 const DOT_RADIUS = 8;
 const PADDING_X = 120;
 const PADDING_Y = 32;
@@ -136,13 +137,15 @@ const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: numb
   });
 
   const laneCount = Math.max(1, ...graphNodes.map((n) => n.lane + 1));
+  const density = Math.min(1, graphNodes.length / Math.max(1, laneCount * 8));
+  const laneGap = Math.max(LANE_GAP_MIN, BASE_LANE_GAP * (1 - density * 0.4));
   const height = PADDING_Y * 2 + maxDepth * ROW_HEIGHT;
-  const width = PADDING_X * 2 + laneCount * LANE_GAP;
+  const width = PADDING_X * 2 + laneCount * laneGap;
 
-  return { graphNodes, edges, laneCount, height, width };
+  return { graphNodes, edges, laneCount, height, width, laneGap };
 };
 
-const laneX = (lane: number) => PADDING_X + lane * LANE_GAP;
+const laneX = (lane: number, gap: number) => PADDING_X + lane * gap;
 
 const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: number }) => {
   const x1 = laneX(from.lane);
@@ -201,7 +204,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
     return visible;
   }, [nodes, selectedNodeId, expandedParents]);
 
-  const { graphNodes, edges, laneCount, height, width } = useMemo(
+  const { graphNodes, edges, laneCount, height, width, laneGap } = useMemo(
     () => buildGraph(visibleNodes, mainRef),
     [visibleNodes, mainRef]
   );
@@ -255,7 +258,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
           })}
         </svg>
         {graphNodes.map((n) => {
-          const x = laneX(n.lane);
+          const x = laneX(n.lane, laneGap);
           const isSelected = selectedNodeId === n.id;
           const onPath = pathSet.has(n.id);
           const isPlaceholder = Boolean((n as any).isPlaceholder);
