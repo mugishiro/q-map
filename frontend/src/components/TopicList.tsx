@@ -50,7 +50,6 @@ export const TopicList = ({ topics, selectedTopicId, onSelect, onCreate }: Props
             onClick={() => onSelect(t.id)}
           >
             <div className="list-title">{t.name}</div>
-            <div className="list-meta">{new Date(t.updatedAt).toLocaleString()}</div>
           </button>
         ))}
         {!topics.length && <div className="empty">トピックがありません</div>}

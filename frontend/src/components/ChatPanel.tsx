@@ -1,86 +1,105 @@
-import { useEffect, useRef, useState } from "react";
+import { ComponentPropsWithoutRef, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChatMessage, Node } from "../types";
 
-const escapeHtml = (text: string) =>
-  text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-const inlineFormat = (text: string) => {
-  let safe = escapeHtml(text);
-  // bold **text**
-  safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  return safe;
-};
-
-const renderMarkdown = (text: string) => {
+const normalizeMarkdown = (text: string) => {
   const lines = text.split(/\r?\n/);
-  const html: string[] = [];
-  let inOl = false;
-  let inUl = false;
-  let olCount = 0;
+  const normalized: string[] = [];
+  let pendingOrdered: string | null = null;
+  let inList = false;
+  let lastWasBlank = false;
 
-  const closeLists = () => {
-    if (inOl) {
-      html.push("</ol>");
-      inOl = false;
-    }
-    if (inUl) {
-      html.push("</ul>");
-      inUl = false;
+  const pushBlank = () => {
+    if (!lastWasBlank) {
+      normalized.push("");
+      lastWasBlank = true;
     }
   };
 
   lines.forEach((line) => {
-    const heading = line.match(/^\s*(#{1,6})\s+(.*)/);
-    if (heading) {
-      closeLists();
-      const level = Math.min(6, heading[1].length);
-      const tag = level <= 3 ? `h${level + 2}` : "h5";
-      html.push(`<${tag}>${inlineFormat(heading[2].trim())}</${tag}>`);
-      olCount = 0;
+    const withoutTrailing = line.trimEnd();
+    const leadingMatch = withoutTrailing.match(/^(\s*)(.*)$/);
+    const leading = leadingMatch?.[1] ?? "";
+    const body = leadingMatch?.[2] ?? "";
+    const trimmedBody = body.trim();
+    const isEmpty = trimmedBody === "";
+
+    if (isEmpty) {
+      if (!inList && pendingOrdered === null) {
+        pushBlank();
+      }
       return;
     }
 
-    const ordered = line.match(/^\s*\d+[\.．]\s+(.*)/);
+    const orderedOnly = trimmedBody.match(/^(\d+[\.．])$/);
+    if (orderedOnly) {
+      pendingOrdered = orderedOnly[1];
+      inList = true;
+      lastWasBlank = false;
+      return;
+    }
+
+    const ordered = trimmedBody.match(/^(\d+[\.．])\s+(.+)/);
     if (ordered) {
-      if (inUl) {
-        html.push("</ul>");
-        inUl = false;
-      }
-      if (!inOl) {
-        html.push("<ol>");
-        inOl = true;
-      }
-      olCount += 1;
-      html.push(`<li value="${olCount}">${inlineFormat(ordered[1])}</li>`);
+      normalized.push(`${ordered[1]} ${ordered[2].trim()}`);
+      pendingOrdered = null;
+      inList = true;
+      lastWasBlank = false;
       return;
     }
 
-    const bullet = line.match(/^\s*[-*]\s+(.*)/);
-      if (bullet) {
-      if (inOl) {
-        html.push("</ol>");
-        inOl = false;
+    const bullet = trimmedBody.match(/^([・･•●◦])\s*(.*)/);
+    if (bullet) {
+      const content = bullet[2].trim();
+      if (!content) {
+        inList = true;
+        lastWasBlank = false;
+        pendingOrdered = null;
+        return;
       }
-      if (!inUl) {
-        html.push("<ul>");
-        inUl = true;
+      if (pendingOrdered) {
+        normalized.push(`${pendingOrdered}`);
       }
-      html.push(`<li>${inlineFormat(bullet[1])}</li>`);
+      const indent = pendingOrdered && leading.length === 0 ? "    " : leading;
+      normalized.push(`${indent}- ${content}`);
+      pendingOrdered = null;
+      inList = true;
+      lastWasBlank = false;
       return;
     }
 
-    // paragraph or empty
-    if (line.trim().length) {
-      closeLists();
-      html.push(`<p>${inlineFormat(line)}</p>`);
+    if (pendingOrdered) {
+      normalized.push(`${pendingOrdered} ${trimmedBody}`);
+      pendingOrdered = null;
+      inList = true;
+      lastWasBlank = false;
+      return;
     }
+
+    if (!lastWasBlank && normalized.length > 0) {
+      pushBlank();
+    }
+    normalized.push(trimmedBody);
+    inList = false;
+    lastWasBlank = false;
   });
 
-  closeLists();
-  return html.join("") || `<p>${inlineFormat(text)}</p>`;
+  return normalized.join("\n");
+};
+
+type HeadingProps = ComponentPropsWithoutRef<"h1"> & { node?: unknown };
+
+const heading = (Tag: "h3" | "h4" | "h5") => {
+  const Component = ({ node: _node, ...props }: HeadingProps) => <Tag {...props} />;
+  return Component;
+};
+
+const markdownComponents = {
+  h1: heading("h3"),
+  h2: heading("h4"),
+  h3: heading("h5"),
+  h4: heading("h5"),
 };
 
 type Props = {
@@ -88,69 +107,147 @@ type Props = {
   loading: boolean;
   onSend: (input: { message: string; baseNodeId?: string }) => Promise<void>;
   onAddLater: (input: { summary: string }) => Promise<void>;
+  draft: string;
+  onDraftChange: (value: string) => void;
 };
 
-type ChatMessageView = ChatMessage & { pending?: boolean };
+type ChatMessageView = ChatMessage & {
+  pending?: boolean;
+  nodeId: string;
+  isQuestion: boolean;
+};
 
-export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
-  const [message, setMessage] = useState("");
-  const [laterText, setLaterText] = useState("");
-  const latest = path[path.length - 1];
-  const canAddLater = Boolean(latest) && !loading;
+export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftChange }: Props) => {
+  const canAddLater = !loading && Boolean(draft.trim());
   const logRef = useRef<HTMLDivElement | null>(null);
+  const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
 
-  const history: ChatMessageView[] = [];
-  path.forEach((n) =>
-    (n.messages || []).forEach((m) =>
-      history.push({
-        ...m,
-        nodeId: n.id,
-        pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…",
-        isQuestion: m.role === "user",
-      } as ChatMessageView & { nodeId: string; isQuestion: boolean })
-    )
-  );
+  const history: ChatMessageView[] = useMemo(() => {
+    const list: ChatMessageView[] = [];
+    path.forEach((n) =>
+      (n.messages || []).forEach((m) =>
+        list.push({
+          ...m,
+          nodeId: n.id,
+          pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…",
+          isQuestion: m.role === "user",
+        })
+      )
+    );
+    return list;
+  }, [path]);
 
   useEffect(() => {
-    if (!logRef.current) return;
-    const targetNode = path[path.length - 1]?.id ?? null;
-    let targetIdx = -1;
-    for (let i = history.length - 1; i >= 0; i -= 1) {
-      const h = history[i] as any;
-      if (h.nodeId === targetNode && h.isQuestion) {
-        targetIdx = i;
-      }
-    }
     const container = logRef.current;
+    if (!container) return;
+    const targetNode = path[path.length - 1]?.id ?? null;
+
+    const targetIdx = history.findIndex((h) => h.nodeId === targetNode && h.isQuestion);
+    const items = container.querySelectorAll<HTMLElement>("[data-chat-item]");
+    const targetEl = targetIdx >= 0 ? items[targetIdx] ?? null : null;
+
     requestAnimationFrame(() => {
-      if (targetIdx >= 0) {
-        const items = container.querySelectorAll<HTMLElement>("[data-chat-item]");
-        const el = items[targetIdx];
-        if (el) {
-          const top = Math.max(0, el.offsetTop - 8);
-          container.scrollTo({ top, behavior: "smooth" });
-          return;
-        }
+      if (targetEl) {
+        const containerRect = container.getBoundingClientRect();
+        const itemRect = targetEl.getBoundingClientRect();
+        const top = Math.max(0, itemRect.top - containerRect.top + container.scrollTop - 12);
+        container.scrollTo({ top, behavior: "smooth" });
+        return;
       }
       container.scrollTop = container.scrollHeight;
     });
-  }, [path, history]);
+  }, [path]);
+
+  useEffect(() => {
+    const container = logRef.current;
+    if (!container) return;
+
+    const isInside = (node: globalThis.Node | null) => (node ? container.contains(node) : false);
+
+    const handleSelection = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) {
+        setSelection(null);
+        return;
+      }
+      const text = sel.toString().trim();
+      if (!text) {
+        setSelection(null);
+        return;
+      }
+      const anchor = sel.anchorNode;
+      const focus = sel.focusNode;
+      if (!isInside(anchor as any) || !isInside(focus as any)) {
+        setSelection(null);
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const top = rect.top - containerRect.top + container.scrollTop - 30;
+      const left = rect.left - containerRect.left + container.scrollLeft;
+      setSelection({ text, top: Math.max(0, top), left: Math.max(0, left) });
+    };
+
+    const clear = () => setSelection(null);
+
+    document.addEventListener("mouseup", handleSelection);
+    document.addEventListener("keyup", handleSelection);
+    container.addEventListener("scroll", clear);
+    return () => {
+      document.removeEventListener("mouseup", handleSelection);
+      document.removeEventListener("keyup", handleSelection);
+      container.removeEventListener("scroll", clear);
+    };
+  }, []);
 
   const send = async () => {
-    if (!message.trim()) return;
-    await onSend({ message: message.trim() });
-    setMessage("");
+    if (!draft.trim()) return;
+    await onSend({ message: draft.trim() });
+    onDraftChange("");
   };
 
   const addLater = async () => {
-    if (!laterText.trim()) return;
-    await onAddLater({ summary: laterText.trim() });
-    setLaterText("");
+    const summary = draft.trim();
+    if (!summary) return;
+    await onAddLater({ summary });
+    onDraftChange("");
   };
 
   return (
-    <div className="stack gap-m">
+    <div className="stack gap-m chat-panel">
       <div className="chat-log bubble-style" ref={logRef}>
+        {selection && (
+          <div
+            className="selection-toolbar"
+            style={{ top: selection.top, left: selection.left }}
+            role="group"
+            aria-label="選択テキスト操作"
+          >
+            <button
+              className="selection-btn"
+              onClick={() => {
+                onDraftChange(selection.text);
+                window.getSelection()?.removeAllRanges();
+                setSelection(null);
+              }}
+              type="button"
+            >
+              聞く
+            </button>
+            <button
+              className="selection-btn"
+              onClick={async () => {
+                await onAddLater({ summary: selection.text });
+                window.getSelection()?.removeAllRanges();
+                setSelection(null);
+              }}
+              type="button"
+            >
+              あとで聞く
+            </button>
+          </div>
+        )}
         {history.length === 0 && <div className="empty">会話がありません</div>}
         {history.map((m, idx) => (
           <div
@@ -168,10 +265,11 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
                 <span style={{ marginLeft: "8px" }}>考え中…</span>
               </div>
             ) : (
-              <div
-                className="bubble-content"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
-              />
+              <div className="bubble-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {normalizeMarkdown(m.content)}
+                </ReactMarkdown>
+              </div>
             )}
           </div>
         ))}
@@ -181,8 +279,8 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
           className="input large"
           rows={3}
           placeholder="わからないことをAIに質問する"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={draft}
+          onChange={(e) => onDraftChange(e.target.value)}
           disabled={loading}
         />
         <div className="chat-actions">
