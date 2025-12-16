@@ -147,9 +147,9 @@ const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: numb
 
 const laneX = (lane: number, gap: number) => PADDING_X + lane * gap;
 
-const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: number }) => {
-  const x1 = laneX(from.lane);
-  const x2 = laneX(to.lane);
+const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: number }, gap: number) => {
+  const x1 = laneX(from.lane, gap);
+  const x2 = laneX(to.lane, gap);
   const y1 = from.y;
   const y2 = to.y;
   const midY = (y1 + y2) / 2;
@@ -251,7 +251,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef }: Props) =>
             return (
               <path
                 key={`${e.from.lane}-${e.to.lane}-${idx}`}
-                d={edgePath(e.from, e.to)}
+                d={edgePath(e.from, e.to, laneGap)}
                 className={`gitk-edge ${e.isMain ? "main" : ""} ${isPathEdge ? "path" : ""}`}
               />
             );

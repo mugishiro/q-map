@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatMessage, Node } from "../types";
 
 const escapeHtml = (text: string) =>
@@ -98,6 +98,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
   const [laterText, setLaterText] = useState("");
   const latest = path[path.length - 1];
   const canAddLater = Boolean(latest) && !loading;
+  const logRef = useRef<HTMLDivElement | null>(null);
 
   const history: ChatMessageView[] = [];
   path.forEach((n) =>
@@ -105,6 +106,12 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
       history.push({ ...m, pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…" })
     )
   );
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [path]);
 
   const send = async () => {
     if (!message.trim()) return;
@@ -124,7 +131,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
         <div className="chat-title">チャット</div>
         <div className="chat-subtle">選択中ノードの会話履歴</div>
       </div>
-      <div className="chat-log bubble-style">
+      <div className="chat-log bubble-style" ref={logRef}>
         {history.length === 0 && <div className="empty">会話がありません</div>}
         {history.map((m, idx) => (
           <div key={`${m.role}-${idx}`} className={`bubble-flat ${m.role} ${m.pending ? "pending" : ""}`}>
