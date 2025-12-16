@@ -392,7 +392,7 @@ body {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 .bubble-flat {
   padding: 0;
@@ -407,16 +407,19 @@ body {
   background: var(--bubble-user);
   border: 1px solid var(--ghost-border);
   padding: 10px 12px;
-  max-width: 80%;
+  max-width: 88%;
 }
 .bubble-flat.assistant {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
 }
 .bubble-flat.pending {
   opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .bubble-flat h3,
 .bubble-flat h4,
@@ -452,6 +455,18 @@ body {
   border-radius: 14px;
   padding: 12px;
   gap: 10px;
+}
+.chat-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.chat-title {
+  font-weight: 700;
+}
+.chat-subtle {
+  color: var(--muted);
+  font-size: 13px;
 }
 .chat-input .input.large {
   border-radius: 12px;
