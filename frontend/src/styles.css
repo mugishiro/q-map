@@ -308,6 +308,8 @@ body {
   border-radius: 12px;
   box-shadow: var(--shadow);
   cursor: pointer;
+  width: 220px;
+  max-width: 220px;
 }
 .gitk-node.active {
   border-color: var(--accent);
@@ -353,6 +355,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
+  width: 100%;
 }
 .gitk-label {
   display: flex;
@@ -362,6 +366,10 @@ body {
 .gitk-label-title {
   color: var(--text);
   font-weight: 600;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bubble-style {

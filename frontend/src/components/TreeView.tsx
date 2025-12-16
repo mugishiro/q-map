@@ -23,7 +23,7 @@ type Props = {
 };
 
 const ROW_HEIGHT = 70;
-const LANE_GAP = 72;
+const LANE_GAP = 240;
 const DOT_RADIUS = 8;
 const PADDING_X = 120;
 const PADDING_Y = 32;
