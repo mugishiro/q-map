@@ -113,19 +113,27 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
 
   useEffect(() => {
     if (!logRef.current) return;
-    const target = history
-      .map((m, idx) => ({ m, idx }))
-      .find((item) => item.m.nodeId === (path[path.length - 1]?.id ?? null) && item.m.isQuestion);
-    const container = logRef.current;
-    if (target) {
-      const el = container.querySelectorAll<HTMLElement>("[data-chat-item]")[target.idx];
-      if (el) {
-        const top = el.offsetTop;
-        container.scrollTo({ top, behavior: "smooth" });
-        return;
+    const targetNode = path[path.length - 1]?.id ?? null;
+    let targetIdx = -1;
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      const h = history[i] as any;
+      if (h.nodeId === targetNode && h.isQuestion) {
+        targetIdx = i;
       }
     }
-    container.scrollTop = container.scrollHeight;
+    const container = logRef.current;
+    requestAnimationFrame(() => {
+      if (targetIdx >= 0) {
+        const items = container.querySelectorAll<HTMLElement>("[data-chat-item]");
+        const el = items[targetIdx];
+        if (el) {
+          const top = Math.max(0, el.offsetTop - 8);
+          container.scrollTo({ top, behavior: "smooth" });
+          return;
+        }
+      }
+      container.scrollTop = container.scrollHeight;
+    });
   }, [path, history]);
 
   const send = async () => {
