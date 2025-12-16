@@ -68,10 +68,10 @@ describe("TreeView (git-style graph)", () => {
     const paths = document.querySelectorAll("path.gitk-edge");
     expect(paths.length).toBe(1);
     const d = paths[0].getAttribute("d");
-    expect(d).toContain("C"); // cubic bezier
+    expect(d).toMatch(/(L|Q)/); // straight or rounded depending on lane
   });
 
-  it("places same-depth nodes at the same vertical position", () => {
+  it("orders nodes vertically by createdAt", () => {
     const nodes: Node[] = [
       buildNode({ id: "root", label: "A1", title: "Root" }),
       buildNode({
@@ -92,11 +92,12 @@ describe("TreeView (git-style graph)", () => {
 
     render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
 
+    const root = getNode("Root") as HTMLElement;
     const c1 = getNode("First child") as HTMLElement;
     const c2 = getNode("Second child") as HTMLElement;
-    const root = getNode("Root") as HTMLElement;
-    expect(c1.style.top).toBe(c2.style.top);
-    expect(c1.style.top).not.toBe(root.style.top);
+    const toNumber = (value: string) => parseFloat(value);
+    expect(toNumber(root.style.top)).toBeLessThan(toNumber(c1.style.top));
+    expect(toNumber(c1.style.top)).toBeLessThan(toNumber(c2.style.top));
   });
 
   it("respects selection state and onSelect handler", async () => {
@@ -138,5 +139,48 @@ describe("TreeView (git-style graph)", () => {
 
     const main = getNode("Main root")!;
     expect(main.getAttribute("data-lane")).toBe("0");
+  });
+
+  it("exposes branch color per lane via CSS variable", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root", label: "A1", title: "Root" }),
+      buildNode({
+        id: "child",
+        label: "A1",
+        title: "Child",
+        parentId: "root",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
+
+    const root = getNode("Root") as HTMLElement;
+    const child = getNode("Child") as HTMLElement;
+    const rootColor = root.style.getPropertyValue("--branch-color");
+    const childColor = child.style.getPropertyValue("--branch-color");
+    expect(rootColor).toBeTruthy();
+    expect(rootColor).toBe(childColor);
+  });
+
+  it("renders labels in the side list, not inside the node dot", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root", label: "A1", title: "Root" }),
+      buildNode({
+        id: "child",
+        label: "B1",
+        title: "Child title",
+        parentId: "root",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
+
+    const dots = screen.getAllByTestId("gitk-node");
+    dots.forEach((dot) => {
+      expect(dot.textContent).toBe("");
+    });
+    expect(screen.getByText("Child title")).toBeInTheDocument();
   });
 });

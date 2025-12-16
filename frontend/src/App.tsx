@@ -4,6 +4,7 @@ import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderMenu from "./components/HeaderMenu";
+import LaterList from "./components/LaterList";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
@@ -18,7 +19,7 @@ const buildPathLocal = (nodeId: string, nodes: Node[]): Node[] => {
     const node = map.get(current);
     if (!node) break;
     chain.push(node);
-    current = node.parentId;
+    current = node.parentIds?.[0] ?? node.parentId;
   }
   return chain.reverse();
 };
@@ -47,6 +48,8 @@ function App() {
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [path, setPath] = useState<Node[]>([]);
+  const [chatDraft, setChatDraft] = useState("");
+  const [laterItems, setLaterItems] = useState<{ id: string; text: string; createdAt: string }[]>([]);
   const [branchBaseId, setBranchBaseId] = useState<string | null>(null);
   const [topicsCollapsed, setTopicsCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -180,6 +183,7 @@ function App() {
       setNodes(optimisticList);
       setPath(buildPathLocal(tempId, optimisticList));
       setBranchBaseId(null);
+      setChatDraft("");
 
       const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
       await loadNodes(selectedTopicId, res.node.nodeId ?? res.node.id);
@@ -193,22 +197,11 @@ function App() {
   };
 
   const handleLater = async ({ summary }: { summary: string }) => {
-    if (!selectedTopicId) return;
-    const parentId = path[path.length - 1]?.id ?? null;
-    if (!parentId) {
-      setError("ノードを選択してから追加してください。");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      await api.createLaterNode({ topicId: selectedTopicId, parentId, summary });
-      await loadNodes(selectedTopicId, parentId);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    const text = summary.trim();
+    if (!text) return;
+    const now = new Date().toISOString();
+    setLaterItems((prev) => [{ id: `later-${Date.now()}`, text, createdAt: now }, ...prev]);
+    setChatDraft("");
   };
 
   const handleSelectTopic = async (id: string) => {
@@ -236,6 +229,12 @@ function App() {
     setTopics([]);
     setNodes([]);
     setPath([]);
+  };
+
+  const selectNode = (nodeId: string) => {
+    setBranchBaseId(nodeId);
+    const localPath = buildPathLocal(nodeId, nodes);
+    setPath(localPath);
   };
 
   const handleLoginStart = async () => {
@@ -282,18 +281,27 @@ function App() {
     <TreeView
       nodes={nodes}
       selectedNodeId={path[path.length - 1]?.id ?? null}
-      onSelect={(nodeId) => {
-        setBranchBaseId(nodeId);
-        const localPath = buildPathLocal(nodeId, nodes);
-        setPath(localPath);
-      }}
+      onSelect={(nodeId) => selectNode(nodeId)}
       mainRef="main"
+      onPrefill={(text) => setChatDraft(text)}
     />
   );
 
   const right = (
-    <div className="stack gap-m">
-      <ChatPanel path={path} loading={loading} onSend={handleSend} onAddLater={handleLater} />
+    <div className="stack gap-m fill">
+      <LaterList
+        items={laterItems}
+        onUse={(text) => setChatDraft(text)}
+        onRemove={(id) => setLaterItems((prev) => prev.filter((i) => i.id !== id))}
+      />
+      <ChatPanel
+        path={path}
+        loading={loading}
+        onSend={handleSend}
+        onAddLater={handleLater}
+        draft={chatDraft}
+        onDraftChange={setChatDraft}
+      />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
     </div>
   );

@@ -18,6 +18,7 @@ export type Node = {
   label: string;
   topicId: string;
   parentId: string | null;
+  parentIds?: string[];
   title: string;
   summary: string;
   type: "chat" | "later";
