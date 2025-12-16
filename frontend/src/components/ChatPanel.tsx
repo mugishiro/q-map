@@ -106,7 +106,8 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
         ...m,
         nodeId: n.id,
         pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…",
-      } as ChatMessageView & { nodeId: string })
+        isQuestion: m.role === "user",
+      } as ChatMessageView & { nodeId: string; isQuestion: boolean })
     )
   );
 
@@ -114,8 +115,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater }: Props) => {
     if (!logRef.current) return;
     const target = history
       .map((m, idx) => ({ m, idx }))
-      .reverse()
-      .find((item) => item.m.nodeId === (path[path.length - 1]?.id ?? null) && item.m.role === "user");
+      .find((item) => item.m.nodeId === (path[path.length - 1]?.id ?? null) && item.m.isQuestion);
     const container = logRef.current;
     if (target) {
       const el = container.querySelectorAll<HTMLElement>("[data-chat-item]")[target.idx];
