@@ -33,6 +33,9 @@ const byCreatedAt = (a: Node, b: Node) => (a.createdAt < b.createdAt ? -1 : 1);
 const buildGraph = (nodes: Node[], mainRef?: string) => {
   const sorted = nodes.slice().sort(byCreatedAt);
 
+  const nodeMap = new Map<string, Node>();
+  sorted.forEach((n) => nodeMap.set(n.id, n));
+
   const childrenMap = new Map<string, string[]>();
   sorted.forEach((n) => {
     const parent = n.parentId;
@@ -59,10 +62,27 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
   const laneById = new Map<string, number>();
   let laneCounter = -1;
 
+  const depthMemo = new Map<string, number>();
+  const computeDepth = (id: string, visiting = new Set<string>()): number => {
+    if (depthMemo.has(id)) return depthMemo.get(id)!;
+    const node = nodeMap.get(id);
+    if (!node || !node.parentId) {
+      depthMemo.set(id, 0);
+      return 0;
+    }
+    if (visiting.has(id)) return 0;
+    visiting.add(id);
+    const depth = 1 + computeDepth(node.parentId, visiting);
+    visiting.delete(id);
+    depthMemo.set(id, depth);
+    return depth;
+  };
+
   const graphNodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
+  let maxDepth = 0;
 
-  sorted.forEach((node, idx) => {
+  sorted.forEach((node) => {
     const parents = ((node as any).parentIds as string[] | undefined) ?? (node.parentId ? [node.parentId] : []);
     const primaryParent = parents[0];
 
@@ -89,7 +109,9 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
       processedChildCount.set(primaryParent, processedCount + 1);
     }
 
-    const y = PADDING_Y + idx * ROW_HEIGHT;
+    const depth = computeDepth(node.id);
+    const y = PADDING_Y + depth * ROW_HEIGHT;
+    maxDepth = Math.max(maxDepth, depth);
     const gNode: GraphNode = { ...node, lane, y, parents };
     graphNodes.push(gNode);
 
@@ -109,7 +131,7 @@ const buildGraph = (nodes: Node[], mainRef?: string) => {
   });
 
   const laneCount = Math.max(1, ...graphNodes.map((n) => n.lane + 1));
-  const height = PADDING_Y * 2 + Math.max(0, graphNodes.length - 1) * ROW_HEIGHT;
+  const height = PADDING_Y * 2 + maxDepth * ROW_HEIGHT;
   const width = PADDING_X * 2 + laneCount * LANE_GAP;
 
   return { graphNodes, edges, laneCount, height, width };

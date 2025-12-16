@@ -71,6 +71,34 @@ describe("TreeView (git-style graph)", () => {
     expect(d).toContain("C"); // cubic bezier
   });
 
+  it("places same-depth nodes at the same vertical position", () => {
+    const nodes: Node[] = [
+      buildNode({ id: "root", label: "A1", title: "Root" }),
+      buildNode({
+        id: "child1",
+        label: "B1",
+        title: "First child",
+        parentId: "root",
+        createdAt: "2024-01-02T00:00:00Z",
+      }),
+      buildNode({
+        id: "child2",
+        label: "B2",
+        title: "Second child",
+        parentId: "root",
+        createdAt: "2024-01-03T00:00:00Z",
+      }),
+    ];
+
+    render(<TreeView nodes={nodes} selectedNodeId={null} onSelect={() => {}} />);
+
+    const c1 = getNode("First child") as HTMLElement;
+    const c2 = getNode("Second child") as HTMLElement;
+    const root = getNode("Root") as HTMLElement;
+    expect(c1.style.top).toBe(c2.style.top);
+    expect(c1.style.top).not.toBe(root.style.top);
+  });
+
   it("respects selection state and onSelect handler", async () => {
     const onSelect = vi.fn();
     const nodes: Node[] = [
