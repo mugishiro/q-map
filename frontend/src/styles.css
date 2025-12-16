@@ -386,9 +386,9 @@ body {
   background: var(--secondary);
   border-radius: 14px;
   padding: 12px;
-  flex: 1;
-  max-height: none;
-  min-height: 480px;
+  flex: 0 1 auto;
+  max-height: calc(100vh - 260px);
+  min-height: 360px;
   overflow: auto;
   display: flex;
   flex-direction: column;
