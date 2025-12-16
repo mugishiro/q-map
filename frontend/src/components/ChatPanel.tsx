@@ -19,11 +19,13 @@ const renderMarkdown = (text: string) => {
   const html: string[] = [];
   let inOl = false;
   let inUl = false;
+  let olCount = 0;
 
   const closeLists = () => {
     if (inOl) {
       html.push("</ol>");
       inOl = false;
+      olCount = 0;
     }
     if (inUl) {
       html.push("</ul>");
@@ -33,30 +35,32 @@ const renderMarkdown = (text: string) => {
 
   lines.forEach((line) => {
     const heading = line.match(/^\s*(#{1,6})\s+(.*)/);
-    if (heading) {
-      closeLists();
-      const level = Math.min(6, heading[1].length);
-      const tag = level <= 3 ? `h${level + 2}` : "h5";
-      html.push(`<${tag}>${inlineFormat(heading[2].trim())}</${tag}>`);
-      return;
-    }
+      if (heading) {
+        closeLists();
+        const level = Math.min(6, heading[1].length);
+        const tag = level <= 3 ? `h${level + 2}` : "h5";
+        html.push(`<${tag}>${inlineFormat(heading[2].trim())}</${tag}>`);
+        return;
+      }
 
     const ordered = line.match(/^\s*\d+[\.．]\s+(.*)/);
-    if (ordered) {
-      if (inUl) {
-        html.push("</ul>");
-        inUl = false;
+      if (ordered) {
+        if (inUl) {
+          html.push("</ul>");
+          inUl = false;
+        }
+        if (!inOl) {
+          html.push("<ol>");
+          inOl = true;
+          olCount = 0;
+        }
+        olCount += 1;
+        html.push(`<li value="${olCount}">${inlineFormat(ordered[1])}</li>`);
+        return;
       }
-      if (!inOl) {
-        html.push("<ol>");
-        inOl = true;
-      }
-      html.push(`<li>${inlineFormat(ordered[1])}</li>`);
-      return;
-    }
 
     const bullet = line.match(/^\s*[-*]\s+(.*)/);
-    if (bullet) {
+      if (bullet) {
       if (inOl) {
         html.push("</ol>");
         inOl = false;
@@ -70,8 +74,8 @@ const renderMarkdown = (text: string) => {
     }
 
     // paragraph or empty
-    closeLists();
     if (line.trim().length) {
+      closeLists();
       html.push(`<p>${inlineFormat(line)}</p>`);
     }
   });

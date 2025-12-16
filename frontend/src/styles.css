@@ -395,17 +395,18 @@ body {
   gap: 8px;
 }
 .bubble-flat {
-  padding: 10px 12px;
-  border-radius: 14px;
+  padding: 0;
+  border-radius: 12px;
   max-width: 100%;
   word-wrap: break-word;
-  background: var(--panel-bg);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
 }
 .bubble-flat.user {
   margin-left: auto;
   background: var(--bubble-user);
-  border-color: var(--ghost-border);
+  border: 1px solid var(--ghost-border);
+  padding: 10px 12px;
   max-width: 80%;
 }
 .bubble-flat.assistant {
@@ -436,7 +437,8 @@ body {
 }
 .bubble-content {
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 15px;
 }
 .bubble-content p {
   margin: 0 0 6px 0;
