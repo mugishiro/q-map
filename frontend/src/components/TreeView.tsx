@@ -48,23 +48,11 @@ const byCreatedAt = (a: Node, b: Node) => {
 
 const parentKey = (id: string | null | undefined) => id ?? "__root__";
 
-const hashString = (value: string) => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-};
-
-const branchColor = (key: string) => BRANCH_COLORS[hashString(key) % BRANCH_COLORS.length];
-
 const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: number })[], mainRef?: string) => {
   const sorted = nodes.slice().sort(byCreatedAt);
 
   const laneById = new Map<string, number>();
   const processedChildCount = new Map<string, number>();
-  const laneColor = new Map<number, string>();
   const positionById = new Map<string, { lane: number; y: number }>();
 
   const graphNodes: GraphNode[] = [];
@@ -98,11 +86,7 @@ const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: numb
     }
 
     const y = PADDING_Y + idx * ROW_HEIGHT;
-    if (!laneColor.has(lane)) {
-      const colorKey = node.label || node.id || `lane-${lane}`;
-      laneColor.set(lane, branchColor(colorKey));
-    }
-    const color = laneColor.get(lane)!;
+    const color = OTHER_COLOR;
     const gNode: GraphNode = { ...node, lane, y, parents, color };
     graphNodes.push(gNode);
     positionById.set(node.id, { lane, y });
@@ -111,7 +95,7 @@ const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: numb
       const pos = positionById.get(pid);
       const pLane = laneById.get(pid);
       if (pos && pLane !== undefined) {
-        const edgeColor = laneColor.get(lane) ?? laneColor.get(pLane) ?? color;
+        const edgeColor = OTHER_COLOR;
         edges.push({
           parentId: pid,
           childId: node.id,
@@ -131,7 +115,7 @@ const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: numb
   const height = PADDING_Y * 2 + maxRow * ROW_HEIGHT;
   const width = PADDING_X * 2 + laneCount * laneGap;
 
-  return { graphNodes, edges, laneCount, height, width, laneGap, laneColor };
+  return { graphNodes, edges, laneCount, height, width, laneGap };
 };
 
 const laneX = (lane: number, gap: number) => PADDING_X + lane * gap;
@@ -203,7 +187,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
     return visible;
   }, [nodes, selectedNodeId, expandedParents]);
 
-  const { graphNodes, edges, laneCount, height, width, laneGap, laneColor } = useMemo(
+  const { graphNodes, edges, laneCount, height, width, laneGap } = useMemo(
     () => buildGraph(visibleNodes, mainRef),
     [visibleNodes, mainRef]
   );
