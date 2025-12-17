@@ -362,7 +362,8 @@ body {
   border-radius: 12px;
   background: var(--secondary);
   padding: 12px 12px 12px 24px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .gitk-shell::before {
   content: "";
