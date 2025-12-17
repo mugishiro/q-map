@@ -36,16 +36,10 @@ const PADDING_Y = 28;
 const MAX_VISIBLE_SIBLINGS = 3;
 const LIST_WIDTH = 360;
 const LIST_GAP = 36;
-const BRANCH_COLORS = [
-  "#22c55e", // sprout green
-  "#0ea5e9", // sky blue
-  "#a78bfa", // violet
-  "#f59e0b", // amber
-  "#10b981", // jade
-  "#14b8a6", // teal
-];
+const PATH_COLOR = "#22c55e";
+const OTHER_COLOR = "#5ca9e6";
 const PATH_EMPHASIS = 0.92;
-const NON_PATH_OPACITY = 0.58;
+const NON_PATH_OPACITY = 0.62;
 
 const byCreatedAt = (a: Node, b: Node) => {
   if (a.createdAt === b.createdAt) return a.id < b.id ? -1 : 1;
@@ -265,7 +259,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
           <svg className="gitk-svg" width={width} height={height}>
             {edges.map((e, idx) => {
               const isPathEdge = pathEdgeSet.has(`${e.parentId}|${e.childId}`);
-              const edgeColor = e.color ?? "#22c55e";
+              const edgeColor = isPathEdge ? PATH_COLOR : OTHER_COLOR;
               const edgeStyle: CSSProperties | undefined = {
                 stroke: edgeColor,
                 strokeOpacity: isPathEdge ? PATH_EMPHASIS : NON_PATH_OPACITY,
@@ -288,7 +282,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const isPlaceholder = Boolean((n as any).isPlaceholder);
             const isHovered = hoveredNodeId === n.id;
             const isMainLane = n.lane === 0;
-            const nodeColor = n.color || "#22c55e";
+            const nodeColor = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
             const nodeStyle: CSSProperties = {
               top: n.y,
               left: x,
@@ -336,7 +330,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const isPlaceholder = Boolean((n as any).isPlaceholder);
             const isHovered = hoveredNodeId === n.id;
             const label = isPlaceholder ? `+${(n as any).hiddenCount || ""}件` : n.title || n.summary || "(no title)";
-            const color = n.color || "#22c55e";
+            const color = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
             return (
               <button
                 key={`list-${n.id}`}
