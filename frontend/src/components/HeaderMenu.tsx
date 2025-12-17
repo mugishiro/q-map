@@ -12,7 +12,8 @@ type Props = {
 
 export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
   const [open, setOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showDisplay, setShowDisplay] = useState(false);
+  const [showLlm, setShowLlm] = useState(false);
   const loggedIn = Boolean(api.getToken());
   const userLabel = loggedIn ? "ログイン中" : "未ログイン";
   return (
@@ -63,7 +64,7 @@ export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) =>
           <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
           <button
             className="btn ghost"
-            onClick={() => setShowSettings(true)}
+            onClick={() => setShowDisplay(true)}
             style={{ display: "flex", gap: "8px", alignItems: "center" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -74,12 +75,28 @@ export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) =>
                 strokeLinecap="round"
               />
             </svg>
-            表示設定（テーマ/グリッド/LLM）
+            表示設定
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => setShowLlm(true)}
+            style={{ display: "flex", gap: "8px", alignItems: "center" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M6 7.5a4.5 4.5 0 0 1 4.5-4.5h6a4.5 4.5 0 0 1 0 9h-.75a.75.75 0 0 0-.75.75v1.5a.75.75 0 0 1-1.22.57L11.5 13H10.5A4.5 4.5 0 0 1 6 8.5v-1Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            LLM 設定
           </button>
         </div>
       )}
-      {showSettings && (
-        <div className="modal-backdrop" onClick={() => setShowSettings(false)}>
+      {showDisplay && (
+        <div className="modal-backdrop" onClick={() => setShowDisplay(false)}>
           <div className="modal-card stack gap-m" onClick={(e) => e.stopPropagation()} style={{ minWidth: "360px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -98,13 +115,38 @@ export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) =>
                 </svg>
                 <span style={{ fontWeight: 700 }}>表示設定</span>
               </div>
-              <button className="icon-btn" aria-label="閉じる" title="閉じる" onClick={() => setShowSettings(false)}>
+              <button className="icon-btn" aria-label="閉じる" title="閉じる" onClick={() => setShowDisplay(false)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
             <ThemeSelect />
+          </div>
+        </div>
+      )}
+      {showLlm && (
+        <div className="modal-backdrop" onClick={() => setShowLlm(false)}>
+          <div className="modal-card stack gap-m" onClick={(e) => e.stopPropagation()} style={{ minWidth: "360px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 7.5a4.5 4.5 0 0 1 4.5-4.5h6a4.5 4.5 0 0 1 0 9h-.75a.75.75 0 0 0-.75.75v1.5a.75.75 0 0 1-1.22.57L11.5 13H10.5A4.5 4.5 0 0 1 6 8.5v-1Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span style={{ fontWeight: 700 }}>LLM 設定</span>
+              </div>
+              <button className="icon-btn" aria-label="閉じる" title="閉じる" onClick={() => setShowLlm(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
             <SettingsPanel embedded noCard showCloseButton={false} />
           </div>
         </div>
