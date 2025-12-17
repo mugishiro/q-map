@@ -20,9 +20,11 @@ type Props = {
   variant?: "panel" | "header";
   embedded?: boolean;
   hideTheme?: boolean;
+  showCloseButton?: boolean;
+  noCard?: boolean;
 };
 
-const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
+const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = true, noCard = false }: Props) => {
   const isHeader = variant === "header";
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -129,9 +131,11 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
         <button className="btn solid" onClick={save} disabled={loading}>
           保存
         </button>
-        <button className="btn ghost" onClick={() => setOpen(false)} disabled={loading}>
-          閉じる
-        </button>
+        {showCloseButton && (
+          <button className="btn ghost" onClick={() => setOpen(false)} disabled={loading}>
+            閉じる
+          </button>
+        )}
       </div>
       {notice && <span className="helper-inline" style={{ color: "#0f766e" }}>{notice}</span>}
       {error && <span className="helper-inline" style={{ color: "#b91c1c" }}>{error}</span>}
@@ -141,7 +145,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false }: Props) => {
   const formContent = <div className="stack gap-m">{llmSection}</div>;
 
   if (embedded) {
-    return <div className="card">{formContent}</div>;
+    return noCard ? <div>{formContent}</div> : <div className="card">{formContent}</div>;
   }
 
   if (isHeader) {
