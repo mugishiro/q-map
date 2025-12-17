@@ -6,9 +6,6 @@ type GraphNode = Node & {
   y: number;
   parents: string[];
   color: string;
-  isOnPath?: boolean;
-  isPlaceholder?: boolean;
-  hiddenCount?: number;
 };
 
 type GraphEdge = {
@@ -33,7 +30,6 @@ const BASE_LANE_GAP = 72;
 const LANE_GAP_MIN = 60;
 const PADDING_X = 36;
 const PADDING_Y = 28;
-const MAX_VISIBLE_SIBLINGS = 3;
 const LIST_WIDTH = 360;
 const LIST_GAP = 36;
 const PATH_COLOR = "#22c55e";
@@ -139,53 +135,11 @@ const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: numb
 };
 
 export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }: Props) => {
-  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   const visibleNodes = useMemo(() => {
-    const sorted = nodes.slice().sort(byCreatedAt) as (Node & { isPlaceholder?: boolean; hiddenCount?: number })[];
-    const childrenMap = new Map<string, (Node & { isPlaceholder?: boolean; hiddenCount?: number })[]>();
-    sorted.forEach((n) => {
-      const key = parentKey(n.parentIds?.[0] ?? n.parentId);
-      if (!childrenMap.has(key)) childrenMap.set(key, []);
-      childrenMap.get(key)!.push(n);
-    });
-
-    const autoExpand = new Set(expandedParents);
-    if (selectedNodeId) {
-      childrenMap.forEach((list, key) => {
-        const idx = list.findIndex((n) => n.id === selectedNodeId);
-        if (idx >= MAX_VISIBLE_SIBLINGS) {
-          autoExpand.add(key);
-        }
-      });
-    }
-
-    const seen = new Map<string, number>();
-    const visible: (Node & { isPlaceholder?: boolean; hiddenCount?: number })[] = [];
-    sorted.forEach((n) => {
-      const key = parentKey(n.parentIds?.[0] ?? n.parentId);
-      const total = childrenMap.get(key)?.length ?? 0;
-      const expanded = autoExpand.has(key);
-      const count = (seen.get(key) ?? 0) + 1;
-      seen.set(key, count);
-      if (expanded || count <= MAX_VISIBLE_SIBLINGS) {
-        visible.push(n);
-      } else if (count === MAX_VISIBLE_SIBLINGS + 1 && total > MAX_VISIBLE_SIBLINGS) {
-        const hiddenCount = total - MAX_VISIBLE_SIBLINGS;
-        visible.push({
-          ...n,
-          id: `__collapsed-${key}`,
-          label: "…",
-          title: `+${hiddenCount} ノードを表示`,
-          summary: "",
-          isPlaceholder: true,
-          hiddenCount,
-        });
-      }
-    });
-    return visible;
-  }, [nodes, selectedNodeId, expandedParents]);
+    return nodes.slice().sort(byCreatedAt);
+  }, [nodes]);
 
   const { graphNodes, edges, laneCount, height, width, laneGap } = useMemo(
     () => buildGraph(visibleNodes, mainRef),
@@ -212,16 +166,6 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
     }
     return { pathNodeSet: nodeSet, pathEdgeSet: edgeSet };
   }, [edges, selectedNodeId]);
-
-  const toggleParent = (parentId: string | null | undefined) => {
-    const key = parentKey(parentId);
-    setExpandedParents((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
 
   if (!graphNodes.length) {
     return (
@@ -263,7 +207,6 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const x = laneX(n.lane, laneGap);
             const isSelected = selectedNodeId === n.id;
             const onPath = pathNodeSet.has(n.id);
-            const isPlaceholder = Boolean((n as any).isPlaceholder);
             const isHovered = hoveredNodeId === n.id;
             const isMainLane = n.lane === 0;
             const nodeColor = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
@@ -278,21 +221,17 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
                 key={n.id}
                 className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "ghost" : ""} ${
                   onPath ? "path" : ""
-                } ${isPlaceholder ? "placeholder" : ""} ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
+                } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
                 style={nodeStyle}
                 data-node-id={n.id}
                 data-lane={n.lane}
                 data-testid="gitk-node"
                 title={n.title || n.summary || ""}
                 onClick={() => {
-                  if (isPlaceholder) {
-                    toggleParent(n.parentId);
-                  } else {
-                    onSelect(n.id);
-                    if (n.type === "later" && onPrefill) {
-                      const text = n.title || n.summary || "";
-                      if (text) onPrefill(text);
-                    }
+                  onSelect(n.id);
+                  if (n.type === "later" && onPrefill) {
+                    const text = n.title || n.summary || "";
+                    if (text) onPrefill(text);
                   }
                 }}
                 onMouseEnter={() => setHoveredNodeId(n.id)}
@@ -311,23 +250,18 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
           {graphNodes.map((n) => {
             const isSelected = selectedNodeId === n.id;
             const onPath = pathNodeSet.has(n.id);
-            const isPlaceholder = Boolean((n as any).isPlaceholder);
             const isHovered = hoveredNodeId === n.id;
-            const label = isPlaceholder ? `+${(n as any).hiddenCount || ""}件` : n.title || n.summary || "(no title)";
+            const label = n.title || n.summary || "(no title)";
             const color = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
             return (
               <button
                 key={`list-${n.id}`}
                 className={`gitk-list-item ${isSelected ? "active" : ""} ${onPath ? "path" : ""} ${
                   n.type === "later" ? "ghost" : ""
-                } ${isPlaceholder ? "placeholder" : ""} ${isHovered ? "hovered" : ""}`}
+                } ${isHovered ? "hovered" : ""}`}
                 style={{ top: n.y, "--branch-color": color }}
                 onClick={() => {
-                  if (isPlaceholder) {
-                    toggleParent(n.parentId);
-                  } else {
-                    onSelect(n.id);
-                  }
+                  onSelect(n.id);
                 }}
                 onMouseEnter={() => setHoveredNodeId(n.id)}
                 onMouseLeave={() => setHoveredNodeId(null)}
