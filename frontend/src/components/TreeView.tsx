@@ -219,7 +219,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             return (
               <button
                 key={n.id}
-                className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "ghost" : ""} ${
+                className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "later" : ""} ${
                   onPath ? "path" : ""
                 } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
                 style={nodeStyle}
@@ -257,7 +257,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
               <button
                 key={`list-${n.id}`}
                 className={`gitk-list-item ${isSelected ? "active" : ""} ${onPath ? "path" : ""} ${
-                  n.type === "later" ? "ghost" : ""
+                  n.type === "later" ? "later" : ""
                 } ${isHovered ? "hovered" : ""}`}
                 style={{ top: n.y, "--branch-color": color }}
                 onClick={() => {

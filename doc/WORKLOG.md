@@ -1,5 +1,7 @@
 # 作業サマリと残タスク
 
+2025-01-XX 更新: later→chat 昇格（`/chat` nodeId 指定、label/parentId 維持で messages 上書き）と Ctrl/Cmd+Enter 送信対応を反映。
+
 ## 完了済み
 - インフラ: dev/prod を Terraform で分離、S3+DynamoDB ステート。Amplify/API Gateway/Cognito/Dynamo/KMS/Lambda を各環境に構築。
 - Lambda: TypeScript でリライト（Dynamo/KMS/LLM 連携、OpenAI/OpenRouter/Anthropic/Gemini）。`backend/` に集約し、`./scripts/build-lambda.sh` で dist を生成。

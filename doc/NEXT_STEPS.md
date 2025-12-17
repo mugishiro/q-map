@@ -1,5 +1,7 @@
 # 次にやること（v1 以降の優先タスク）
 
+2025-01-XX 更新: later→chat 昇格（`/chat` nodeId 指定）と Ctrl/Cmd+Enter 送信を前提に反映済み。
+
 - CI/CD 強化  
   - GitHub Actions で Terraform plan/apply（prod は手動承認）とフロント build を自動化。plan 結果を PR にコメント。
   - Amplify プレビュー（PR）を有効化するか方針決定。

@@ -61,7 +61,13 @@ export const api = {
     });
     return handleResponse(res);
   },
-  async postChat(params: { topicId: string; message: string; baseNodeId?: string; label?: string }) {
+  async postChat(params: {
+    topicId: string;
+    message: string;
+    baseNodeId?: string;
+    label?: string;
+    nodeId?: string;
+  }) {
     const res = await fetch(`${API_BASE}/v1/chat`, {
       method: "POST",
       headers: { "content-type": "application/json", ...authHeader() },
@@ -69,7 +75,7 @@ export const api = {
     });
     return handleResponse<{ node: Node }>(res);
   },
-  async createLaterNode(params: { topicId: string; parentId: string; summary: string; label?: string }) {
+  async createLaterNode(params: { topicId: string; parentId: string | null; summary: string; label?: string }) {
     const res = await fetch(`${API_BASE}/v1/nodes`, {
       method: "POST",
       headers: { "content-type": "application/json", ...authHeader() },

@@ -109,6 +109,7 @@ type Props = {
   onAddLater: (input: { summary: string }) => Promise<void>;
   draft: string;
   onDraftChange: (value: string) => void;
+  onPrefillDraft?: (value: string) => void;
 };
 
 type ChatMessageView = ChatMessage & {
@@ -117,7 +118,15 @@ type ChatMessageView = ChatMessage & {
   isQuestion: boolean;
 };
 
-export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftChange }: Props) => {
+export const ChatPanel = ({
+  path,
+  loading,
+  onSend,
+  onAddLater,
+  draft,
+  onDraftChange,
+  onPrefillDraft,
+}: Props) => {
   const canAddLater = !loading && Boolean(draft.trim());
   const logRef = useRef<HTMLDivElement | null>(null);
   const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
@@ -133,7 +142,9 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
         list.push({
           ...m,
           nodeId: n.id,
-          pending: n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…",
+          pending:
+            (m as any).pending === true ||
+            (n.id.startsWith("temp-") && m.role === "assistant" && m.content === "考え中…"),
           isQuestion: m.role === "user",
         })
       )
@@ -144,21 +155,14 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
   useEffect(() => {
     const container = logRef.current;
     if (!container) return;
-    const targetNode = path[path.length - 1]?.id ?? null;
-
-    const targetIdx = history.findIndex((h) => h.nodeId === targetNode && h.isQuestion);
-    const items = container.querySelectorAll<HTMLElement>("[data-chat-item]");
-    const targetEl = targetIdx >= 0 ? items[targetIdx] ?? null : null;
 
     requestAnimationFrame(() => {
-      if (targetEl) {
-        const containerRect = container.getBoundingClientRect();
-        const itemRect = targetEl.getBoundingClientRect();
-        const top = Math.max(0, itemRect.top - containerRect.top + container.scrollTop - 12);
-        container.scrollTo({ top, behavior: "smooth" });
-        return;
+      const scrollTarget = container.scrollHeight;
+      if (typeof container.scrollTo === "function") {
+        container.scrollTo({ top: scrollTarget, behavior: "smooth" });
+      } else {
+        container.scrollTop = scrollTarget;
       }
-      container.scrollTop = container.scrollHeight;
     });
   }, [path]);
 
@@ -268,6 +272,8 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
     container.scrollTop = container.scrollHeight;
   }, [streaming?.shown]);
 
+  const selected = path[path.length - 1];
+
   const send = async () => {
     if (!draft.trim()) return;
     await onSend({ message: draft.trim() });
@@ -279,6 +285,15 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
     if (!summary) return;
     await onAddLater({ summary });
     onDraftChange("");
+  };
+
+  const prefillDraft = (text: string) => {
+    if (!text.trim()) return;
+    if (onPrefillDraft) {
+      onPrefillDraft(text);
+    } else {
+      onDraftChange(text);
+    }
   };
 
   return (
@@ -294,7 +309,7 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
             <button
               className="selection-btn"
               onClick={() => {
-                onDraftChange(selection.text);
+                prefillDraft(selection.text);
                 window.getSelection()?.removeAllRanges();
                 setSelection(null);
               }}
@@ -355,6 +370,12 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
           placeholder="わからないことをAIに質問する"
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              e.preventDefault();
+              void send();
+            }
+          }}
           disabled={loading}
         />
         <div className="chat-actions">

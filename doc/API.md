@@ -226,7 +226,7 @@ export type UserSettings = {
 ## チャット API（ノード生成 + LLM 呼び出し）
 ### POST /chat
 - 用途:
-  - type="chat" の新ノードを作成。
+  - type="chat" の新ノードを作成、または既存の「あとで聞く」ノードを chat に昇格。
   - `baseNodeId` までのパスを辿り、パス内 messages + 今回の user 入力だけで LLM を呼ぶ。
   - 応答を含むノードを返す。
 - リクエスト例（ルート作成）:
@@ -237,9 +237,14 @@ export type UserSettings = {
 ```json
 { "topicId": "t-web-sec", "baseNodeId": "01HF...A1", "message": "具体例を教えて" } // label=A1
 ```
+- リクエスト例（あとで聞くノードを chat に昇格）:
+```json
+{ "topicId": "t-web-sec", "baseNodeId": "01HF...A1", "nodeId": "01HF...B2", "message": "SQL Injection について" }
+```
 - フィールド:
   - `topicId` (必須)
   - `baseNodeId` (null または ノード ID) — null はルート作成
+  - `nodeId` (任意) — type="later" の既存ノードを chat に昇格する場合に指定
   - `message` (必須) — ユーザー入力
 - レスポンス 200:
 ```json
@@ -266,8 +271,8 @@ export type UserSettings = {
   2) `baseNodeId` があれば親を遡ってパス取得。  
   3) パス内 messages を時系列連結し、末尾に今回の user メッセージを追加 → これだけを LLM に送る（兄弟・未来分岐は含めない）。  
   4) UserSettings で LLM クライアントを構築し呼び出し。  
-  5) 応答とともに新ノード（type="chat"）を作成し保存。  
-  6) 新ノードをレスポンスする。
+  5) `nodeId` が指定され type="later" の場合はそのノードを再利用し、title/summary を message で置換・messages を今回の user/assistant 2 件で上書きし、type="chat" に更新する。指定なしの場合は新ノード（type="chat"）を作成。  
+  6) 変更後のノードをレスポンスする（label/parentId は再利用の場合も維持）。
 - LLM 実行には `/me/settings` に保存された API キーが必須。プロバイダ未設定やキーなしの場合は `LLM_API_KEY_MISSING` を返す。
 - ラベルは深さと兄弟数から `A1/B2/...` を自動採番する。
 

@@ -2,6 +2,8 @@
 
 フロントエンドの React SPA から LLM 呼び出しまでの構成を示す。ホスティングは Amplify Hosting（内部で CloudFront/CDN を利用）。`/api/*` は API Gateway 経由で Lambda (BFF) にルーティングする。Lambda は DynamoDB/KMS/LLM 各種 API を扱う。
 
+2025-01-XX 更新メモ: `/v1/chat` は `nodeId` を受け取り、type="later" のノードを chat に昇格させるフローを含む（label/parentId は維持し messages を送信/応答の 2 件で上書き）。フロントは Ctrl/Cmd+Enter 送信をサポート。
+
 ```
 [ブラウザ: React SPA]
    │  HTTPS (Amplify Hosting のドメイン)

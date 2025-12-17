@@ -2,6 +2,8 @@
 
 機能ドキュメントを補完する、認証・レート制御・運用/監視などの方針をまとめる。
 
+2025-01-XX 更新: `/chat` の later→chat 昇格（nodeId 指定）とフロントの Ctrl/Cmd+Enter 送信を前提に整合を確認。
+
 ## 認証・認可
 - 認証: Cognito 等の JWT を `Authorization: Bearer <JWT>` で必須。`userId` は JWT から解決。
 - 認可: すべてのリソースは `userId` に紐づく。Topic/Node 取得時は `userId` 照合で早期拒否。

@@ -1,12 +1,20 @@
 import { useMemo, useState } from "react";
 
-type Props = {
-  items: { id: string; text: string; createdAt: string }[];
-  onUse: (text: string) => void;
-  onRemove: (id: string) => void;
+type LaterItem = {
+  id: string;
+  text: string;
+  createdAt: string;
+  label?: string;
+  parentLabel?: string;
 };
 
-export const LaterList = ({ items, onUse, onRemove }: Props) => {
+type Props = {
+  items: LaterItem[];
+  activeId: string | null;
+  onOpen: (item: LaterItem) => void;
+};
+
+export const LaterList = ({ items, activeId, onOpen }: Props) => {
   const [open, setOpen] = useState(false);
 
   const sorted = useMemo(
@@ -29,20 +37,23 @@ export const LaterList = ({ items, onUse, onRemove }: Props) => {
         <div className="later-list">
           {sorted.length === 0 && <div className="empty">登録なし</div>}
           {sorted.map((n) => (
-            <div key={n.id} className="later-item" title={n.text}>
-              <button className="later-main" onClick={() => onUse(n.text)} type="button">
-                <span className="later-text">{n.text || "(no title)"}</span>
-              </button>
-              <button
-                className="later-remove"
-                onClick={() => onRemove(n.id)}
-                type="button"
-                aria-label="削除"
-                title="削除"
-              >
-                ×
-              </button>
-            </div>
+            <button
+              key={n.id}
+              className={`later-item ${n.id === activeId ? "active" : ""}`}
+              title={n.text}
+              onClick={() => onOpen(n)}
+              type="button"
+            >
+              {(n.label || n.parentLabel) && (
+                <div className="later-meta-line">
+                  {n.label && <span className="later-label">{n.label}</span>}
+                  {n.parentLabel && <span className="later-parent">親: {n.parentLabel}</span>}
+                </div>
+              )}
+              <div className="later-text" aria-label="保存済みの質問">
+                {n.text || "(no title)"}
+              </div>
+            </button>
           ))}
         </div>
       )}

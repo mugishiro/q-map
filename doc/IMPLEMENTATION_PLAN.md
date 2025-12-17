@@ -1,5 +1,7 @@
 # 実装の進め方（v1）
 
+2025-01-XX 更新: `/chat` で `nodeId` 指定による「あとで聞く」ノード昇格を組み込み（label/parentId を維持し messages を 2 件で上書き）。フロントは Ctrl/Cmd+Enter 送信対応。
+
 ## 1. インフラ/IaC
 - CDK などで API Gateway HTTP API + 単一 Lambda(BFF) + DynamoDB(UserSettings/Topics/Nodes+GSI1) + KMS を定義。
 - 環境変数: TABLE 名、GSI 名、KMS ARN、LLM エンドポイント/モデル上限。

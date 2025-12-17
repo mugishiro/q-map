@@ -571,27 +571,28 @@ export const handler = async (
 
     // POST /v1/nodes (later)
     if (method === "POST" && path === "/v1/nodes") {
-      const body = parseBody<{ topicId?: string; parentId?: string; summary?: string; label?: string }>(event);
-      if (!ensureBody(body, ["topicId", "parentId", "summary"]))
-        return error("VALIDATION_ERROR", "topicId, parentId, summary are required");
+      const body = parseBody<{ topicId?: string; parentId?: string | null; summary?: string; label?: string }>(event);
+      if (!ensureBody(body, ["topicId", "summary"]))
+        return error("VALIDATION_ERROR", "topicId and summary are required");
       const topic = await getTopic(userId, body.topicId!);
       if (!topic) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
       const now = nowIso();
       const nodeId = `node#${newId()}`;
-      const label = body.label || (await generateLabel(body.topicId!, body.parentId!, userId));
+      const parentId = body.parentId ?? null;
+      const label = body.label || (await generateLabel(body.topicId!, parentId, userId));
       const baseLater: NodeItem = {
         topicId: body.topicId!,
         nodeId,
         userId,
         label,
-        title: `あとで: ${body.summary}`,
+        title: body.summary,
         summary: body.summary,
         type: "later",
         messages: [],
         createdAt: now,
         updatedAt: now,
       };
-      const item: NodeItem = attachParentId(baseLater, body.parentId);
+      const item: NodeItem = attachParentId(baseLater, parentId);
       await ddb.put({ TableName: NODES_TABLE, Item: item }).promise();
       const { messages, ...rest } = item;
       return json(201, rest);
@@ -649,6 +650,7 @@ export const handler = async (
         message?: string;
         baseNodeId?: string;
         label?: string;
+        nodeId?: string; // reuse existing later node
       }>(event);
       if (!ensureBody(body, ["topicId", "message"]))
         return error("VALIDATION_ERROR", "topicId and message are required");
@@ -656,10 +658,19 @@ export const handler = async (
       const topic = await getTopic(userId, body.topicId!);
       if (!topic) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
 
+      const targetNode = body.nodeId ? await findNodeById(userId, body.nodeId) : null;
+      if (body.nodeId && !targetNode) return error("NODE_NOT_FOUND", "target node not found", 404);
+      if (targetNode && targetNode.topicId !== body.topicId) {
+        return error("NODE_TOPIC_MISMATCH", "target node does not belong to the topic", 400);
+      }
+
       let baseNode: NodeItem | null = null;
       if (body.baseNodeId) {
         baseNode = await findNodeById(userId, body.baseNodeId);
         if (!baseNode) return error("NODE_NOT_FOUND", "baseNode not found", 404);
+      } else if (targetNode?.parentId) {
+        baseNode = await getNode(targetNode.topicId, targetNode.parentId);
+        if (baseNode && baseNode.userId !== userId) baseNode = null;
       }
 
       // パスの messages を連結
@@ -670,7 +681,8 @@ export const handler = async (
           (n.messages || []).forEach((m) => history.push(m));
         }
       }
-      history.push({ role: "user", content: body.message!, createdAt: nowIso() });
+      const userMessage: Message = { role: "user", content: body.message!, createdAt: nowIso() };
+      history.push(userMessage);
 
       let assistantMsg: Message;
       try {
@@ -683,6 +695,43 @@ export const handler = async (
       }
 
       const now = nowIso();
+      const storedMessages: Message[] = [
+        { role: "user", content: body.message!, createdAt: now },
+        assistantMsg,
+      ];
+
+      if (targetNode) {
+        if (targetNode.type && targetNode.type !== "later") {
+          return error("NODE_NOT_LATER", "target node is not a later node", 400);
+        }
+        await ddb
+          .update({
+            TableName: NODES_TABLE,
+            Key: { topicId: targetNode.topicId, nodeId: targetNode.nodeId },
+            UpdateExpression:
+              "SET title = :title, summary = :summary, #type = :type, messages = :messages, updatedAt = :updatedAt",
+            ExpressionAttributeValues: {
+              ":title": body.message,
+              ":summary": body.message,
+              ":type": "chat",
+              ":messages": storedMessages,
+              ":updatedAt": now,
+            },
+            ExpressionAttributeNames: { "#type": "type" },
+          })
+          .promise();
+        return json(200, {
+          node: {
+            ...targetNode,
+            title: body.message,
+            summary: body.message,
+            type: "chat",
+            messages: storedMessages,
+            updatedAt: now,
+          },
+        });
+      }
+
       const nodeId = `node#${newId()}`;
       const parentId = body.baseNodeId || null;
       const label = body.label || (await generateLabel(body.topicId!, parentId, userId));
@@ -694,10 +743,7 @@ export const handler = async (
         title: body.message,
         summary: body.message,
         type: "chat",
-        messages: [
-          { role: "user", content: body.message!, createdAt: now },
-          assistantMsg,
-        ],
+        messages: storedMessages,
         createdAt: now,
         updatedAt: now,
       };

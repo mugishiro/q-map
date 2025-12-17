@@ -4,7 +4,6 @@ import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderMenu from "./components/HeaderMenu";
-import LaterList from "./components/LaterList";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
@@ -43,14 +42,21 @@ const generateLocalLabel = (parentId: string | null, nodes: Node[]): string => {
   return `${letter}${siblings}`;
 };
 
+const stripLaterPrefix = (value?: string | null) => (value ? value.replace(/^あとで[:：]\s*/i, "") : value);
+const isLaterNode = (node?: Node | null) => {
+  if (!node) return false;
+  const hasMessages = Array.isArray(node.messages) && node.messages.length > 0;
+  return node.type === "later" || (!node.type && !hasMessages);
+};
+
 function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [path, setPath] = useState<Node[]>([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [lastLaterNodeId, setLastLaterNodeId] = useState<string | null>(null);
   const [chatDraft, setChatDraft] = useState("");
-  const [laterItems, setLaterItems] = useState<{ id: string; text: string; createdAt: string }[]>([]);
-  const [branchBaseId, setBranchBaseId] = useState<string | null>(null);
   const [topicsCollapsed, setTopicsCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +132,7 @@ function App() {
     void run();
   }, []);
 
-  const loadNodes = async (topicId: string, selectNodeId?: string) => {
+  const loadNodes = async (topicId: string, selectNodeId?: string | null) => {
     setLoading(true);
     setError(null);
     try {
@@ -135,13 +141,23 @@ function App() {
         id: n.nodeId ?? n.id,
         ...n,
       }));
-      setNodes(mapped);
-      if (selectNodeId) {
-        setPath(buildPathLocal(selectNodeId, mapped));
+      const normalized = mapped.map((n) => {
+        if (isLaterNode(n)) {
+          return { ...n, type: "later", title: stripLaterPrefix(n.title), summary: stripLaterPrefix(n.summary) };
+        }
+        return n;
+      });
+      setNodes(normalized);
+      const targetId = selectNodeId ?? selectedNodeId;
+      if (targetId) {
+        setPath(buildPathLocal(targetId, normalized));
+        setSelectedNodeId(targetId);
+        const selectedNode = normalized.find((n) => n.id === targetId);
+        setLastLaterNodeId(isLaterNode(selectedNode) ? targetId : null);
       } else {
         setPath([]);
       }
-      return mapped;
+      return normalized;
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -153,14 +169,84 @@ function App() {
     if (selectedTopicId) void loadNodes(selectedTopicId);
   }, [selectedTopicId]);
 
+  useEffect(() => {
+    if (selectedNodeId) {
+      const exists = nodes.find((n) => n.id === selectedNodeId);
+      if (exists) {
+        setPath(buildPathLocal(selectedNodeId, nodes));
+        if (isLaterNode(exists)) {
+          setLastLaterNodeId(selectedNodeId);
+        }
+      } else {
+        setPath([]);
+      }
+    }
+  }, [nodes, selectedNodeId]);
+
+  const applyDraft = (text: string) => {
+    const next = text.trim();
+    if (!next) return;
+    setChatDraft(next);
+  };
+
+  const handleDraftChange = (value: string) => {
+    setChatDraft(value);
+  };
+
   const handleSend = async ({ message, baseNodeId }: { message: string; baseNodeId?: string }) => {
     if (!selectedTopicId) return;
     const prevNodes = nodes;
     const prevPath = path;
+    const activeFromSelection = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null;
+    const activeNodeFromPath = path[path.length - 1] ?? null;
+    const activeNode = activeFromSelection ?? activeNodeFromPath;
+    const activeNodeId = activeNode?.id ?? activeNodeFromPath?.id ?? selectedNodeId ?? null;
+    const targetLaterNode =
+      isLaterNode(activeFromSelection) && activeFromSelection
+        ? activeFromSelection
+        : isLaterNode(activeNodeFromPath) && activeNodeFromPath
+        ? activeNodeFromPath
+        : lastLaterNodeId
+        ? nodes.find((n) => n.id === lastLaterNodeId) ?? null
+        : null;
+    if (targetLaterNode) {
+      setLastLaterNodeId(null);
+    }
     setLoading(true);
     setError(null);
     try {
-      const targetBase = branchBaseId || baseNodeId || path[path.length - 1]?.id || undefined;
+      if (targetLaterNode) {
+        const now = new Date().toISOString();
+        const optimisticNode: Node = {
+          ...targetLaterNode,
+          title: message,
+          summary: message,
+          type: "chat",
+          updatedAt: now,
+          messages: [
+            { role: "user", content: message, createdAt: now },
+            { role: "assistant", content: "考え中…", createdAt: now, pending: true as any },
+          ],
+        };
+        const optimisticList = nodes.map((n) => (n.id === targetLaterNode.id ? optimisticNode : n));
+        setNodes(optimisticList);
+        setPath(buildPathLocal(targetLaterNode.id, optimisticList));
+        setSelectedNodeId(targetLaterNode.id);
+        setChatDraft("");
+
+        const res = await api.postChat({
+          topicId: selectedTopicId,
+          message,
+          baseNodeId: targetLaterNode.parentId ?? undefined,
+          nodeId: targetLaterNode.id,
+        });
+        const updatedId = res.node.nodeId ?? res.node.id ?? targetLaterNode.id;
+        setSelectedNodeId(updatedId);
+        await loadNodes(selectedTopicId, updatedId);
+        return;
+      }
+
+      const targetBase = baseNodeId || activeNodeId || undefined;
       const now = new Date().toISOString();
       const tempId = `temp-${Date.now()}`;
       const optimisticLabel = generateLocalLabel(targetBase ?? null, nodes);
@@ -176,21 +262,24 @@ function App() {
         updatedAt: now,
         messages: [
           { role: "user", content: message, createdAt: now },
-          { role: "assistant", content: "考え中…", createdAt: now },
+          { role: "assistant", content: "考え中…", createdAt: now, pending: true as any },
         ],
       };
       const optimisticList = [...nodes, optimisticNode];
       setNodes(optimisticList);
       setPath(buildPathLocal(tempId, optimisticList));
-      setBranchBaseId(null);
+      setSelectedNodeId(tempId);
       setChatDraft("");
 
       const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
-      await loadNodes(selectedTopicId, res.node.nodeId ?? res.node.id);
+      const newId = res.node.nodeId ?? res.node.id;
+      setSelectedNodeId(newId);
+      await loadNodes(selectedTopicId, newId);
     } catch (e) {
       setNodes(prevNodes);
       setPath(prevPath);
       setError((e as Error).message);
+      setChatDraft(message);
     } finally {
       setLoading(false);
     }
@@ -199,14 +288,57 @@ function App() {
   const handleLater = async ({ summary }: { summary: string }) => {
     const text = summary.trim();
     if (!text) return;
+    if (!selectedTopicId) return;
+    const clean = stripLaterPrefix(text);
+    const prevNodes = nodes;
+    const prevPath = path;
+    const targetBase = selectedNodeId || path[path.length - 1]?.id || null;
+    setLoading(true);
+    setError(null);
     const now = new Date().toISOString();
-    setLaterItems((prev) => [{ id: `later-${Date.now()}`, text, createdAt: now }, ...prev]);
+    const tempId = `later-${Date.now()}`;
+    const optimisticLabel = generateLocalLabel(targetBase, nodes);
+    const optimisticNode: Node = {
+      id: tempId,
+      label: optimisticLabel,
+      topicId: selectedTopicId ?? "",
+      parentId: targetBase,
+      title: clean,
+      summary: clean,
+      type: "later",
+      createdAt: now,
+      updatedAt: now,
+      messages: [],
+    };
+    const optimisticList = [...nodes, optimisticNode];
+    setNodes(optimisticList);
+    setPath(buildPathLocal(tempId, optimisticList));
+    setSelectedNodeId(tempId);
+    setLastLaterNodeId(tempId);
     setChatDraft("");
+
+    try {
+      const res = await api.createLaterNode({
+        topicId: selectedTopicId ?? "",
+        parentId: targetBase,
+        summary: clean,
+        label: optimisticLabel,
+      });
+      await loadNodes(selectedTopicId ?? "", (res as any).nodeId ?? (res as any).id);
+    } catch (e) {
+      setNodes(prevNodes);
+      setPath(prevPath);
+      setError((e as Error).message);
+      setChatDraft(clean);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSelectTopic = async (id: string) => {
     setSelectedTopicId(id);
-    setBranchBaseId(null);
+    setSelectedNodeId(null);
+    setLastLaterNodeId(null);
     if (isMobile) setMobileSection("tree");
     await loadNodes(id);
   };
@@ -229,12 +361,22 @@ function App() {
     setTopics([]);
     setNodes([]);
     setPath([]);
+    setSelectedNodeId(null);
+    setLastLaterNodeId(null);
+    setChatDraft("");
   };
 
   const selectNode = (nodeId: string) => {
-    setBranchBaseId(nodeId);
-    const localPath = buildPathLocal(nodeId, nodes);
-    setPath(localPath);
+    setSelectedNodeId(nodeId);
+    setPath(buildPathLocal(nodeId, nodes));
+    const target = nodes.find((n) => n.id === nodeId);
+    if (target?.type === "later") {
+      setLastLaterNodeId(nodeId);
+      const text = stripLaterPrefix(target.title || target.summary || "");
+      if (text) applyDraft(text);
+    } else {
+      setLastLaterNodeId(null);
+    }
   };
 
   const handleLoginStart = async () => {
@@ -277,30 +419,31 @@ function App() {
     </div>
   );
 
+  const activeNodeId = path[path.length - 1]?.id ?? null;
+
   const center = (
     <TreeView
       nodes={nodes}
-      selectedNodeId={path[path.length - 1]?.id ?? null}
-      onSelect={(nodeId) => selectNode(nodeId)}
+      selectedNodeId={activeNodeId}
+      onSelect={(nodeId) => {
+        selectNode(nodeId);
+        if (isMobile) setMobileSection("chat");
+      }}
       mainRef="main"
-      onPrefill={(text) => setChatDraft(text)}
+      onPrefill={applyDraft}
     />
   );
 
   const right = (
     <div className="stack gap-m fill">
-      <LaterList
-        items={laterItems}
-        onUse={(text) => setChatDraft(text)}
-        onRemove={(id) => setLaterItems((prev) => prev.filter((i) => i.id !== id))}
-      />
       <ChatPanel
         path={path}
         loading={loading}
         onSend={handleSend}
         onAddLater={handleLater}
         draft={chatDraft}
-        onDraftChange={setChatDraft}
+        onDraftChange={handleDraftChange}
+        onPrefillDraft={applyDraft}
       />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
     </div>

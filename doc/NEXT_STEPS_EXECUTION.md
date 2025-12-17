@@ -2,6 +2,8 @@
 
 `doc/NEXT_STEPS.md` の粒度を上げ、すぐ着手できるようにした具体化メモ。前提仕様は `SPEC.md` / `USER_FLOW.md` / `API.md` を踏襲する。
 
+2025-01-XX 更新: later→chat 昇格（`/chat` で nodeId 指定）と Ctrl/Cmd+Enter 送信を現行仕様として反映。
+
 ## Amplify Hosting / ルーティング
 - 現状: Amplify デフォルトドメインを使用。`modules/amplify` で `/api/<*>` → APIGW (`https://{api}/{stage}/<*>`) の rewrite を設定済み。Amplify 環境では `VITE_API_BASE_URL=/api` を渡し、ローカル開発は `.env.dev` で APIGW 直叩き（例: `https://14z0sascyi.../dev`）。  
 - カスタムドメインを入れる場合:  

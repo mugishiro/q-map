@@ -1,5 +1,7 @@
 # QMap インフラ構成メモ
 
+2025-01-XX 更新: `/chat` で `nodeId` を受け取って later→chat 昇格を処理する現行コードを前提。フロントは Ctrl/Cmd+Enter 送信を持つ。
+
 - IaC: Terraform（単一ディレクトリ: `infra/terraform`、環境切替は backend-*.hcl + tfvars）
 - 状態管理: S3 バケット `qmap-tfstate-710146154969-apne1` + DynamoDB ロックテーブル `qmap-terraform-locks`（backend-dev.hcl / backend-prod.hcl で key を dev/prod に分離）
 - デプロイ対象: Amplify（GitHub `https://github.com/mugishiro/q-map.git`）、API Gateway (HTTP API)、Cognito、DynamoDB、KMS、Lambda

@@ -2,6 +2,8 @@
 
 QMap が満たすアクセスパターンに対して、v1 で採用する 3 テーブル構成（UserSettings / Topics / Nodes）をまとめる。将来 Single-table 化は移行で対応可能。
 
+2025-01-XX 更新: `/chat` で `nodeId` を指定し type="later" を chat に昇格するパスを追加。既存レコードを更新し label/parentId は保持、messages を送信/応答 2 件で上書き。Nodes テーブルの `type`/`messages` に対し上書き更新が発生する。
+
 ## 0. アクセスパターン
 - ユーザーの Topic 一覧を取得: userId → Topics
 - Topic 内のノード一覧を取得（ツリー描画）: topicId → Nodes
