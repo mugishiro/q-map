@@ -83,11 +83,21 @@ const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = 
     }
   };
 
+  const row = (label: string, control: JSX.Element) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <span style={{ width: 80, fontWeight: 600 }}>{label}</span>
+      <div style={{ flex: 1 }}>{control}</div>
+    </div>
+  );
+
   const llmSection = (
     <div className="stack gap-s">
-      <div className="label">LLM 設定</div>
-      <label className="stack gap-xs">
-        <span className="helper-inline">Provider</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="label">LLM 設定</span>
+        {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
+      </div>
+      {row(
+        "Provider",
         <select
           className="input"
           value={form.llmProvider}
@@ -99,36 +109,34 @@ const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = 
             </option>
           ))}
         </select>
-      </label>
-      <label className="stack gap-xs">
-        <span className="helper-inline">Model</span>
+      )}
+      {row(
+        "Model",
         <input
           className="input"
           placeholder="例: gpt-4o-mini"
           value={form.model}
           onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
         />
-      </label>
-      <label className="stack gap-xs">
-        <span className="helper-inline">API Key</span>
-        <input
-          className="input"
-          placeholder="sk-..."
-          type={showApiKey ? "text" : "password"}
-          value={form.apiKey}
-          onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
-        />
-        <div className="helper-inline" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-            <input type="checkbox" checked={showApiKey} onChange={(e) => setShowApiKey(e.target.checked)} />
-            <span>キーを表示</span>
-          </label>
+      )}
+      {row(
+        "API Key",
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            className="input"
+            style={{ flex: 1 }}
+            placeholder="sk-..."
+            type={showApiKey ? "text" : "password"}
+            value={form.apiKey}
+            onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+          />
+          <button className="btn ghost" onClick={() => setShowApiKey((v) => !v)}>
+            {showApiKey ? "隠す" : "表示"}
+          </button>
         </div>
-        <span className="helper-inline">「保存」で適用されます</span>
-        {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
-      </label>
-      <div className="stack gap-xs" style={{ flexDirection: "row", gap: "8px" }}>
-        <button className="btn solid" onClick={save} disabled={loading}>
+      )}
+      <div style={{ display: "flex", gap: "8px" }}>
+        <button className="btn solid" onClick={save} disabled={loading} style={{ flex: 1 }}>
           保存
         </button>
         {showCloseButton && (
