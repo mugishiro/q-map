@@ -63,8 +63,17 @@ export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) =>
           <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
           <ThemeSelect />
           <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
-          <button className="btn solid" onClick={() => setShowLlm(true)}>
-            LLM 設定を開く
+          <button className="btn solid" onClick={() => setShowLlm(true)} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M6 7.5a4.5 4.5 0 0 1 4.5-4.5h6a4.5 4.5 0 0 1 0 9h-.75a.75.75 0 0 0-.75.75v1.5a.75.75 0 0 1-1.22.57L11.5 13H10.5A4.5 4.5 0 0 1 6 8.5v-1Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            LLM 設定
           </button>
         </div>
       )}
