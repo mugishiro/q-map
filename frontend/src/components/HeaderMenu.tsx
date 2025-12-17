@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { api } from "../api";
 import HeaderAuth from "./HeaderAuth";
 import SettingsPanel from "./SettingsPanel";
 import ThemeSelect from "./ThemeSelect";
@@ -12,6 +13,8 @@ type Props = {
 export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) => {
   const [open, setOpen] = useState(false);
   const [showLlm, setShowLlm] = useState(false);
+  const loggedIn = Boolean(api.getToken());
+  const userLabel = loggedIn ? "ログイン中" : "未ログイン";
   return (
     <div className="settings-header">
       <button className="icon-btn" aria-label="設定" title="設定" onClick={() => setOpen((v) => !v)}>
@@ -30,10 +33,37 @@ export const HeaderMenu = ({ onAuthChange, onLoginSuccess, onLogout }: Props) =>
         </svg>
       </button>
       {open && (
-        <div className="settings-popover card stack gap-m">
+        <div className="settings-popover card stack gap-m" style={{ minWidth: "320px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "#e0f2fe",
+                color: "#0ea5e9",
+                display: "grid",
+                placeItems: "center",
+                fontWeight: 700,
+              }}
+            >
+              Q
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+              <span style={{ fontWeight: 700, fontSize: "14px" }}>{userLabel}</span>
+            </div>
+            <button className="icon-btn" aria-label="閉じる" title="閉じる" onClick={() => setOpen(false)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
           <HeaderAuth onAuthChange={onAuthChange} onLoginSuccess={onLoginSuccess} onLogout={onLogout} />
+          <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
           <ThemeSelect />
-          <button className="btn ghost" onClick={() => setShowLlm(true)}>
+          <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
+          <button className="btn solid" onClick={() => setShowLlm(true)}>
             LLM 設定を開く
           </button>
         </div>

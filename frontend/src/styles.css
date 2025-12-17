@@ -81,6 +81,10 @@ body {
   color: var(--text);
   overflow: hidden;
 }
+:root[data-grid="off"] body,
+body[data-grid="off"] {
+  background-image: none;
+}
 
 .shell {
   min-height: 100vh;
@@ -369,6 +373,10 @@ body {
   padding: 12px 12px 12px 24px;
   overflow-x: hidden;
   overflow-y: auto;
+}
+:root[data-grid="off"] .gitk-shell,
+body[data-grid="off"] .gitk-shell {
+  background-image: none;
 }
 .gitk-svg {
   position: absolute;
