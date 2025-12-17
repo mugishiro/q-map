@@ -39,13 +39,13 @@ const LIST_GAP = 36;
 const BRANCH_COLORS = [
   "#22c55e", // sprout green
   "#0ea5e9", // sky blue
+  "#a78bfa", // violet
+  "#f59e0b", // amber
   "#10b981", // jade
-  "#0ea6a0", // teal
-  "#7dd3fc", // mist blue
-  "#4ade80", // fresh lime
+  "#14b8a6", // teal
 ];
-const PATH_COLOR = "#22c55e";
-const NON_PATH_COLOR = "#bae6fd";
+const PATH_EMPHASIS = 0.92;
+const NON_PATH_OPACITY = 0.58;
 
 const byCreatedAt = (a: Node, b: Node) => {
   if (a.createdAt === b.createdAt) return a.id < b.id ? -1 : 1;
@@ -265,9 +265,11 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
           <svg className="gitk-svg" width={width} height={height}>
             {edges.map((e, idx) => {
               const isPathEdge = pathEdgeSet.has(`${e.parentId}|${e.childId}`);
-              const edgeColor = isPathEdge ? PATH_COLOR : e.color || NON_PATH_COLOR;
+              const edgeColor = e.color ?? "#22c55e";
               const edgeStyle: CSSProperties | undefined = {
                 stroke: edgeColor,
+                strokeOpacity: isPathEdge ? PATH_EMPHASIS : NON_PATH_OPACITY,
+                strokeWidth: isPathEdge ? 2.8 : 2.1,
               };
               return (
                 <path
@@ -286,8 +288,13 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const isPlaceholder = Boolean((n as any).isPlaceholder);
             const isHovered = hoveredNodeId === n.id;
             const isMainLane = n.lane === 0;
-            const nodeColor = onPath || isSelected ? PATH_COLOR : n.color || NON_PATH_COLOR;
-            const nodeStyle: CSSProperties = { top: n.y, left: x, "--branch-color": nodeColor };
+            const nodeColor = n.color || "#22c55e";
+            const nodeStyle: CSSProperties = {
+              top: n.y,
+              left: x,
+              "--branch-color": nodeColor,
+              "--branch-emphasis": onPath || isSelected ? nodeColor : "transparent",
+            };
             return (
               <button
                 key={n.id}
@@ -329,7 +336,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const isPlaceholder = Boolean((n as any).isPlaceholder);
             const isHovered = hoveredNodeId === n.id;
             const label = isPlaceholder ? `+${(n as any).hiddenCount || ""}件` : n.title || n.summary || "(no title)";
-            const color = onPath || isSelected ? PATH_COLOR : n.color || NON_PATH_COLOR;
+            const color = n.color || "#22c55e";
             return (
               <button
                 key={`list-${n.id}`}
