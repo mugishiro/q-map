@@ -567,6 +567,10 @@ body {
   box-shadow: var(--shadow);
   padding: 10px 12px;
 }
+.bubble-flat.streaming {
+  position: relative;
+  border-color: var(--accent-2);
+}
 .bubble-flat.pending {
   opacity: 0.9;
   display: flex;
@@ -609,6 +613,26 @@ body {
 }
 .bubble-content li p + p {
   margin-top: 6px;
+}
+.stream-caret {
+  display: inline-block;
+  width: 10px;
+  height: 16px;
+  margin-left: 6px;
+  background: var(--text);
+  border-radius: 3px;
+  opacity: 0.65;
+  animation: stream-blink 0.95s steps(2, jump-none) infinite;
+}
+@keyframes stream-blink {
+  0%,
+  50% {
+    opacity: 0.2;
+  }
+  51%,
+  100% {
+    opacity: 0.8;
+  }
 }
 .selection-toolbar {
   position: absolute;

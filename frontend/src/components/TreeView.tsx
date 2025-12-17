@@ -149,9 +149,8 @@ const laneX = (lane: number, gap: number) => PADDING_X + lane * gap;
 const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: number }, gap: number) => {
   const x1 = laneX(from.lane, gap);
   const x2 = laneX(to.lane, gap);
-  const clearance = 6;
-  const y1 = from.y + clearance;
-  const y2 = to.y - clearance;
+  const y1 = from.y;
+  const y2 = to.y;
   // straight if same lane
   if (from.lane === to.lane) return `M ${x1} ${y1} L ${x1} ${y2}`;
   // branch: go horizontal at parent level, then down

@@ -121,6 +121,10 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
   const canAddLater = !loading && Boolean(draft.trim());
   const logRef = useRef<HTMLDivElement | null>(null);
   const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
+  const [streaming, setStreaming] = useState<{ key: string; shown: string; full: string } | null>(null);
+  const streamedKeys = useRef<Set<string>>(new Set());
+  const streamFrameRef = useRef<number | null>(null);
+  const prevLastAssistantKeyRef = useRef<string | null>(null);
 
   const history: ChatMessageView[] = useMemo(() => {
     const list: ChatMessageView[] = [];
@@ -201,6 +205,69 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
     };
   }, []);
 
+  const messageKey = (m: ChatMessageView) => `${m.nodeId}-${m.createdAt}-${m.content.length}`;
+
+  useEffect(() => {
+    // Stream the newest assistant message once per message key
+    if (streamFrameRef.current) {
+      window.cancelAnimationFrame(streamFrameRef.current);
+      streamFrameRef.current = null;
+    }
+    const lastAssistant = [...history].reverse().find((m) => m.role === "assistant" && !m.pending);
+    if (!lastAssistant || !lastAssistant.content) {
+      setStreaming(null);
+      return;
+    }
+    const key = messageKey(lastAssistant);
+    const createdAtMs = Date.parse(lastAssistant.createdAt);
+    const isRecent = Number.isFinite(createdAtMs) ? Date.now() - createdAtMs < 30_000 : false;
+    const isNewKey = key !== prevLastAssistantKeyRef.current;
+    prevLastAssistantKeyRef.current = key;
+
+    if (streamedKeys.current.has(key) || !isRecent || !isNewKey) {
+      streamedKeys.current.add(key);
+      setStreaming(null);
+      return;
+    }
+    streamedKeys.current.add(key);
+    if (streamedKeys.current.size > 200) {
+      const first = streamedKeys.current.values().next().value;
+      streamedKeys.current.delete(first);
+    }
+
+    const full = lastAssistant.content;
+    const targetMs = Math.max(900, Math.min(3600, full.length * 26)); // adjust speed by length
+    const started = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - started;
+      const progress = Math.min(1, elapsed / targetMs);
+      const nextCount = Math.max(1, Math.floor(full.length * progress));
+      const next = full.slice(0, nextCount);
+      setStreaming({ key, shown: next, full });
+      if (progress < 1) {
+        streamFrameRef.current = window.requestAnimationFrame(tick);
+      } else {
+        streamFrameRef.current = null;
+        setStreaming(null);
+      }
+    };
+    setStreaming({ key, shown: "", full });
+    streamFrameRef.current = window.requestAnimationFrame(tick);
+    return () => {
+      if (streamFrameRef.current) {
+        window.cancelAnimationFrame(streamFrameRef.current);
+        streamFrameRef.current = null;
+      }
+    };
+  }, [history]);
+
+  useEffect(() => {
+    if (!streaming || !logRef.current) return;
+    const container = logRef.current;
+    container.scrollTop = container.scrollHeight;
+  }, [streaming?.shown]);
+
   const send = async () => {
     if (!draft.trim()) return;
     await onSend({ message: draft.trim() });
@@ -252,7 +319,9 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
         {history.map((m, idx) => (
           <div
             key={`${m.role}-${idx}`}
-            className={`bubble-flat ${m.role} ${m.pending ? "pending" : ""}`}
+            className={`bubble-flat ${m.role} ${m.pending ? "pending" : ""} ${
+              streaming && streaming.key === messageKey(m) ? "streaming" : ""
+            }`}
             data-chat-item
           >
             {m.pending ? (
@@ -267,8 +336,13 @@ export const ChatPanel = ({ path, loading, onSend, onAddLater, draft, onDraftCha
             ) : (
               <div className="bubble-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                  {normalizeMarkdown(m.content)}
+                  {normalizeMarkdown(streaming && streaming.key === messageKey(m) ? streaming.shown : m.content)}
                 </ReactMarkdown>
+                {streaming &&
+                  streaming.key === messageKey(m) &&
+                  streaming.shown.length < streaming.full.length && (
+                    <span className="stream-caret" aria-hidden="true" />
+                  )}
               </div>
             )}
           </div>
