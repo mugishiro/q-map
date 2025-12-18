@@ -149,11 +149,12 @@ const countChildren = async (topicId: string, parentId: string | null, userId: s
         TableName: NODES_TABLE,
         IndexName: NODES_GSI1,
         KeyConditionExpression: "parentId = :p",
-        ExpressionAttributeValues: { ":p": parentId },
+        FilterExpression: "topicId = :t",
+        ExpressionAttributeValues: { ":p": parentId, ":t": topicId },
       })
     .promise();
   const items = (res.Items as NodeItem[]) ?? [];
-  return items.filter((n) => n.userId === userId).length;
+  return items.filter((n) => n.userId === userId && n.topicId === topicId).length;
 };
 
 const generateLabel = async (topicId: string, parentId: string | null, userId: string) => {
@@ -256,8 +257,12 @@ const queryNodesByTopic = async (userId: string, topicId: string) => {
     if (res.Items) items.push(...(res.Items as NodeItem[]));
     lastKey = res.LastEvaluatedKey;
   } while (lastKey);
-  // Filter by userId for safety
-  return items.filter((n) => n.userId === userId);
+  // Filter by userId for safety and order deterministically
+  const filtered = items.filter((n) => n.userId === userId);
+  return filtered.sort((a, b) => {
+    if (a.createdAt === b.createdAt) return a.nodeId < b.nodeId ? -1 : 1;
+    return a.createdAt < b.createdAt ? -1 : 1;
+  });
 };
 
 const findNodeById = async (userId: string, nodeId: string) => {
