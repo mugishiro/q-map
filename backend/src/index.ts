@@ -242,15 +242,22 @@ const deleteTopicWithNodes = async (userId: string, topicId: string) => {
 };
 
 const queryNodesByTopic = async (userId: string, topicId: string) => {
-  const res = await ddb
-    .query({
-      TableName: NODES_TABLE,
-      KeyConditionExpression: "topicId = :t",
-      ExpressionAttributeValues: { ":t": topicId },
-    })
-    .promise();
+  let lastKey: AWS.DynamoDB.DocumentClient.Key | undefined;
+  const items: NodeItem[] = [];
+  do {
+    const res = await ddb
+      .query({
+        TableName: NODES_TABLE,
+        KeyConditionExpression: "topicId = :t",
+        ExpressionAttributeValues: { ":t": topicId },
+        ExclusiveStartKey: lastKey,
+      })
+      .promise();
+    if (res.Items) items.push(...(res.Items as NodeItem[]));
+    lastKey = res.LastEvaluatedKey;
+  } while (lastKey);
   // Filter by userId for safety
-  return ((res.Items as NodeItem[]) ?? []).filter((n) => n.userId === userId);
+  return items.filter((n) => n.userId === userId);
 };
 
 const findNodeById = async (userId: string, nodeId: string) => {
@@ -297,8 +304,16 @@ const getNode = async (topicId: string, nodeId: string) => {
 const buildPath = async (userId: string, startNode: NodeItem) => {
   const path: NodeItem[] = [];
   let current: NodeItem | null = startNode;
+  const visited = new Set<string>();
+  const MAX_HOPS = 1000;
+  let hops = 0;
   while (current) {
+    if (visited.has(current.nodeId) || hops >= MAX_HOPS) {
+      break;
+    }
+    visited.add(current.nodeId);
     path.push(current);
+    hops += 1;
     if (!current.parentId) break;
     const parent = await getNode(current.topicId, current.parentId);
     if (!parent || parent.userId !== userId) break;
@@ -335,6 +350,16 @@ const mapMessagesForGemini = (messages: Message[]) =>
 
 const ALLOWED_LLM_PROVIDERS: LLMProvider[] = ["openai", "openrouter", "anthropic", "gemini"];
 
+const fetchWithTimeout = async (input: RequestInfo, init: RequestInit, timeoutMs: number) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
+};
+
 const saveUserSettings = async (userId: string, input: { llmProvider: LLMProvider; model: string; apiKey: string }) => {
   if (!ALLOWED_LLM_PROVIDERS.includes(input.llmProvider)) {
     throw new AppError("INVALID_PROVIDER", "Unsupported LLM provider", 400);
@@ -367,20 +392,21 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
   const apiKey = await decryptApiKey(settings.apiKeyEncrypted);
   const provider: LLMProvider = settings.llmProvider || "openai";
   const model = settings.model || "gpt-4o-mini";
+  const timeoutMs = 30_000;
 
   if (provider === "openai") {
     const payload = {
       model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
     };
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
-    });
+    }, timeoutMs);
     if (!res.ok) {
       const text = await res.text();
       throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
@@ -395,14 +421,14 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
       model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
     };
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
-    });
+    }, timeoutMs);
     if (!res.ok) {
       const text = await res.text();
       throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
@@ -418,7 +444,7 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
       max_tokens: 1024,
       messages: mapMessagesForAnthropic(messages),
     };
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -426,7 +452,7 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify(payload),
-    });
+    }, timeoutMs);
     if (!res.ok) {
       const text = await res.text();
       throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
@@ -441,11 +467,11 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
       apiKey
     )}`;
     const payload = { contents: mapMessagesForGemini(messages) };
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
-    });
+    }, timeoutMs);
     if (!res.ok) {
       const text = await res.text();
       throw new AppError("LLM_REQUEST_FAILED", text || "LLM request failed", 502);
@@ -460,6 +486,14 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
 
 const ensureBody = <T extends Record<string, unknown>>(body: T, keys: (keyof T)[]): boolean => {
   return keys.every((k) => Boolean(body[k]));
+};
+
+const normalizeNodeType = (node: NodeItem, hasMessages: boolean): NodeItem => {
+  if (node.type) return node;
+  if (hasMessages && node.messages && node.messages.length > 0) {
+    return { ...node, type: "chat" };
+  }
+  return { ...node, type: "later" };
 };
 
 const attachParentId = <T extends { parentId?: string }>(item: T, parentId?: string | null): T => {
@@ -557,7 +591,12 @@ export const handler = async (
     if (method === "GET" && mTopicNodes) {
       const includeMessages = event?.queryStringParameters?.includeMessages === "true";
       const items = await queryNodesByTopic(userId, mTopicNodes.topicId);
-      const mapped = includeMessages ? items : items.map(({ messages, ...rest }) => rest);
+      const mapped = includeMessages
+        ? items.map((n) => normalizeNodeType(n, true))
+        : items.map((n) => {
+            if (n.type) return n;
+            return { ...n, type: "later" };
+          });
       return json(200, { items: mapped });
     }
 
@@ -576,6 +615,13 @@ export const handler = async (
         return error("VALIDATION_ERROR", "topicId and summary are required");
       const topic = await getTopic(userId, body.topicId!);
       if (!topic) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
+      if (body.parentId) {
+        const parent = await getNode(body.topicId!, body.parentId);
+        if (!parent || parent.userId !== userId) return error("PARENT_NOT_FOUND", "Parent node not found", 404);
+        if (parent.topicId !== body.topicId) {
+          return error("PARENT_TOPIC_MISMATCH", "Parent node does not belong to the topic", 400);
+        }
+      }
       const now = nowIso();
       const nodeId = `node#${newId()}`;
       const parentId = body.parentId ?? null;
@@ -604,7 +650,7 @@ export const handler = async (
       const nodeId = decodeURIComponent(mNode.nodeId);
       const node = await findNodeById(userId, nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
-      return json(200, node);
+      return json(200, normalizeNodeType(node, true));
     }
 
     // GET /v1/nodes/{nodeId}/path
@@ -614,7 +660,8 @@ export const handler = async (
       const node = await findNodeById(userId, nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
       const pathArr = await buildPath(userId, node);
-      return json(200, { topicId: node.topicId, path: pathArr });
+      const normalizedPath = pathArr.map((n) => normalizeNodeType(n, true));
+      return json(200, { topicId: node.topicId, path: normalizedPath });
     }
 
     // PATCH /v1/nodes/{nodeId}
@@ -668,6 +715,9 @@ export const handler = async (
       if (body.baseNodeId) {
         baseNode = await findNodeById(userId, body.baseNodeId);
         if (!baseNode) return error("NODE_NOT_FOUND", "baseNode not found", 404);
+        if (baseNode.topicId !== body.topicId) {
+          return error("BASE_NODE_TOPIC_MISMATCH", "baseNode does not belong to the topic", 400);
+        }
       } else if (targetNode?.parentId) {
         baseNode = await getNode(targetNode.topicId, targetNode.parentId);
         if (baseNode && baseNode.userId !== userId) baseNode = null;
@@ -721,14 +771,17 @@ export const handler = async (
           })
           .promise();
         return json(200, {
-          node: {
-            ...targetNode,
-            title: body.message,
-            summary: body.message,
-            type: "chat",
-            messages: storedMessages,
-            updatedAt: now,
-          },
+          node: normalizeNodeType(
+            {
+              ...targetNode,
+              title: body.message,
+              summary: body.message,
+              type: "chat",
+              messages: storedMessages,
+              updatedAt: now,
+            },
+            true
+          ),
         });
       }
 
@@ -750,7 +803,7 @@ export const handler = async (
       const nodeItem: NodeItem = attachParentId(baseChat, parentId);
 
       await ddb.put({ TableName: NODES_TABLE, Item: nodeItem }).promise();
-      return json(200, { node: nodeItem });
+      return json(200, { node: normalizeNodeType(nodeItem, true) });
     }
 
     return error("NOT_FOUND", "Route not found", 404);

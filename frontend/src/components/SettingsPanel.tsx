@@ -13,7 +13,6 @@ const providers = [
   { value: "openrouter", label: "OpenRouter" },
   { value: "anthropic", label: "Anthropic" },
   { value: "gemini", label: "Gemini" },
-  { value: "local", label: "Local" },
 ] as const;
 
 type Props = {

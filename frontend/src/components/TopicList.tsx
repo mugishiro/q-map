@@ -26,21 +26,19 @@ export const TopicList = ({ topics, selectedTopicId, onSelect, onCreate }: Props
   };
 
   return (
-      <div className="stack gap-m">
-        <div className="stack gap-xs">
-          <div className="stack gap-xs">
-            <input
-              className="input"
-              placeholder="新規トピック名"
-              value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            disabled={loading}
-          />
-          <button className="btn solid" onClick={handleCreate} disabled={loading}>
-            {loading ? "追加中..." : "追加"}
-          </button>
-        </div>
+    <div className="stack gap-m">
+      <div className="stack gap-xs">
+        <input
+          className="input"
+          placeholder="新規トピック名"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          disabled={loading}
+        />
+        <button className="btn solid" onClick={handleCreate} disabled={loading || !name.trim()}>
+          {loading ? "追加中..." : "追加"}
+        </button>
       </div>
       <div className="list">
         {sorted.map((t) => (

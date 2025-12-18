@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Layout from "./components/Layout";
 import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
@@ -43,10 +43,11 @@ const generateLocalLabel = (parentId: string | null, nodes: Node[]): string => {
 };
 
 const stripLaterPrefix = (value?: string | null) => (value ? value.replace(/^あとで[:：]\s*/i, "") : value);
+const getParentId = (node: Node) => node.parentId ?? node.parentIds?.[0] ?? null;
 const isLaterNode = (node?: Node | null) => {
   if (!node) return false;
-  const hasMessages = Array.isArray(node.messages) && node.messages.length > 0;
-  return node.type === "later" || (!node.type && !hasMessages);
+  if (node.type === "later") return true;
+  return false;
 };
 
 function App() {
@@ -64,6 +65,7 @@ function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSection, setMobileSection] = useState<"topics" | "tree" | "chat">("tree");
+  const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     initTheme();
@@ -137,11 +139,7 @@ function App() {
     setError(null);
     try {
       const res = await api.listNodes(topicId, true);
-      const mapped = res.items.map((n: any) => ({
-        id: n.nodeId ?? n.id,
-        ...n,
-      }));
-      const normalized = mapped.map((n) => {
+      const normalized = res.items.map((n) => {
         if (isLaterNode(n)) {
           return { ...n, type: "later", title: stripLaterPrefix(n.title), summary: stripLaterPrefix(n.summary) };
         }
@@ -189,6 +187,11 @@ function App() {
     setChatDraft(next);
   };
 
+  const applyLaterDraft = (text: string) => {
+    const clean = stripLaterPrefix(text);
+    if (clean) applyDraft(clean);
+  };
+
   const handleDraftChange = (value: string) => {
     setChatDraft(value);
   };
@@ -217,12 +220,14 @@ function App() {
     try {
       if (targetLaterNode) {
         const now = new Date().toISOString();
+        const targetParentId = getParentId(targetLaterNode);
         const optimisticNode: Node = {
           ...targetLaterNode,
           title: message,
           summary: message,
           type: "chat",
           updatedAt: now,
+          parentId: targetParentId,
           messages: [
             { role: "user", content: message, createdAt: now },
             { role: "assistant", content: "考え中…", createdAt: now, pending: true as any },
@@ -237,7 +242,7 @@ function App() {
         const res = await api.postChat({
           topicId: selectedTopicId,
           message,
-          baseNodeId: targetLaterNode.parentId ?? undefined,
+          baseNodeId: targetParentId ?? undefined,
           nodeId: targetLaterNode.id,
         });
         const updatedId = res.node.nodeId ?? res.node.id ?? targetLaterNode.id;
@@ -272,9 +277,9 @@ function App() {
       setChatDraft("");
 
       const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
-      const newId = res.node.nodeId ?? res.node.id;
-      setSelectedNodeId(newId);
-      await loadNodes(selectedTopicId, newId);
+      const newId = res.node.id ?? res.node.nodeId;
+      if (newId) setSelectedNodeId(newId);
+      await loadNodes(selectedTopicId, newId ?? undefined);
     } catch (e) {
       setNodes(prevNodes);
       setPath(prevPath);
@@ -324,7 +329,7 @@ function App() {
         summary: clean,
         label: optimisticLabel,
       });
-      await loadNodes(selectedTopicId ?? "", (res as any).nodeId ?? (res as any).id);
+      await loadNodes(selectedTopicId ?? "", res.id);
     } catch (e) {
       setNodes(prevNodes);
       setPath(prevPath);
@@ -377,6 +382,10 @@ function App() {
     } else {
       setLastLaterNodeId(null);
     }
+    if (isMobile) {
+      setMobileSection("chat");
+      setTimeout(() => chatInputRef.current?.focus({ preventScroll: true }), 0);
+    }
   };
 
   const handleLoginStart = async () => {
@@ -427,10 +436,9 @@ function App() {
       selectedNodeId={activeNodeId}
       onSelect={(nodeId) => {
         selectNode(nodeId);
-        if (isMobile) setMobileSection("chat");
       }}
       mainRef="main"
-      onPrefill={applyDraft}
+      onPrefill={applyLaterDraft}
     />
   );
 
@@ -444,6 +452,8 @@ function App() {
         draft={chatDraft}
         onDraftChange={handleDraftChange}
         onPrefillDraft={applyDraft}
+        inputRef={chatInputRef}
+        isMobile={isMobile}
       />
       {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
     </div>

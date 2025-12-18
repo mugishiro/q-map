@@ -28,7 +28,7 @@ export type Node = {
 };
 
 export type UserSettings = {
-  llmProvider: "openai" | "anthropic" | "gemini" | "openrouter" | "local" | null;
+  llmProvider: "openai" | "anthropic" | "gemini" | "openrouter" | null;
   model: string | null;
   apiKeyMasked: string | null;
 };

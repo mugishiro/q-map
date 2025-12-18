@@ -1,4 +1,4 @@
-import { ComponentPropsWithoutRef, useEffect, useMemo, useRef, useState } from "react";
+import { ComponentPropsWithoutRef, RefObject, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatMessage, Node } from "../types";
@@ -110,6 +110,8 @@ type Props = {
   draft: string;
   onDraftChange: (value: string) => void;
   onPrefillDraft?: (value: string) => void;
+  inputRef?: RefObject<HTMLTextAreaElement>;
+  isMobile?: boolean;
 };
 
 type ChatMessageView = ChatMessage & {
@@ -126,9 +128,13 @@ export const ChatPanel = ({
   draft,
   onDraftChange,
   onPrefillDraft,
+  inputRef,
+  isMobile = false,
 }: Props) => {
   const canAddLater = !loading && Boolean(draft.trim());
   const logRef = useRef<HTMLDivElement | null>(null);
+  const localInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef = inputRef ?? localInputRef;
   const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
   const [streaming, setStreaming] = useState<{ key: string; shown: string; full: string } | null>(null);
   const streamedKeys = useRef<Set<string>>(new Set());
@@ -366,6 +372,7 @@ export const ChatPanel = ({
       <div className="stack gap-s chat-input">
         <textarea
           className="input large"
+          ref={textareaRef}
           rows={3}
           placeholder="わからないことをAIに質問する"
           value={draft}
@@ -412,6 +419,13 @@ export const ChatPanel = ({
             </span>
           </button>
         </div>
+        {isMobile && (
+          <div className="mobile-send">
+            <button className="btn solid" onClick={send} disabled={loading} aria-label="送信 (モバイル)">
+              送信
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

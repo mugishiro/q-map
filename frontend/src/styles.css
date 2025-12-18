@@ -773,6 +773,9 @@ body[data-grid="off"] .gitk-shell {
   justify-content: flex-end;
   gap: 8px;
 }
+.mobile-send {
+  display: none;
+}
 .btn .btn-icon {
   display: inline-flex;
   align-items: center;
@@ -1039,5 +1042,17 @@ body[data-grid="off"] .gitk-shell {
   }
   .chat-input .input.large {
     min-height: 80px;
+  }
+  .mobile-send {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    margin-top: 6px;
+    padding-top: 6px;
+    background: linear-gradient(180deg, transparent, var(--panel-bg));
+  }
+  .mobile-send .btn {
+    flex: 1;
+    justify-content: center;
   }
 }

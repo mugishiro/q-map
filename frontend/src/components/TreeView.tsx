@@ -210,7 +210,7 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const isHovered = hoveredNodeId === n.id;
             const isMainLane = n.lane === 0;
             const nodeColor = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
-            const nodeStyle: CSSProperties = {
+            const nodeStyle: CSSProperties & { ["--branch-color"]?: string; ["--branch-emphasis"]?: string } = {
               top: n.y,
               left: x,
               "--branch-color": nodeColor,
@@ -253,13 +253,14 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
             const isHovered = hoveredNodeId === n.id;
             const label = n.title || n.summary || "(no title)";
             const color = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
+            const listStyle: CSSProperties & { ["--branch-color"]?: string } = { top: n.y, "--branch-color": color };
             return (
               <button
                 key={`list-${n.id}`}
                 className={`gitk-list-item ${isSelected ? "active" : ""} ${onPath ? "path" : ""} ${
                   n.type === "later" ? "later" : ""
                 } ${isHovered ? "hovered" : ""}`}
-                style={{ top: n.y, "--branch-color": color }}
+                style={listStyle}
                 onClick={() => {
                   onSelect(n.id);
                 }}

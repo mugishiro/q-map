@@ -2,6 +2,12 @@ import { ChatMessage, Node, NodesResponse, PathResponse, Topic, TopicListRespons
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
+const normalizeNode = (n: any): Node => {
+  const id = n.nodeId ?? n.id;
+  const type = n.type || (Array.isArray(n.messages) && n.messages.length > 0 ? "chat" : "later");
+  return { ...n, id, type };
+};
+
 const authHeader = () => {
   const token = localStorage.getItem("qmap_token");
   if (!token) return {};
@@ -9,11 +15,20 @@ const authHeader = () => {
 };
 
 const handleResponse = async <T>(res: Response): Promise<T> => {
+  const text = await res.text();
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `HTTP ${res.status}`);
+    let message = `HTTP ${res.status}`;
+    if (text) {
+      try {
+        const data = JSON.parse(text);
+        message = data?.error?.message || data?.message || text || message;
+      } catch {
+        message = text || message;
+      }
+    }
+    throw new Error(message);
   }
-  return (await res.json()) as T;
+  return text ? (JSON.parse(text) as T) : ({} as T);
 };
 
 export const api = {
@@ -53,13 +68,15 @@ export const api = {
       `${API_BASE}/v1/topics/${encodeURIComponent(topicId)}/nodes?includeMessages=${includeMessages}`,
       { headers: { ...authHeader() } }
     );
-    return handleResponse(res);
+    const data = await handleResponse<NodesResponse>(res);
+    return { ...data, items: data.items.map(normalizeNode) };
   },
   async getNodePath(nodeId: string): Promise<PathResponse> {
     const res = await fetch(`${API_BASE}/v1/nodes/${encodeURIComponent(nodeId)}/path`, {
       headers: { ...authHeader() },
     });
-    return handleResponse(res);
+    const data = await handleResponse<PathResponse>(res);
+    return { ...data, path: data.path.map(normalizeNode) };
   },
   async postChat(params: {
     topicId: string;
@@ -73,7 +90,8 @@ export const api = {
       headers: { "content-type": "application/json", ...authHeader() },
       body: JSON.stringify(params),
     });
-    return handleResponse<{ node: Node }>(res);
+    const data = await handleResponse<{ node: Node }>(res);
+    return { node: normalizeNode(data.node) };
   },
   async createLaterNode(params: { topicId: string; parentId: string | null; summary: string; label?: string }) {
     const res = await fetch(`${API_BASE}/v1/nodes`, {
@@ -81,7 +99,8 @@ export const api = {
       headers: { "content-type": "application/json", ...authHeader() },
       body: JSON.stringify(params),
     });
-    return handleResponse<Node>(res);
+    const data = await handleResponse<Node>(res);
+    return normalizeNode(data);
   },
   async getSettings(): Promise<UserSettings> {
     const res = await fetch(`${API_BASE}/v1/me/settings`, { headers: { ...authHeader() } });
