@@ -583,6 +583,26 @@ export const handler = async (
       });
     }
 
+    // PATCH /v1/topics/{topicId}
+    if (method === "PATCH" && mTopic && !path.includes("/nodes") && !path.endsWith("/summary")) {
+      const body = parseBody<{ name?: string }>(event);
+      const nextName = body.name?.trim();
+      if (!nextName) return error("VALIDATION_ERROR", "name is required");
+      const item = await getTopic(userId, mTopic.topicId);
+      if (!item) return error("TOPIC_NOT_FOUND", "Topic not found", 404);
+      const now = nowIso();
+      await ddb
+        .update({
+          TableName: TOPICS_TABLE,
+          Key: { userId, topicId: mTopic.topicId },
+          UpdateExpression: "SET #name = :name, updatedAt = :updatedAt",
+          ExpressionAttributeNames: { "#name": "name" },
+          ExpressionAttributeValues: { ":name": nextName, ":updatedAt": now },
+        })
+        .promise();
+      return json(200, { id: item.topicId, name: nextName, createdAt: item.createdAt, updatedAt: now });
+    }
+
     // DELETE /v1/topics/{topicId}
     if (method === "DELETE" && mTopic) {
       const item = await getTopic(userId, mTopic.topicId);
@@ -625,6 +645,9 @@ export const handler = async (
         if (!parent || parent.userId !== userId) return error("PARENT_NOT_FOUND", "Parent node not found", 404);
         if (parent.topicId !== body.topicId) {
           return error("PARENT_TOPIC_MISMATCH", "Parent node does not belong to the topic", 400);
+        }
+        if (parent.type === "later") {
+          return error("PARENT_NOT_ALLOWED", "Cannot add later node under another later node", 400);
         }
       }
       const now = nowIso();
@@ -693,6 +716,22 @@ export const handler = async (
         summary: updates[":summary"],
         updatedAt: updates[":updatedAt"],
       });
+    }
+
+    // DELETE /v1/nodes/{nodeId}
+    if (method === "DELETE" && mNode) {
+      const node = await findNodeById(userId, mNode.nodeId);
+      if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
+      if (node.type !== "later") {
+        return error("DELETE_NOT_ALLOWED", "Only later nodes can be deleted", 400);
+      }
+      await ddb
+        .delete({
+          TableName: NODES_TABLE,
+          Key: { topicId: node.topicId, nodeId: node.nodeId },
+        })
+        .promise();
+      return { statusCode: 204, body: "" };
     }
 
     // POST /v1/chat

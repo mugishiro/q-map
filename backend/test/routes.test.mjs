@@ -232,6 +232,35 @@ describe("route validations", () => {
     expect(payload.error.code).toBe("PARENT_NOT_FOUND");
   });
 
+  it("rejects later node creation under another later node", async () => {
+    const topic = { userId: "user-1", topicId: "topic#a", name: "A", createdAt: now(), updatedAt: now() };
+    const laterParent = {
+      topicId: topic.topicId,
+      nodeId: "node#parent",
+      userId: "user-1",
+      title: "later parent",
+      summary: "later parent",
+      type: "later",
+      messages: [],
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    tables.TOPICS.push(topic);
+    tables.NODES.push(laterParent);
+
+    const res = await handler(
+      buildEvent({
+        method: "POST",
+        path: "/v1/nodes",
+        body: { topicId: topic.topicId, parentId: laterParent.nodeId, summary: "child later" },
+      })
+    );
+
+    expect(res.statusCode).toBe(400);
+    const payload = JSON.parse(res.body);
+    expect(payload.error.code).toBe("PARENT_NOT_ALLOWED");
+  });
+
   it("rejects chat creation when baseNode belongs to another topic", async () => {
     const topicA = { userId: "user-1", topicId: "topic#a", name: "A", createdAt: now(), updatedAt: now() };
     const topicB = { userId: "user-1", topicId: "topic#b", name: "B", createdAt: now(), updatedAt: now() };
@@ -293,5 +322,48 @@ describe("route validations", () => {
     expect(payload.node).toBeTruthy();
     expect(payload.node.topicId).toBe(topic.topicId);
     expect(payload.node.messages?.length).toBe(2);
+  });
+
+  it("deletes later node for owner", async () => {
+    const topic = { userId: "user-1", topicId: "topic#a", name: "A", createdAt: now(), updatedAt: now() };
+    const laterNode = {
+      topicId: topic.topicId,
+      nodeId: "node#later",
+      userId: "user-1",
+      title: "later",
+      summary: "later",
+      type: "later",
+      messages: [],
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    tables.TOPICS.push(topic);
+    tables.NODES.push(laterNode);
+
+    const res = await handler(buildEvent({ method: "DELETE", path: `/v1/nodes/${laterNode.nodeId}` }));
+    expect(res.statusCode).toBe(204);
+    expect(tables.NODES.find((n) => n.nodeId === laterNode.nodeId)).toBeUndefined();
+  });
+
+  it("rejects deleting non-later node", async () => {
+    const topic = { userId: "user-1", topicId: "topic#a", name: "A", createdAt: now(), updatedAt: now() };
+    const chatNode = {
+      topicId: topic.topicId,
+      nodeId: "node#chat",
+      userId: "user-1",
+      title: "chat",
+      summary: "chat",
+      type: "chat",
+      messages: [],
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    tables.TOPICS.push(topic);
+    tables.NODES.push(chatNode);
+
+    const res = await handler(buildEvent({ method: "DELETE", path: `/v1/nodes/${chatNode.nodeId}` }));
+    expect(res.statusCode).toBe(400);
+    const payload = JSON.parse(res.body);
+    expect(payload.error.code).toBe("DELETE_NOT_ALLOWED");
   });
 });
