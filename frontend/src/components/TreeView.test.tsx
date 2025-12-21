@@ -19,7 +19,11 @@ const buildNode = (override: Partial<Node> = {}): Node => ({
 });
 
 const getNode = (title: string) =>
-  screen.getAllByTestId("gitk-node").find((el) => (el.getAttribute("title") || "").includes(title));
+  screen
+    .getAllByTestId("gitk-node")
+    .find((el) =>
+      (el.getAttribute("aria-label") || "").includes(title) || (el.getAttribute("data-tooltip") || "").includes(title)
+    );
 
 describe("TreeView (git-style graph)", () => {
   it("keeps parent lane for the first child and shifts siblings to new lanes", () => {

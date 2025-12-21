@@ -150,11 +150,27 @@ export const TreeView = ({
 }: Props) => {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
+  const [listTooltipId, setListTooltipId] = useState<string | null>(null);
   const [laterPopover, setLaterPopover] = useState<{
     x: number;
     y: number;
     items: { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[];
   } | null>(null);
+
+  const isTruncated = (el: HTMLElement | null) => {
+    if (!el) return false;
+    return el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
+  };
+
+  const handleListEnter = (id: string, el: HTMLElement | null) => {
+    setHoveredNodeId(id);
+    setListTooltipId(isTruncated(el) ? id : null);
+  };
+
+  const handleListLeave = () => {
+    setHoveredNodeId(null);
+    setListTooltipId(null);
+  };
 
   const visibleNodes = useMemo(() => {
     return nodes.slice().sort(byCreatedAt);
@@ -252,6 +268,7 @@ export const TreeView = ({
                 const isHovered = hoveredNodeId === n.id;
                 const isMainLane = n.lane === 0;
                 const laterCount = laterCounts?.[n.id] ?? 0;
+                const tooltip = n.title || n.summary || "";
                 const nodeColor = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
                 const nodeStyle: CSSProperties & { ["--branch-color"]?: string; ["--branch-emphasis"]?: string } = {
                   top: n.y,
@@ -264,12 +281,14 @@ export const TreeView = ({
                     <button
                       className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "later" : ""} ${
                         onPath ? "path" : ""
-                      } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
+                      } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""} ${
+                        tooltip ? "has-tooltip" : ""
+                      }`}
                       style={nodeStyle}
                       data-node-id={n.id}
                       data-lane={n.lane}
                       data-testid="gitk-node"
-                      title={n.title || n.summary || ""}
+                      data-tooltip={tooltip || undefined}
                       onClick={() => {
                         onSelect(n.id);
                         if (n.type === "later" && onPrefill) {
@@ -331,15 +350,18 @@ export const TreeView = ({
                     key={`list-${n.id}`}
                     className={`gitk-list-item ${isSelected ? "active" : ""} ${onPath ? "path" : ""} ${
                       n.type === "later" ? "later" : ""
-                    } ${isHovered ? "hovered" : ""}`}
+                    } ${isHovered ? "hovered" : ""} ${listTooltipId === n.id ? "has-tooltip" : ""}`}
                     style={listStyle}
                     onClick={() => {
                       onSelect(n.id);
                     }}
-                    onMouseEnter={() => setHoveredNodeId(n.id)}
-                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onMouseEnter={(event) => {
+                      const titleEl = event.currentTarget.querySelector<HTMLElement>(".gitk-list-title");
+                      handleListEnter(n.id, titleEl);
+                    }}
+                    onMouseLeave={handleListLeave}
                     type="button"
-                    title={label}
+                    data-tooltip={listTooltipId === n.id ? label : undefined}
                   >
                     <div className="gitk-list-bar" />
                     <div className="gitk-list-body">
