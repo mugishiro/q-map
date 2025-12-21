@@ -24,6 +24,7 @@ vi.mock("./api", () => {
     listNodes: vi.fn(),
     postChat: vi.fn(),
     createLaterNode: vi.fn(),
+    createTopic: vi.fn(),
     updateTopic: vi.fn(),
     setToken: vi.fn(),
     getToken: vi.fn(),
@@ -217,5 +218,50 @@ describe("later node promotion", () => {
       expect(userBubble?.textContent).toContain("編集後の質問");
       expect(assistantBubble?.textContent).toContain("回答メッセージ");
     });
+  });
+});
+
+describe("new chat title", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupMatchMedia();
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+      value: vi.fn(),
+      writable: true,
+    });
+  });
+
+  it("最初の質問からトピック名を生成する", async () => {
+    const now = new Date().toISOString();
+    api.getToken.mockReturnValue("token");
+    api.listTopics.mockResolvedValue({ items: [] });
+    api.createTopic.mockResolvedValue({ id: "topic-1", name: "これはテストです", createdAt: now, updatedAt: now });
+    const node = {
+      id: "node-1",
+      nodeId: "node-1",
+      label: "A1",
+      topicId: "topic-1",
+      parentId: null,
+      title: "これはテストです",
+      summary: "これはテストです",
+      type: "chat" as const,
+      createdAt: now,
+      updatedAt: now,
+      messages: [{ role: "user" as const, content: "これはテストです", createdAt: now }],
+    };
+    api.postChat.mockResolvedValue({ node });
+    api.listNodes.mockResolvedValue({ items: [node] });
+
+    render(<App />);
+
+    await waitFor(() => expect(api.listTopics).toHaveBeenCalled());
+
+    const textarea = screen.getByPlaceholderText("わからないことをAIに質問する");
+    await userEvent.type(textarea, "これはテストです\n二行目");
+
+    const sendButton = screen.getByRole("button", { name: "送信" });
+    await userEvent.click(sendButton);
+
+    await waitFor(() => expect(api.createTopic).toHaveBeenCalledWith("これはテストです"));
   });
 });

@@ -42,7 +42,7 @@ const generateLocalLabel = (parentId: string | null, nodes: Node[]): string => {
   return `${letter}${siblings}`;
 };
 
-const DEFAULT_CHAT_TITLE = "New chat";
+const LEGACY_DEFAULT_TITLE = "New chat";
 const MAX_CHAT_TITLE_LENGTH = 48;
 const buildChatTitleFromMessage = (message: string) => {
   const firstLine = message.split(/\r?\n/).find((line) => line.trim()) ?? message;
@@ -233,7 +233,8 @@ function App() {
     setError(null);
     try {
       if (!topicId) {
-        const created = await api.createTopic(DEFAULT_CHAT_TITLE);
+        const title = buildChatTitleFromMessage(message);
+        const created = await api.createTopic(title);
         const nextId = (created as any).topicId ?? created.id ?? null;
         if (!nextId) throw new Error("TOPIC_CREATE_FAILED");
         const normalized = { ...created, id: nextId } as Topic;
@@ -245,12 +246,10 @@ function App() {
       }
       if (!topicId) throw new Error("TOPIC_NOT_READY");
 
-      const maybeUpdateTitle = async (force = false) => {
+      const maybeUpdateTitle = async () => {
         if (!topicId) return;
-        if (!force) {
-          const topic = topics.find((t) => t.id === topicId);
-          if (!topic || topic.name !== DEFAULT_CHAT_TITLE) return;
-        }
+        const topic = topics.find((t) => t.id === topicId);
+        if (!topic || topic.name !== LEGACY_DEFAULT_TITLE) return;
         const nextTitle = buildChatTitleFromMessage(message);
         if (!nextTitle) return;
         try {
@@ -292,7 +291,7 @@ function App() {
           baseNodeId: targetParentId ?? undefined,
           nodeId: targetLaterNode.id,
         });
-        await maybeUpdateTitle(Boolean(createdTopicId));
+        if (!createdTopicId) await maybeUpdateTitle();
         const updatedId = res.node.nodeId ?? res.node.id ?? targetLaterNode.id;
         setSelectedNodeId(updatedId);
         await loadNodes(topicId, updatedId);
@@ -325,7 +324,7 @@ function App() {
       setChatDraft("");
 
       const res = await api.postChat({ topicId, message, baseNodeId: targetBase });
-      await maybeUpdateTitle(Boolean(createdTopicId));
+      if (!createdTopicId) await maybeUpdateTitle();
       const newId = res.node.id ?? res.node.nodeId;
       if (newId) setSelectedNodeId(newId);
       await loadNodes(topicId, newId ?? undefined);
