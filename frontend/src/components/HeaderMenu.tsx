@@ -98,13 +98,14 @@ export const HeaderMenu = ({
       </button>
       {open && (
         <div className={popoverClass}>
-          <div className="settings-user">
-            <div className="settings-avatar">Q</div>
-            <div className="settings-user-meta">
-              <span className="settings-user-title">{userLabel}</span>
-              <span className="settings-user-subtitle">QMap Workspace</span>
-            </div>
-            <button className="icon-btn" aria-label="閉じる" title="閉じる" onClick={() => setOpen(false)}>
+          <div className="settings-popover-header">
+            <span className="settings-popover-title">設定</span>
+            <button
+              className="icon-btn settings-popover-close"
+              aria-label="閉じる"
+              title="閉じる"
+              onClick={() => setOpen(false)}
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
               </svg>
@@ -222,7 +223,6 @@ export const HeaderMenu = ({
               </span>
               <span className="settings-menu-label">認証</span>
               <span className="settings-menu-trailing">
-                <span className="settings-menu-meta">{userLabel}</span>
                 <span className="settings-menu-arrow">›</span>
               </span>
             </button>
