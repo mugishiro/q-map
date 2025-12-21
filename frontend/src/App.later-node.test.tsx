@@ -4,7 +4,13 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import App from "./App";
 import { api } from "./api";
 
-vi.mock("./theme", () => ({ initTheme: vi.fn() }));
+vi.mock("./theme", () => ({
+  initTheme: vi.fn(),
+  getStoredTheme: vi.fn(() => "light"),
+  getStoredGrid: vi.fn(() => true),
+  setTheme: vi.fn(),
+  setGridVisible: vi.fn(),
+}));
 vi.mock("./auth", () => ({
   auth: {
     startLogin: vi.fn(),
@@ -18,6 +24,7 @@ vi.mock("./api", () => {
     listNodes: vi.fn(),
     postChat: vi.fn(),
     createLaterNode: vi.fn(),
+    updateTopic: vi.fn(),
     setToken: vi.fn(),
     getToken: vi.fn(),
     clearToken: vi.fn(),
@@ -102,11 +109,8 @@ describe("later node promotion", () => {
 
     await waitFor(() => expect(api.listNodes).toHaveBeenCalled());
 
-    const laterButton = (await screen.findAllByTestId("gitk-node")).find(
-      (el) => el.getAttribute("data-node-id") === "node-later"
-    );
-    expect(laterButton).toBeTruthy();
-    await userEvent.click(laterButton!);
+    const laterItem = await screen.findByRole("button", { name: /テスト/ });
+    await userEvent.click(laterItem);
 
     const textarea = screen.getByPlaceholderText("わからないことをAIに質問する");
     await userEvent.clear(textarea);
@@ -122,8 +126,8 @@ describe("later node promotion", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getAllByTestId("gitk-node").length).toBe(2);
-      expect(document.querySelectorAll(".gitk-node.later").length).toBe(0);
+      expect(screen.getAllByTestId("gitk-node").length).toBe(2); // root + promoted chat
+      expect(document.querySelectorAll(".gitk-node.later").length).toBe(0); // laterノードはツリーに表示しない
     });
   });
 
@@ -180,11 +184,8 @@ describe("later node promotion", () => {
 
     await waitFor(() => expect(api.listNodes).toHaveBeenCalled());
 
-    const laterButton = (await screen.findAllByTestId("gitk-node")).find(
-      (el) => el.getAttribute("data-node-id") === "node-later"
-    );
-    expect(laterButton).toBeTruthy();
-    await userEvent.click(laterButton!);
+    const laterItem = await screen.findByRole("button", { name: /元のタイトル/ });
+    await userEvent.click(laterItem);
 
     const textarea = screen.getByPlaceholderText("わからないことをAIに質問する") as HTMLTextAreaElement;
     expect(textarea.value).toBe("元のタイトル");

@@ -42,6 +42,15 @@ const generateLocalLabel = (parentId: string | null, nodes: Node[]): string => {
   return `${letter}${siblings}`;
 };
 
+const DEFAULT_CHAT_TITLE = "New chat";
+const MAX_CHAT_TITLE_LENGTH = 48;
+const buildChatTitleFromMessage = (message: string) => {
+  const firstLine = message.split(/\r?\n/).find((line) => line.trim()) ?? message;
+  const compact = firstLine.trim().replace(/\s+/g, " ");
+  if (compact.length <= MAX_CHAT_TITLE_LENGTH) return compact;
+  return `${compact.slice(0, MAX_CHAT_TITLE_LENGTH - 3)}...`;
+};
+
 const stripLaterPrefix = (value?: string | null) => (value ? value.replace(/^あとで[:：]\s*/i, "") : value);
 const getParentId = (node: Node) => node.parentId ?? node.parentIds?.[0] ?? null;
 const isLaterNode = (node?: Node | null) => {
@@ -53,6 +62,7 @@ const isLaterNode = (node?: Node | null) => {
 function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [pendingNewChat, setPendingNewChat] = useState(false);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [path, setPath] = useState<Node[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -82,18 +92,18 @@ function App() {
     return () => mq.removeEventListener("change", listener);
   }, []);
 
-  const selectedTopicName = useMemo(
-    () => topics.find((t) => t.id === selectedTopicId)?.name ?? "",
-    [topics, selectedTopicId]
-  );
-
-  const refreshTopics = async () => {
+  const refreshTopics = async (preferredId?: string | null) => {
     if (!authenticated) return;
     try {
       const res = await api.listTopics();
-      setTopics(res.items.map((t) => ({ ...t, id: t.topicId ?? t.id } as any)));
-      if (!selectedTopicId && res.items.length > 0) {
-        setSelectedTopicId(res.items[0].topicId ?? res.items[0].id);
+      const normalized = res.items.map((t) => ({ ...t, id: (t as any).topicId ?? t.id } as any));
+      setTopics(normalized);
+      if (preferredId) {
+        setSelectedTopicId(preferredId);
+        return;
+      }
+      if (!selectedTopicId && normalized.length > 0 && !pendingNewChat) {
+        setSelectedTopicId(normalized[0].id);
       }
     } catch (e) {
       setError((e as Error).message);
@@ -146,7 +156,7 @@ function App() {
         return n;
       });
       setNodes(normalized);
-      const targetId = selectNodeId ?? selectedNodeId;
+      const targetId = selectNodeId ?? selectedNodeId ?? normalized[0]?.id ?? null;
       if (targetId) {
         setPath(buildPathLocal(targetId, normalized));
         setSelectedNodeId(targetId);
@@ -197,9 +207,13 @@ function App() {
   };
 
   const handleSend = async ({ message, baseNodeId }: { message: string; baseNodeId?: string }) => {
-    if (!selectedTopicId) return;
     const prevNodes = nodes;
     const prevPath = path;
+    const prevTopics = topics;
+    const prevSelectedTopicId = selectedTopicId;
+    const prevPendingNewChat = pendingNewChat;
+    let topicId = selectedTopicId;
+    let createdTopicId: string | null = null;
     const activeFromSelection = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null;
     const activeNodeFromPath = path[path.length - 1] ?? null;
     const activeNode = activeFromSelection ?? activeNodeFromPath;
@@ -218,6 +232,39 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      if (!topicId) {
+        const created = await api.createTopic(DEFAULT_CHAT_TITLE);
+        const nextId = (created as any).topicId ?? created.id ?? null;
+        if (!nextId) throw new Error("TOPIC_CREATE_FAILED");
+        const normalized = { ...created, id: nextId } as Topic;
+        createdTopicId = nextId;
+        topicId = nextId;
+        setTopics((prev) => [normalized, ...prev.filter((t) => t.id !== nextId)]);
+        setSelectedTopicId(nextId);
+        setPendingNewChat(false);
+      }
+      if (!topicId) throw new Error("TOPIC_NOT_READY");
+
+      const maybeUpdateTitle = async (force = false) => {
+        if (!topicId) return;
+        if (!force) {
+          const topic = topics.find((t) => t.id === topicId);
+          if (!topic || topic.name !== DEFAULT_CHAT_TITLE) return;
+        }
+        const nextTitle = buildChatTitleFromMessage(message);
+        if (!nextTitle) return;
+        try {
+          const updated = await api.updateTopic(topicId, nextTitle);
+          setTopics((prev) => {
+            const exists = prev.some((t) => t.id === topicId);
+            if (!exists) return prev;
+            return prev.map((t) => (t.id === topicId ? { ...t, ...updated, id: updated.id ?? t.id } : t));
+          });
+        } catch {
+          // ignore title update failure
+        }
+      };
+
       if (targetLaterNode) {
         const now = new Date().toISOString();
         const targetParentId = getParentId(targetLaterNode);
@@ -240,14 +287,15 @@ function App() {
         setChatDraft("");
 
         const res = await api.postChat({
-          topicId: selectedTopicId,
+          topicId,
           message,
           baseNodeId: targetParentId ?? undefined,
           nodeId: targetLaterNode.id,
         });
+        await maybeUpdateTitle(Boolean(createdTopicId));
         const updatedId = res.node.nodeId ?? res.node.id ?? targetLaterNode.id;
         setSelectedNodeId(updatedId);
-        await loadNodes(selectedTopicId, updatedId);
+        await loadNodes(topicId, updatedId);
         return;
       }
 
@@ -258,7 +306,7 @@ function App() {
       const optimisticNode: Node = {
         id: tempId,
         label: optimisticLabel,
-        topicId: selectedTopicId,
+        topicId,
         parentId: targetBase ?? null,
         title: message,
         summary: message,
@@ -276,11 +324,17 @@ function App() {
       setSelectedNodeId(tempId);
       setChatDraft("");
 
-      const res = await api.postChat({ topicId: selectedTopicId, message, baseNodeId: targetBase });
+      const res = await api.postChat({ topicId, message, baseNodeId: targetBase });
+      await maybeUpdateTitle(Boolean(createdTopicId));
       const newId = res.node.id ?? res.node.nodeId;
       if (newId) setSelectedNodeId(newId);
-      await loadNodes(selectedTopicId, newId ?? undefined);
+      await loadNodes(topicId, newId ?? undefined);
     } catch (e) {
+      if (!createdTopicId) {
+        setTopics(prevTopics);
+        setSelectedTopicId(prevSelectedTopicId);
+        setPendingNewChat(prevPendingNewChat);
+      }
       setNodes(prevNodes);
       setPath(prevPath);
       setError((e as Error).message);
@@ -298,6 +352,11 @@ function App() {
     const prevNodes = nodes;
     const prevPath = path;
     const targetBase = selectedNodeId || path[path.length - 1]?.id || null;
+    const baseNode = targetBase ? nodes.find((n) => n.id === targetBase) : null;
+    if (baseNode?.type === "later") {
+      setError("「あとで聞く」の下には追加できません。");
+      return;
+    }
     setLoading(true);
     setError(null);
     const now = new Date().toISOString();
@@ -317,8 +376,6 @@ function App() {
     };
     const optimisticList = [...nodes, optimisticNode];
     setNodes(optimisticList);
-    setPath(buildPathLocal(tempId, optimisticList));
-    setSelectedNodeId(tempId);
     setLastLaterNodeId(tempId);
     setChatDraft("");
 
@@ -329,7 +386,8 @@ function App() {
         summary: clean,
         label: optimisticLabel,
       });
-      await loadNodes(selectedTopicId ?? "", res.id);
+      setLastLaterNodeId(res.id);
+      await loadNodes(selectedTopicId ?? "", selectedNodeId);
     } catch (e) {
       setNodes(prevNodes);
       setPath(prevPath);
@@ -341,6 +399,7 @@ function App() {
   };
 
   const handleSelectTopic = async (id: string) => {
+    setPendingNewChat(false);
     setSelectedTopicId(id);
     setSelectedNodeId(null);
     setLastLaterNodeId(null);
@@ -348,9 +407,16 @@ function App() {
     await loadNodes(id);
   };
 
-  const handleCreateTopic = async (name: string) => {
-    await api.createTopic(name);
-    await refreshTopics();
+  const handleNewChat = () => {
+    setError(null);
+    setPendingNewChat(true);
+    setSelectedTopicId(null);
+    setSelectedNodeId(null);
+    setLastLaterNodeId(null);
+    setChatDraft("");
+    setNodes([]);
+    setPath([]);
+    if (isMobile) setMobileSection("chat");
   };
 
   const handleManualToken = (token: string) => {
@@ -363,6 +429,7 @@ function App() {
     api.clearToken();
     auth.clearAuthArtifacts();
     setAuthenticated(false);
+    setPendingNewChat(false);
     setTopics([]);
     setNodes([]);
     setPath([]);
@@ -397,13 +464,66 @@ function App() {
     }
   };
 
+  const activeNodeId = path[path.length - 1]?.id ?? null;
+  const activeNode = path[path.length - 1] ?? null;
+  const treeNodes = useMemo(() => nodes.filter((n) => n.type !== "later"), [nodes]);
+  type LaterItem = {
+    id: string;
+    text: string;
+    createdAt: string;
+    label?: string;
+    parentLabel?: string;
+    parentId?: string | null;
+  };
+
+  const laterItems: LaterItem[] = useMemo(() => {
+    return nodes
+      .filter((n) => n.type === "later")
+      .map((n) => {
+        const parentId = n.parentId ?? n.parentIds?.[0] ?? null;
+        const parent = parentId ? nodes.find((p) => p.id === parentId || p.nodeId === parentId) : null;
+        return {
+          id: n.id,
+          text: n.title || n.summary || "",
+          createdAt: n.createdAt,
+          label: n.label,
+          parentLabel: parent?.label,
+          parentId,
+        };
+      })
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }, [nodes]);
+  const laterCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    nodes.forEach((n) => {
+      if (n.type === "later") {
+        const parentId = n.parentId ?? n.parentIds?.[0];
+        if (parentId) {
+          map[parentId] = (map[parentId] || 0) + 1;
+        }
+      }
+    });
+    return map;
+  }, [nodes]);
+  const laterByParent = useMemo(() => {
+    const map: Record<string, LaterItem[]> = {};
+    laterItems.forEach((item) => {
+      const key = item.parentId || "__root__";
+      if (!map[key]) map[key] = [];
+      map[key].push(item);
+    });
+    return map;
+  }, [laterItems]);
+  const selectedLaterItems = activeNodeId ? laterByParent[activeNodeId] ?? [] : [];
+  const panelLaterItems = selectedLaterItems;
+
   const left = (
-    <div className="stack gap-s" style={{ height: "100%" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+    <div className={`sidebar ${topicsCollapsed ? "collapsed" : ""}`}>
+      <div className={`sidebar-actions ${topicsCollapsed ? "collapsed" : ""}`}>
         <button
           className="icon-btn"
-          aria-label={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
-          title={topicsCollapsed ? "トピックを開く" : "トピックを畳む"}
+          aria-label={topicsCollapsed ? "サイドバーを開く" : "サイドバーを畳む"}
+          title={topicsCollapsed ? "サイドバーを開く" : "サイドバーを畳む"}
           onClick={() => setTopicsCollapsed((v) => !v)}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -416,30 +536,87 @@ function App() {
             />
           </svg>
         </button>
+        <button
+          className="sidebar-action primary"
+          aria-label="新しいチャット"
+          title="新しいチャット"
+          onClick={handleNewChat}
+          disabled={loading}
+        >
+          <span className="sidebar-action-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          {!topicsCollapsed && <span>新しいチャット</span>}
+        </button>
       </div>
       {!topicsCollapsed && (
-        <TopicList
-          topics={topics}
-          selectedTopicId={selectedTopicId}
-          onSelect={handleSelectTopic}
-          onCreate={handleCreateTopic}
-        />
+        <div className="sidebar-scroll">
+          <TopicList topics={topics} selectedTopicId={selectedTopicId} onSelect={handleSelectTopic} />
+        </div>
       )}
+      <div className="sidebar-bottom">
+        <HeaderMenu
+          onAuthChange={refreshTopics}
+          onLoginSuccess={() => setAuthenticated(true)}
+          onLogout={handleLogout}
+          placement="up"
+          align="left"
+          showLabel={!topicsCollapsed}
+          label="設定"
+        />
+      </div>
     </div>
   );
 
-  const activeNodeId = path[path.length - 1]?.id ?? null;
+  const openLaterItem = (item: { id: string; text: string; parentId: string | null }) => {
+    const parentId = item.parentId;
+    if (parentId) {
+      selectNode(parentId);
+    }
+    setLastLaterNodeId(item.id);
+    applyDraft(stripLaterPrefix(item.text));
+    if (isMobile) {
+      setMobileSection("chat");
+      setTimeout(() => chatInputRef.current?.focus({ preventScroll: true }), 0);
+    }
+  };
+
+  const handleDeleteLater = async (id: string) => {
+    const target = nodes.find((n) => n.id === id);
+    if (!target || target.type !== "later") return;
+    const prevNodes = nodes;
+    setNodes(nodes.filter((n) => n.id !== id));
+    if (lastLaterNodeId === id) setLastLaterNodeId(null);
+    setLoading(true);
+    setError(null);
+    try {
+      await api.deleteNode(id);
+    } catch (e) {
+      setNodes(prevNodes);
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const center = (
-    <TreeView
-      nodes={nodes}
-      selectedNodeId={activeNodeId}
-      onSelect={(nodeId) => {
-        selectNode(nodeId);
-      }}
-      mainRef="main"
-      onPrefill={applyLaterDraft}
-    />
+    <div className="stack gap-s fill">
+      <div className="tree-panel">
+        <TreeView
+          nodes={treeNodes}
+          selectedNodeId={activeNodeId}
+          onSelect={(nodeId) => {
+            selectNode(nodeId);
+          }}
+          mainRef="main"
+          onPrefill={applyLaterDraft}
+          laterCounts={laterCounts}
+          laterItemsByParent={laterByParent}
+        />
+      </div>
+    </div>
   );
 
   const right = (
@@ -454,17 +631,14 @@ function App() {
         onPrefillDraft={applyDraft}
         inputRef={chatInputRef}
         isMobile={isMobile}
+        disableAddLater={!selectedTopicId || pendingNewChat || activeNode?.type === "later"}
+        laterItems={panelLaterItems}
+        laterActiveId={lastLaterNodeId}
+        onOpenLater={(item) => openLaterItem(item)}
+        onDeleteLater={(item) => handleDeleteLater(item.id)}
       />
-      {error && <div className="card" style={{ color: "#b91c1c" }}>エラー: {error}</div>}
+      {error && <div className="card error-card">エラー: {error}</div>}
     </div>
-  );
-
-  const headerAction = (
-    <HeaderMenu
-      onAuthChange={refreshTopics}
-      onLoginSuccess={() => setAuthenticated(true)}
-      onLogout={handleLogout}
-    />
   );
 
   if (!authenticated) {
@@ -472,40 +646,27 @@ function App() {
     return (
       <div className="login-shell">
         <div className="login-card">
-          <div className="pill">Secure Access</div>
           <div className="brand hero">QMap</div>
-          <div className="login-copy">
-            思考の枝分かれを地図化するワークスペース。まずはログインして、トピック・ツリー・チャットにアクセスしてください。
-          </div>
-          <ul className="login-bullets">
-            <li>GitHub Amplify ホスト + Cognito Hosted UI でサインイン</li>
-            <li>JWT はブラウザにのみ保存され、リロードで自動再利用</li>
-            <li>トークンがある場合は手動貼り付けも可能（デバッグ用）</li>
-          </ul>
+          <div className="login-copy">ログインして開始</div>
           <div className="login-actions">
-            <button className="btn solid" onClick={handleLoginStart}>
+            <button className="btn solid login-primary" onClick={handleLoginStart}>
               ログイン
             </button>
-            <div className="manual-auth">
-              <input
-                className="input"
-                style={{ width: "240px" }}
-                placeholder="JWT を貼り付け（任意）"
-                defaultValue={manualToken}
-              />
-              <button
-                className="btn"
-                onClick={() => {
-                  const token = (document.querySelector(".manual-auth input") as HTMLInputElement | null)?.value;
-                  if (token) handleManualToken(token.trim());
-                }}
-              >
-                保存
-              </button>
+            <div className="login-field">
+              <span className="login-label">トークンでログイン</span>
+              <div className="manual-auth">
+                <input className="input" placeholder="JWT を貼り付け" defaultValue={manualToken} />
+                <button
+                  className="btn"
+                  onClick={() => {
+                    const token = (document.querySelector(".manual-auth input") as HTMLInputElement | null)?.value;
+                    if (token) handleManualToken(token.trim());
+                  }}
+                >
+                  適用
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="helper-inline" style={{ marginTop: "8px" }}>
-            Hosted UI に遷移しない場合は環境変数（VITE_COGNITO_*）をご確認ください。
           </div>
           {authError && <div className="helper-inline" style={{ color: "#b91c1c" }}>{authError}</div>}
           {error && <div className="helper-inline" style={{ color: "#b91c1c" }}>{error}</div>}
@@ -519,7 +680,6 @@ function App() {
       left={left}
       center={center}
       right={right}
-      headerAction={headerAction}
       leftCollapsed={topicsCollapsed}
       isMobile={isMobile}
       mobileSection={mobileSection}

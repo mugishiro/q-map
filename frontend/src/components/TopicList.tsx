@@ -1,45 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Topic } from "../types";
 
 type Props = {
   topics: Topic[];
   selectedTopicId: string | null;
   onSelect: (id: string) => void;
-  onCreate: (name: string) => Promise<void>;
 };
 
-export const TopicList = ({ topics, selectedTopicId, onSelect, onCreate }: Props) => {
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-
+export const TopicList = ({ topics, selectedTopicId, onSelect }: Props) => {
   const sorted = useMemo(() => [...topics].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)), [topics]);
 
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-    setLoading(true);
-    try {
-      await onCreate(name.trim());
-      setName("");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="stack gap-m">
-      <div className="stack gap-xs">
-        <input
-          className="input"
-          placeholder="新規トピック名"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-          disabled={loading}
-        />
-        <button className="btn solid" onClick={handleCreate} disabled={loading || !name.trim()}>
-          {loading ? "追加中..." : "追加"}
-        </button>
-      </div>
+    <div className="stack gap-s">
       <div className="list">
         {sorted.map((t) => (
           <button
@@ -50,7 +22,7 @@ export const TopicList = ({ topics, selectedTopicId, onSelect, onCreate }: Props
             <div className="list-title">{t.name}</div>
           </button>
         ))}
-        {!topics.length && <div className="empty">トピックがありません</div>}
+        {!topics.length && <div className="empty">チャットがありません</div>}
       </div>
     </div>
   );

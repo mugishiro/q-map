@@ -53,6 +53,14 @@ export const api = {
     });
     return handleResponse(res);
   },
+  async updateTopic(topicId: string, name: string): Promise<Topic> {
+    const res = await fetch(`${API_BASE}/v1/topics/${encodeURIComponent(topicId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", ...authHeader() },
+      body: JSON.stringify({ name }),
+    });
+    return handleResponse(res);
+  },
   async deleteTopic(topicId: string): Promise<void> {
     const res = await fetch(`${API_BASE}/v1/topics/${topicId}`, {
       method: "DELETE",
@@ -113,5 +121,15 @@ export const api = {
       body: JSON.stringify(input),
     });
     return handleResponse<UserSettings>(res);
+  },
+  async deleteNode(nodeId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/v1/nodes/${encodeURIComponent(nodeId)}`, {
+      method: "DELETE",
+      headers: { ...authHeader() },
+    });
+    if (!res.ok && res.status !== 204) {
+      const text = await res.text();
+      throw new Error(text || `HTTP ${res.status}`);
+    }
   },
 };

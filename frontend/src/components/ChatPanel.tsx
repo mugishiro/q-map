@@ -2,6 +2,7 @@ import { ComponentPropsWithoutRef, RefObject, useEffect, useMemo, useRef, useSta
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatMessage, Node } from "../types";
+import LaterList from "./LaterList";
 
 const normalizeMarkdown = (text: string) => {
   const lines = text.split(/\r?\n/);
@@ -112,6 +113,11 @@ type Props = {
   onPrefillDraft?: (value: string) => void;
   inputRef?: RefObject<HTMLTextAreaElement>;
   isMobile?: boolean;
+  disableAddLater?: boolean;
+  laterItems?: { id: string; text: string; createdAt: string; parentId?: string | null }[];
+  laterActiveId?: string | null;
+  onOpenLater?: (item: { id: string; text: string; parentId: string | null }) => void;
+  onDeleteLater?: (item: { id: string }) => void;
 };
 
 type ChatMessageView = ChatMessage & {
@@ -130,8 +136,13 @@ export const ChatPanel = ({
   onPrefillDraft,
   inputRef,
   isMobile = false,
+  disableAddLater = false,
+  laterItems = [],
+  laterActiveId = null,
+  onOpenLater,
+  onDeleteLater,
 }: Props) => {
-  const canAddLater = !loading && Boolean(draft.trim());
+  const canAddLater = !loading && Boolean(draft.trim()) && !disableAddLater;
   const logRef = useRef<HTMLDivElement | null>(null);
   const localInputRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaRef = inputRef ?? localInputRef;
@@ -157,20 +168,26 @@ export const ChatPanel = ({
     );
     return list;
   }, [path]);
+  const selected = path[path.length - 1];
 
   useEffect(() => {
     const container = logRef.current;
     if (!container) return;
+    if (!selected?.id) return;
 
     requestAnimationFrame(() => {
-      const scrollTarget = container.scrollHeight;
-      if (typeof container.scrollTo === "function") {
-        container.scrollTo({ top: scrollTarget, behavior: "smooth" });
+      const items = Array.from(container.querySelectorAll<HTMLElement>("[data-node-id]"));
+      const target =
+        items.find((el) => el.dataset.nodeId === selected.id && el.dataset.role === "user") ||
+        items.find((el) => el.dataset.nodeId === selected.id);
+      if (!target) return;
+      if (typeof target.scrollIntoView === "function") {
+        target.scrollIntoView({ block: "start", behavior: "smooth" });
       } else {
-        container.scrollTop = scrollTarget;
+        container.scrollTop = target.offsetTop;
       }
     });
-  }, [path]);
+  }, [selected?.id, history.length]);
 
   useEffect(() => {
     const container = logRef.current;
@@ -278,8 +295,6 @@ export const ChatPanel = ({
     container.scrollTop = container.scrollHeight;
   }, [streaming?.shown]);
 
-  const selected = path[path.length - 1];
-
   const send = async () => {
     if (!draft.trim()) return;
     await onSend({ message: draft.trim() });
@@ -287,6 +302,7 @@ export const ChatPanel = ({
   };
 
   const addLater = async () => {
+    if (disableAddLater) return;
     const summary = draft.trim();
     if (!summary) return;
     await onAddLater({ summary });
@@ -326,10 +342,12 @@ export const ChatPanel = ({
             <button
               className="selection-btn"
               onClick={async () => {
+                if (disableAddLater) return;
                 await onAddLater({ summary: selection.text });
                 window.getSelection()?.removeAllRanges();
                 setSelection(null);
               }}
+              disabled={disableAddLater}
               type="button"
             >
               あとで聞く
@@ -344,6 +362,8 @@ export const ChatPanel = ({
               streaming && streaming.key === messageKey(m) ? "streaming" : ""
             }`}
             data-chat-item
+            data-node-id={m.nodeId}
+            data-role={m.role}
           >
             {m.pending ? (
               <div className="bubble-content">
@@ -369,6 +389,15 @@ export const ChatPanel = ({
           </div>
         ))}
       </div>
+      {laterItems.length > 0 && (
+        <LaterList
+          items={laterItems}
+          activeId={laterActiveId}
+          onOpen={(item) => onOpenLater?.({ ...item, parentId: item.parentId ?? null })}
+          onRemove={onDeleteLater}
+          variant="chips"
+        />
+      )}
       <div className="stack gap-s chat-input">
         <textarea
           className="input large"
@@ -387,31 +416,37 @@ export const ChatPanel = ({
         />
         <div className="chat-actions">
           <button
-            className="btn ghost"
+            className="btn ghost icon-only"
             onClick={addLater}
             disabled={!canAddLater}
             aria-label="あとで聞くに追加"
             title="あとで聞くに追加"
           >
             <span className="btn-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
-                  d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5v15.38a.5.5 0 0 1-.79.41L12 16l-5.21 4.29a.5.5 0 0 1-.79-.41V4.5Z"
+                  d="M7 4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V20l-4.5-3.5L8 20V4.5Z"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="1.6"
                   fill="none"
                   strokeLinejoin="round"
+                />
+                <path
+                  d="M12.5 8.5v4M10.5 10.5h4"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
                 />
               </svg>
             </span>
           </button>
-          <button className="btn solid" onClick={send} disabled={loading} aria-label="送信" title="送信">
+          <button className="btn solid icon-only" onClick={send} disabled={loading} aria-label="送信" title="送信">
             <span className="btn-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
-                  d="M3.5 12.5 19.5 5 15 19 12.5 13.5 7 11z"
+                  d="M4 12L20 4l-6 16-2.5-7L4 12Z"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="1.6"
                   fill="none"
                   strokeLinejoin="round"
                 />

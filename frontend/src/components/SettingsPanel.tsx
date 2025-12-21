@@ -82,60 +82,55 @@ const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = 
     }
   };
 
-  const row = (label: string, control: JSX.Element) => (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-      <span style={{ width: 80, fontWeight: 600 }}>{label}</span>
-      <div style={{ flex: 1 }}>{control}</div>
-    </div>
-  );
-
   const llmSection = (
-    <div className="stack gap-s">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div className="settings-panel">
+      <div className="settings-section-header">
         <span className="label">LLM 設定</span>
-        {currentMasked && <span className="helper-inline">保存済み: {currentMasked}</span>}
+        {currentMasked && <span className="settings-chip">保存済み: {currentMasked}</span>}
       </div>
-      {row(
-        "Provider",
-        <select
-          className="input"
-          value={form.llmProvider}
-          onChange={(e) => setForm((f) => ({ ...f, llmProvider: e.target.value }))}
-        >
-          {providerOptions.map((p) => (
-            <option key={p} value={p}>
-              {providers.find((v) => v.value === p)?.label ?? p}
-            </option>
-          ))}
-        </select>
-      )}
-      {row(
-        "Model",
-        <input
-          className="input"
-          placeholder="例: gpt-4o-mini"
-          value={form.model}
-          onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-        />
-      )}
-      {row(
-        "API Key",
-        <div style={{ display: "flex", gap: "8px" }}>
+      <div className="settings-fields">
+        <label className="settings-field">
+          <span className="settings-field-label">Provider</span>
+          <select
+            className="input"
+            value={form.llmProvider}
+            onChange={(e) => setForm((f) => ({ ...f, llmProvider: e.target.value }))}
+          >
+            {providerOptions.map((p) => (
+              <option key={p} value={p}>
+                {providers.find((v) => v.value === p)?.label ?? p}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="settings-field">
+          <span className="settings-field-label">Model</span>
           <input
             className="input"
-            style={{ flex: 1 }}
-            placeholder="sk-..."
-            type={showApiKey ? "text" : "password"}
-            value={form.apiKey}
-            onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+            placeholder="例: gpt-4o-mini"
+            value={form.model}
+            onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
           />
-          <button className="btn ghost" onClick={() => setShowApiKey((v) => !v)}>
-            {showApiKey ? "隠す" : "表示"}
-          </button>
-        </div>
-      )}
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button className="btn solid" onClick={save} disabled={loading} style={{ flex: 1 }}>
+        </label>
+        <label className="settings-field">
+          <span className="settings-field-label">API Key</span>
+          <div className="settings-inline">
+            <input
+              className="input"
+              placeholder="sk-..."
+              type={showApiKey ? "text" : "password"}
+              value={form.apiKey}
+              onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+            />
+            <button className="btn ghost" onClick={() => setShowApiKey((v) => !v)}>
+              {showApiKey ? "隠す" : "表示"}
+            </button>
+          </div>
+          <span className="settings-hint">保存時に暗号化され、クライアントへは返しません。</span>
+        </label>
+      </div>
+      <div className="settings-actions">
+        <button className="btn solid" onClick={save} disabled={loading}>
           保存
         </button>
         {showCloseButton && (
@@ -144,8 +139,8 @@ const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = 
           </button>
         )}
       </div>
-      {notice && <span className="helper-inline" style={{ color: "#0f766e" }}>{notice}</span>}
-      {error && <span className="helper-inline" style={{ color: "#b91c1c" }}>{error}</span>}
+      {notice && <div className="settings-message success">{notice}</div>}
+      {error && <div className="settings-message error">{error}</div>}
     </div>
   );
 

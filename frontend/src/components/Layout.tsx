@@ -24,17 +24,13 @@ export const Layout = ({
 }: Props) => {
   return (
     <div className="shell" data-mobile={isMobile} data-section={mobileSection}>
-      <header className="topbar">
-        <div className="brand">QMap</div>
-        {headerAction && <div className="topbar-actions">{headerAction}</div>}
-      </header>
       {isMobile && (
         <div className="mobile-nav">
           <button
             className={`mobile-tab ${mobileSection === "topics" ? "active" : ""}`}
             onClick={() => onMobileSectionChange?.("topics")}
           >
-            トピック
+            履歴
           </button>
           <button
             className={`mobile-tab ${mobileSection === "tree" ? "active" : ""}`}
@@ -51,6 +47,10 @@ export const Layout = ({
         </div>
       )}
       <div className={`grid ${leftCollapsed ? "collapsed-left" : ""}`}>
+        <header className="app-header topbar">
+          <div className="brand">QMap</div>
+          {headerAction && <div className="topbar-actions">{headerAction}</div>}
+        </header>
         <aside className={`panel left ${leftCollapsed ? "collapsed" : ""}`}>{left}</aside>
         <main className="panel center">{center}</main>
         <section className="panel right">{right}</section>

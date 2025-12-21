@@ -23,15 +23,20 @@ type Props = {
   onSelect: (nodeId: string) => void;
   mainRef?: string; // label or id that should stick to lane 0 if possible
   onPrefill?: (text: string) => void;
+  laterCounts?: Record<string, number>;
+  laterItemsByParent?: Record<
+    string,
+    { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[]
+  >;
 };
 
-const ROW_HEIGHT = 56;
-const BASE_LANE_GAP = 72;
-const LANE_GAP_MIN = 60;
-const PADDING_X = 36;
-const PADDING_Y = 28;
-const LIST_WIDTH = 360;
-const LIST_GAP = 36;
+const ROW_HEIGHT = 48;
+const BASE_LANE_GAP = 64;
+const LANE_GAP_MIN = 48;
+const PADDING_X = 24;
+const PADDING_Y = 20;
+const LIST_WIDTH = 280;
+const MIN_CANVAS_HEIGHT = 520;
 const PATH_COLOR = "#22c55e";
 const OTHER_COLOR = "#5ca9e6";
 const PATH_EMPHASIS = 0.92;
@@ -108,7 +113,7 @@ const buildGraph = (nodes: (Node & { isPlaceholder?: boolean; hiddenCount?: numb
   const density = Math.min(1, graphNodes.length / Math.max(1, laneCount * 8));
   const laneGap = Math.max(LANE_GAP_MIN, BASE_LANE_GAP * (1 - density * 0.4));
   const maxRow = Math.max(0, graphNodes.length - 1);
-  const height = PADDING_Y * 2 + maxRow * ROW_HEIGHT;
+  const height = Math.max(MIN_CANVAS_HEIGHT, PADDING_Y * 2 + maxRow * ROW_HEIGHT);
   const width = PADDING_X * 2 + laneCount * laneGap;
 
   return { graphNodes, edges, laneCount, height, width, laneGap };
@@ -124,7 +129,7 @@ const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: numb
   // straight if same lane
   if (from.lane === to.lane) return `M ${x1} ${y1} L ${x1} ${y2}`;
   // branch: go horizontal at parent level, then down
-  const radius = 6;
+  const radius = 5;
   const dir = x2 > x1 ? 1 : -1;
   return [
     `M ${x1} ${y1}`,
@@ -134,8 +139,22 @@ const edgePath = (from: { lane: number; y: number }, to: { lane: number; y: numb
   ].join(" ");
 };
 
-export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }: Props) => {
+export const TreeView = ({
+  nodes,
+  selectedNodeId,
+  onSelect,
+  mainRef,
+  onPrefill,
+  laterCounts,
+  laterItemsByParent,
+}: Props) => {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [listOpen, setListOpen] = useState(true);
+  const [laterPopover, setLaterPopover] = useState<{
+    x: number;
+    y: number;
+    items: { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[];
+  } | null>(null);
 
   const visibleNodes = useMemo(() => {
     return nodes.slice().sort(byCreatedAt);
@@ -167,115 +186,170 @@ export const TreeView = ({ nodes, selectedNodeId, onSelect, mainRef, onPrefill }
     return { pathNodeSet: nodeSet, pathEdgeSet: edgeSet };
   }, [edges, selectedNodeId]);
 
-  if (!graphNodes.length) {
-    return (
-      <div className="stack gap-m">
-        <div className="tree">
-          <div className="empty">ノードなし</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="stack gap-m">
-      <div
-        className="tree gitk-shell gitk-with-list"
-        style={{ height, paddingRight: LIST_WIDTH + LIST_GAP, overflowX: "hidden" }}
-      >
-        <div className="gitk-graph" style={{ width, height }}>
-          <svg className="gitk-svg" width={width} height={height}>
-            {edges.map((e, idx) => {
-              const isPathEdge = pathEdgeSet.has(`${e.parentId}|${e.childId}`);
-              const edgeColor = isPathEdge ? PATH_COLOR : OTHER_COLOR;
-              const edgeStyle: CSSProperties | undefined = {
-                stroke: edgeColor,
-                strokeOpacity: isPathEdge ? PATH_EMPHASIS : NON_PATH_OPACITY,
-                strokeWidth: isPathEdge ? 2.8 : 2.1,
-              };
-              return (
-                <path
-                  key={`${e.from.lane}-${e.to.lane}-${idx}`}
-                  d={edgePath(e.from, e.to, laneGap)}
-                  className={`gitk-edge ${e.isMain ? "main" : ""} ${isPathEdge ? "path" : ""}`}
-                  style={edgeStyle}
-                />
-              );
-            })}
-          </svg>
-          {graphNodes.map((n) => {
-            const x = laneX(n.lane, laneGap);
-            const isSelected = selectedNodeId === n.id;
-            const onPath = pathNodeSet.has(n.id);
-            const isHovered = hoveredNodeId === n.id;
-            const isMainLane = n.lane === 0;
-            const nodeColor = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
-            const nodeStyle: CSSProperties & { ["--branch-color"]?: string; ["--branch-emphasis"]?: string } = {
-              top: n.y,
-              left: x,
-              "--branch-color": nodeColor,
-              "--branch-emphasis": onPath || isSelected ? nodeColor : "transparent",
-            };
-            return (
-              <button
-                key={n.id}
-                className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "later" : ""} ${
-                  onPath ? "path" : ""
-                } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
-                style={nodeStyle}
-                data-node-id={n.id}
-                data-lane={n.lane}
-                data-testid="gitk-node"
-                title={n.title || n.summary || ""}
-                onClick={() => {
-                  onSelect(n.id);
-                  if (n.type === "later" && onPrefill) {
-                    const text = n.title || n.summary || "";
-                    if (text) onPrefill(text);
-                  }
-                }}
-                onMouseEnter={() => setHoveredNodeId(n.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
-                type="button"
-                aria-label={n.title || n.summary || "node"}
-              >
-                <span className="gitk-dot-btn">
-                  <span className="gitk-dot" />
-                </span>
-              </button>
-            );
-          })}
+    <div className="stack gap-m fill">
+      <div className="tree gitk-shell gitk-with-list" style={{ height: "100%", minHeight: `${MIN_CANVAS_HEIGHT}px` }}>
+        <div className="gitk-list-toolbar">
+          <button
+            className={`gitk-list-toggle ${listOpen ? "active" : ""}`}
+            onClick={() => setListOpen((v) => !v)}
+            type="button"
+            aria-pressed={listOpen}
+            aria-label="ノード一覧を切り替える"
+            title={listOpen ? "一覧を閉じる" : "一覧を開く"}
+          >
+            <span className="gitk-list-toggle-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span>一覧</span>
+          </button>
         </div>
-        <div className="gitk-list" style={{ width: LIST_WIDTH, height }}>
-          {graphNodes.map((n) => {
-            const isSelected = selectedNodeId === n.id;
-            const onPath = pathNodeSet.has(n.id);
-            const isHovered = hoveredNodeId === n.id;
-            const label = n.title || n.summary || "(no title)";
-            const color = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
-            const listStyle: CSSProperties & { ["--branch-color"]?: string } = { top: n.y, "--branch-color": color };
-            return (
-              <button
-                key={`list-${n.id}`}
-                className={`gitk-list-item ${isSelected ? "active" : ""} ${onPath ? "path" : ""} ${
-                  n.type === "later" ? "later" : ""
-                } ${isHovered ? "hovered" : ""}`}
-                style={listStyle}
-                onClick={() => {
-                  onSelect(n.id);
-                }}
-                onMouseEnter={() => setHoveredNodeId(n.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
-                type="button"
-                title={label}
-              >
-                <div className="gitk-list-bar" />
-                <div className="gitk-list-body">
-                  <div className="gitk-list-title">{label}</div>
+        <div className="gitk-body" style={{ height }}>
+          <div className="gitk-canvas" style={{ height }}>
+            <div className="gitk-graph" style={{ width, height }}>
+              {!graphNodes.length && <div className="gitk-empty">ノードなし</div>}
+              <svg className="gitk-svg" width={width} height={height}>
+                {edges.map((e, idx) => {
+                  const isPathEdge = pathEdgeSet.has(`${e.parentId}|${e.childId}`);
+                  const edgeColor = isPathEdge ? PATH_COLOR : OTHER_COLOR;
+                  const edgeStyle: CSSProperties | undefined = {
+                    stroke: edgeColor,
+                    strokeOpacity: isPathEdge ? PATH_EMPHASIS : NON_PATH_OPACITY,
+                    strokeWidth: isPathEdge ? 2.6 : 2,
+                  };
+                  return (
+                    <path
+                      key={`${e.from.lane}-${e.to.lane}-${idx}`}
+                      d={edgePath(e.from, e.to, laneGap)}
+                      className={`gitk-edge ${e.isMain ? "main" : ""} ${isPathEdge ? "path" : ""}`}
+                      style={edgeStyle}
+                    />
+                  );
+                })}
+              </svg>
+              {laterPopover && laterPopover.items.length > 0 && (
+                <div
+                  className="later-popover"
+                  style={{ top: laterPopover.y, left: laterPopover.x, transform: "translate(0, -100%)" }}
+                  onMouseLeave={() => setLaterPopover(null)}
+                >
+                  <div className="later-popover-title">後で聞く</div>
+                  <div className="later-popover-list">
+                    {laterPopover.items.map((item) => (
+                      <div key={item.id} className="later-popover-item">
+                        <div className="later-popover-text">{item.text || "(no title)"}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </button>
-            );
-          })}
+              )}
+              {graphNodes.map((n) => {
+                const x = laneX(n.lane, laneGap);
+                const isSelected = selectedNodeId === n.id;
+                const onPath = pathNodeSet.has(n.id);
+                const isHovered = hoveredNodeId === n.id;
+                const isMainLane = n.lane === 0;
+                const laterCount = laterCounts?.[n.id] ?? 0;
+                const nodeColor = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
+                const nodeStyle: CSSProperties & { ["--branch-color"]?: string; ["--branch-emphasis"]?: string } = {
+                  top: n.y,
+                  left: x,
+                  "--branch-color": nodeColor,
+                  "--branch-emphasis": onPath || isSelected ? nodeColor : "transparent",
+                };
+                return (
+                  <div key={n.id}>
+                    <button
+                      className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "later" : ""} ${
+                        onPath ? "path" : ""
+                      } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
+                      style={nodeStyle}
+                      data-node-id={n.id}
+                      data-lane={n.lane}
+                      data-testid="gitk-node"
+                      title={n.title || n.summary || ""}
+                      onClick={() => {
+                        onSelect(n.id);
+                        if (n.type === "later" && onPrefill) {
+                          const text = n.title || n.summary || "";
+                          if (text) onPrefill(text);
+                        }
+                      }}
+                      onMouseEnter={() => setHoveredNodeId(n.id)}
+                      onMouseLeave={() => setHoveredNodeId(null)}
+                      type="button"
+                      aria-label={n.title || n.summary || "node"}
+                    >
+                      <span className="gitk-dot-btn">
+                        <span className="gitk-dot" />
+                      </span>
+                    </button>
+                    {laterCount > 0 && (
+                      <span
+                        className="gitk-later-badge"
+                        style={{ top: n.y - 8, left: x + 14 }}
+                        aria-label={`後で聞く ${laterCount}件`}
+                        title={`後で聞く ${laterCount}件`}
+                        onMouseEnter={() => {
+                          const items = laterItemsByParent?.[n.id] ?? [];
+                          const anchorX = x + 20;
+                          const minX = PADDING_X + 8;
+                          const clampedX = Math.max(minX, anchorX);
+                          setLaterPopover({ x: clampedX, y: n.y - 18, items });
+                        }}
+                        onMouseLeave={() => setLaterPopover(null)}
+                      >
+                        {laterCount}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {listOpen && (
+            <div
+              className="gitk-list"
+              style={{ height, "--list-width": `${LIST_WIDTH}px` } as CSSProperties & {
+                ["--list-width"]: string;
+              }}
+            >
+              {graphNodes.map((n) => {
+                const isSelected = selectedNodeId === n.id;
+                const onPath = pathNodeSet.has(n.id);
+                const isHovered = hoveredNodeId === n.id;
+                const label = n.title || n.summary || "(no title)";
+                const color = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
+                const listStyle: CSSProperties & { ["--branch-color"]?: string } = {
+                  top: n.y,
+                  "--branch-color": color,
+                };
+                return (
+                  <button
+                    key={`list-${n.id}`}
+                    className={`gitk-list-item ${isSelected ? "active" : ""} ${onPath ? "path" : ""} ${
+                      n.type === "later" ? "later" : ""
+                    } ${isHovered ? "hovered" : ""}`}
+                    style={listStyle}
+                    onClick={() => {
+                      onSelect(n.id);
+                    }}
+                    onMouseEnter={() => setHoveredNodeId(n.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    type="button"
+                    title={label}
+                  >
+                    <div className="gitk-list-bar" />
+                    <div className="gitk-list-body">
+                      <div className="gitk-list-title">{label}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
