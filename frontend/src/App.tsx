@@ -4,6 +4,7 @@ import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderMenu from "./components/HeaderMenu";
+import LoginScreen from "./components/LoginScreen";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
@@ -120,15 +121,25 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state");
-    if (!code) return;
+    const oauthError = params.get("error");
+    const oauthErrorDescription = params.get("error_description");
+    if (!code && !oauthError) return;
 
     const cleanupQuery = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
     };
 
+    if (oauthError) {
+      auth.clearAuthArtifacts();
+      setAuthError(oauthErrorDescription ? `${oauthError}: ${oauthErrorDescription}` : oauthError);
+      cleanupQuery();
+      return;
+    }
+
     const run = async () => {
       setLoading(true);
       setError(null);
+      setAuthError(null);
       try {
         const tokens = await auth.exchangeCodeForToken(code, state ?? undefined);
         api.setToken(tokens.accessToken);
@@ -641,36 +652,15 @@ function App() {
   );
 
   if (!authenticated) {
-    const manualToken = api.getToken() || "";
     return (
-      <div className="login-shell">
-        <div className="login-card">
-          <div className="brand hero">QMap</div>
-          <div className="login-copy">ログインして開始</div>
-          <div className="login-actions">
-            <button className="btn solid login-primary" onClick={handleLoginStart}>
-              ログイン
-            </button>
-            <div className="login-field">
-              <span className="login-label">トークンでログイン</span>
-              <div className="manual-auth">
-                <input className="input" placeholder="JWT を貼り付け" defaultValue={manualToken} />
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const token = (document.querySelector(".manual-auth input") as HTMLInputElement | null)?.value;
-                    if (token) handleManualToken(token.trim());
-                  }}
-                >
-                  適用
-                </button>
-              </div>
-            </div>
-          </div>
-          {authError && <div className="helper-inline" style={{ color: "#b91c1c" }}>{authError}</div>}
-          {error && <div className="helper-inline" style={{ color: "#b91c1c" }}>{error}</div>}
-        </div>
-      </div>
+      <LoginScreen
+        onLogin={handleLoginStart}
+        onManualToken={handleManualToken}
+        authError={authError}
+        error={error}
+        loading={loading}
+        initialToken={api.getToken() || ""}
+      />
     );
   }
 
