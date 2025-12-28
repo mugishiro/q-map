@@ -324,7 +324,6 @@ export const TreeView = ({
                       data-node-id={n.id}
                       data-lane={n.lane}
                       data-testid="gitk-node"
-                      title={tooltip || undefined}
                       onClick={() => {
                         onSelect(n.id);
                         if (n.type === "later" && onPrefill) {

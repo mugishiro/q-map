@@ -866,8 +866,8 @@ body[data-grid="off"] {
     repeating-linear-gradient(90deg, var(--grid-line) 0, var(--grid-line) 1px, transparent 1px, transparent 28px);
   background-attachment: local;
   padding: 12px 12px 12px 16px;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
 }
 :root[data-grid="off"] .gitk-shell,
 body[data-grid="off"] .gitk-shell {
@@ -886,8 +886,7 @@ body[data-grid="off"] .gitk-shell {
 .gitk-canvas {
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
   padding-bottom: 6px;
 }
 .gitk-graph {
