@@ -1,4 +1,4 @@
-import { CSSProperties, useMemo, useState } from "react";
+import { CSSProperties, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Node } from "../types";
 
 type GraphNode = Node & {
@@ -41,6 +41,10 @@ const PATH_COLOR = "#22c55e";
 const OTHER_COLOR = "#5ca9e6";
 const PATH_EMPHASIS = 0.92;
 const NON_PATH_OPACITY = 0.62;
+const TOOLTIP_MAX_WIDTH = 280;
+const TOOLTIP_MARGIN = 12;
+const TOOLTIP_TOP_THRESHOLD = 56;
+const TOOLTIP_OFFSET = 12;
 
 const byCreatedAt = (a: Node, b: Node) => {
   if (a.createdAt === b.createdAt) return a.id < b.id ? -1 : 1;
@@ -148,9 +152,17 @@ export const TreeView = ({
   laterCounts,
   laterItemsByParent,
 }: Props) => {
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [listTooltipId, setListTooltipId] = useState<string | null>(null);
+  const [nodeTooltip, setNodeTooltip] = useState<{
+    text: string;
+    x: number;
+    y: number;
+    align: "left" | "center" | "right";
+    placement: "top" | "bottom";
+  } | null>(null);
   const [laterPopover, setLaterPopover] = useState<{
     x: number;
     y: number;
@@ -170,6 +182,28 @@ export const TreeView = ({
   const handleListLeave = () => {
     setHoveredNodeId(null);
     setListTooltipId(null);
+  };
+
+  const showNodeTooltip = (event: MouseEvent<HTMLButtonElement>, text: string) => {
+    if (!shellRef.current) return;
+    const shellRect = shellRef.current.getBoundingClientRect();
+    const nodeRect = event.currentTarget.getBoundingClientRect();
+    const anchorX = nodeRect.left - shellRect.left + nodeRect.width / 2;
+    const top = nodeRect.top - shellRect.top;
+    const bottom = nodeRect.bottom - shellRect.top;
+    let align: "left" | "center" | "right" = "center";
+    if (anchorX < TOOLTIP_MAX_WIDTH / 2 + TOOLTIP_MARGIN) {
+      align = "left";
+    } else if (anchorX > shellRect.width - TOOLTIP_MAX_WIDTH / 2 - TOOLTIP_MARGIN) {
+      align = "right";
+    }
+    const placement = top < TOOLTIP_TOP_THRESHOLD ? "bottom" : "top";
+    const y = placement === "top" ? top - TOOLTIP_OFFSET : bottom + TOOLTIP_OFFSET;
+    setNodeTooltip({ text, x: anchorX, y, align, placement });
+  };
+
+  const hideNodeTooltip = () => {
+    setNodeTooltip(null);
   };
 
   const visibleNodes = useMemo(() => {
@@ -204,7 +238,11 @@ export const TreeView = ({
 
   return (
     <div className="stack gap-m fill">
-      <div className="tree gitk-shell gitk-with-list" style={{ height: "100%", minHeight: `${MIN_CANVAS_HEIGHT}px` }}>
+      <div
+        ref={shellRef}
+        className="tree gitk-shell gitk-with-list"
+        style={{ height: "100%", minHeight: `${MIN_CANVAS_HEIGHT}px` }}
+      >
         <div className="gitk-list-toolbar">
           <button
             className={`gitk-list-toggle ${listOpen ? "active" : ""}`}
@@ -281,14 +319,12 @@ export const TreeView = ({
                     <button
                       className={`gitk-node ${isSelected ? "active" : ""} ${n.type === "later" ? "later" : ""} ${
                         onPath ? "path" : ""
-                      } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""} ${
-                        tooltip ? "has-tooltip" : ""
-                      }`}
+                      } ${isHovered ? "hovered" : ""} ${isMainLane ? "main" : ""}`}
                       style={nodeStyle}
                       data-node-id={n.id}
                       data-lane={n.lane}
                       data-testid="gitk-node"
-                      data-tooltip={tooltip || undefined}
+                      title={tooltip || undefined}
                       onClick={() => {
                         onSelect(n.id);
                         if (n.type === "later" && onPrefill) {
@@ -296,8 +332,14 @@ export const TreeView = ({
                           if (text) onPrefill(text);
                         }
                       }}
-                      onMouseEnter={() => setHoveredNodeId(n.id)}
-                      onMouseLeave={() => setHoveredNodeId(null)}
+                      onMouseEnter={(event) => {
+                        setHoveredNodeId(n.id);
+                        if (tooltip) showNodeTooltip(event, tooltip);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredNodeId(null);
+                        hideNodeTooltip();
+                      }}
                       type="button"
                       aria-label={n.title || n.summary || "node"}
                     >
@@ -373,6 +415,22 @@ export const TreeView = ({
             </div>
           )}
         </div>
+        {nodeTooltip && (
+          <div
+            className={`gitk-tooltip ${nodeTooltip.align === "center" ? "" : `align-${nodeTooltip.align}`} ${
+              nodeTooltip.placement === "bottom" ? "bottom" : ""
+            }`}
+            style={
+              {
+                left: nodeTooltip.x,
+                top: nodeTooltip.y,
+                "--tooltip-max-width": `${TOOLTIP_MAX_WIDTH}px`,
+              } as CSSProperties
+            }
+          >
+            {nodeTooltip.text}
+          </div>
+        )}
       </div>
     </div>
   );
