@@ -1745,7 +1745,7 @@ body[data-grid="off"] .gitk-shell {
   position: relative;
   max-width: 560px;
   display: grid;
-  gap: 18px;
+  gap: 12px;
   z-index: 2;
   animation: loginFade 0.8s ease both;
 }
@@ -1770,89 +1770,6 @@ body[data-grid="off"] .gitk-shell {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--login-text);
-}
-
-.login-tagline {
-  color: var(--login-muted);
-  font-size: 16px;
-  line-height: 1.7;
-  max-width: 480px;
-}
-
-.login-feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-}
-
-.login-feature {
-  border: 1px solid var(--login-card-border);
-  border-radius: 16px;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(6px);
-  display: grid;
-  gap: 6px;
-  color: var(--login-text);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-  animation: loginRise 0.8s ease both;
-}
-:root[data-theme="dark"] .login-feature {
-  background: rgba(15, 23, 42, 0.45);
-}
-.login-feature:nth-child(1) {
-  animation-delay: 0.1s;
-}
-.login-feature:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.login-feature:nth-child(3) {
-  animation-delay: 0.3s;
-}
-.login-feature-title {
-  font-weight: 700;
-  font-size: 14px;
-}
-.login-feature-copy {
-  font-size: 12px;
-  color: var(--login-muted);
-  line-height: 1.5;
-}
-
-.login-status {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid var(--login-card-border);
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-}
-:root[data-theme="dark"] .login-status {
-  background: rgba(15, 23, 42, 0.5);
-}
-.login-status .status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  margin-top: 6px;
-  background: var(--login-accent-2);
-  box-shadow: 0 0 12px rgba(20, 184, 166, 0.6);
-}
-.login-status.missing .status-dot {
-  background: var(--login-warm);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
-}
-.login-status-title {
-  font-weight: 600;
-  font-size: 13px;
-}
-.login-status-meta {
-  font-size: 12px;
-  color: var(--login-muted);
-  margin-top: 2px;
-  word-break: break-all;
 }
 
 .login-panel {
@@ -1900,10 +1817,6 @@ body[data-grid="off"] .gitk-shell {
 .login-subtitle {
   font-weight: 600;
   font-size: 16px;
-}
-.login-caption {
-  font-size: 12px;
-  color: var(--login-muted);
 }
 
 .login-primary,
@@ -1969,10 +1882,6 @@ body[data-grid="off"] .gitk-shell {
   font-weight: 600;
   color: var(--login-muted);
 }
-.login-helper {
-  font-size: 12px;
-  color: var(--login-muted);
-}
 
 .login-error {
   border-radius: 12px;
@@ -1985,11 +1894,6 @@ body[data-grid="off"] .gitk-shell {
   gap: 4px;
 }
 
-.login-footer {
-  text-align: center;
-  font-size: 12px;
-  color: var(--login-muted);
-}
 
 @keyframes loginFloat {
   0%,
@@ -2040,9 +1944,6 @@ body[data-grid="off"] .gitk-shell {
     gap: 24px;
     padding: 32px 18px 40px;
   }
-  .login-feature-grid {
-    grid-template-columns: 1fr;
-  }
   .login-card {
     padding: 22px;
   }
@@ -2055,7 +1956,6 @@ body[data-grid="off"] .gitk-shell {
 @media (prefers-reduced-motion: reduce) {
   .login-orb,
   .login-hero,
-  .login-feature,
   .login-panel {
     animation: none;
   }
