@@ -1,4 +1,4 @@
-import { CSSProperties, useMemo, useRef, useState, type MouseEvent } from "react";
+import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Node } from "../types";
 
 type GraphNode = Node & {
@@ -153,6 +153,7 @@ export const TreeView = ({
   laterItemsByParent,
 }: Props) => {
   const shellRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [listTooltipId, setListTooltipId] = useState<string | null>(null);
@@ -163,6 +164,8 @@ export const TreeView = ({
     align: "left" | "center" | "right";
     placement: "top" | "bottom";
   } | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const [laterPopover, setLaterPopover] = useState<{
     x: number;
     y: number;
@@ -206,6 +209,44 @@ export const TreeView = ({
     setNodeTooltip(null);
   };
 
+  const updateScrollState = useCallback(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+    setCanScrollLeft(el.scrollLeft > 1);
+    setCanScrollRight(el.scrollLeft < maxScrollLeft - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const handle = () => updateScrollState();
+    handle();
+    el.addEventListener("scroll", handle);
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(handle);
+      observer.observe(el);
+    }
+    window.addEventListener("resize", handle);
+    return () => {
+      el.removeEventListener("scroll", handle);
+      window.removeEventListener("resize", handle);
+      observer?.disconnect();
+    };
+  }, [updateScrollState]);
+
+  useEffect(() => {
+    updateScrollState();
+  }, [updateScrollState, width, listOpen, nodes.length]);
+
+  const scrollCanvas = (direction: -1 | 1) => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const amount = Math.max(160, Math.round(el.clientWidth * 0.6));
+    el.scrollBy({ left: amount * direction, behavior: "smooth" });
+  };
+
   const visibleNodes = useMemo(() => {
     return nodes.slice().sort(byCreatedAt);
   }, [nodes]);
@@ -244,6 +285,32 @@ export const TreeView = ({
         style={{ height: "100%", minHeight: `${MIN_CANVAS_HEIGHT}px` }}
       >
         <div className="gitk-list-toolbar">
+          <div className="gitk-scroll-controls" aria-label="横スクロール">
+            <button
+              className="gitk-scroll-btn"
+              onClick={() => scrollCanvas(-1)}
+              type="button"
+              aria-label="左にスクロール"
+              title="左にスクロール"
+              disabled={!canScrollLeft}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              className="gitk-scroll-btn"
+              onClick={() => scrollCanvas(1)}
+              type="button"
+              aria-label="右にスクロール"
+              title="右にスクロール"
+              disabled={!canScrollRight}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
           <button
             className={`gitk-list-toggle ${listOpen ? "active" : ""}`}
             onClick={() => setListOpen((v) => !v)}
@@ -261,7 +328,7 @@ export const TreeView = ({
           </button>
         </div>
         <div className="gitk-body" style={{ height }}>
-          <div className="gitk-canvas" style={{ height }}>
+          <div ref={canvasRef} className="gitk-canvas" style={{ height }}>
             <div className="gitk-graph" style={{ width, height }}>
               {!graphNodes.length && <div className="gitk-empty">ノードなし</div>}
               <svg className="gitk-svg" width={width} height={height}>

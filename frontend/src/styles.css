@@ -866,8 +866,9 @@ body[data-grid="off"] {
     repeating-linear-gradient(90deg, var(--grid-line) 0, var(--grid-line) 1px, transparent 1px, transparent 28px);
   background-attachment: local;
   padding: 12px 12px 12px 16px;
-  overflow: auto;
-  scrollbar-gutter: stable both-edges;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 :root[data-grid="off"] .gitk-shell,
 body[data-grid="off"] .gitk-shell {
@@ -886,8 +887,10 @@ body[data-grid="off"] .gitk-shell {
 .gitk-canvas {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 6px;
+  scrollbar-gutter: stable;
 }
 .gitk-graph {
   position: relative;
@@ -1122,6 +1125,37 @@ body[data-grid="off"] .gitk-shell {
   height: 0;
   z-index: 4;
   pointer-events: none;
+}
+.gitk-scroll-controls {
+  position: absolute;
+  left: 12px;
+  top: 0;
+  display: inline-flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+.gitk-scroll-btn {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-bg) 85%, transparent);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+  transition: border 0.12s ease, color 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
+}
+.gitk-scroll-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+.gitk-scroll-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
 }
 .gitk-list-toggle {
   position: absolute;
