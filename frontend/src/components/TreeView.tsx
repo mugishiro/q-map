@@ -236,10 +236,6 @@ export const TreeView = ({
     };
   }, [updateScrollState]);
 
-  useEffect(() => {
-    updateScrollState();
-  }, [updateScrollState, width, listOpen, nodes.length]);
-
   const scrollCanvas = (direction: -1 | 1) => {
     const el = canvasRef.current;
     if (!el) return;
@@ -255,6 +251,10 @@ export const TreeView = ({
     () => buildGraph(visibleNodes, mainRef),
     [visibleNodes, mainRef]
   );
+
+  useEffect(() => {
+    updateScrollState();
+  }, [updateScrollState, width, listOpen, nodes.length]);
 
   const { pathNodeSet, pathEdgeSet } = useMemo(() => {
     const byChild = new Map<string, string>();
