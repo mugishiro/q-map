@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { api } from "../api";
+import HeaderAuth from "./HeaderAuth";
 import SettingsPanel from "./SettingsPanel";
 import {
     getStoredGrid,
@@ -9,6 +11,8 @@ import {
 } from "../theme";
 
 type Props = {
+    onAuthChange: () => void;
+    onLogout: () => void;
     placement?: "up" | "down";
     align?: "left" | "right";
     showLabel?: boolean;
@@ -16,6 +20,8 @@ type Props = {
 };
 
 export const HeaderMenu = ({
+    onAuthChange,
+    onLogout,
     placement = "down",
     align = "left",
     showLabel = false,
@@ -23,11 +29,14 @@ export const HeaderMenu = ({
 }: Props) => {
     const [open, setOpen] = useState(false);
     const [showLlm, setShowLlm] = useState(false);
+    const [showAuth, setShowAuth] = useState(false);
     const [theme, setThemeState] = useState<ThemeOption>(() =>
         getStoredTheme(),
     );
     const [grid, setGrid] = useState<boolean>(() => getStoredGrid());
     const menuRef = useRef<HTMLDivElement | null>(null);
+    const loggedIn = Boolean(api.getToken());
+    const userLabel = loggedIn ? "ログイン中" : "未ログイン";
     const themeLabel = theme === "dark" ? "Dark" : "Light";
     const gridLabel = grid ? "On" : "Off";
     const applyTheme = (next: ThemeOption) => {
@@ -251,6 +260,38 @@ export const HeaderMenu = ({
                                 <span className="settings-menu-arrow">›</span>
                             </span>
                         </button>
+                        <button
+                            className="settings-menu-item"
+                            onClick={() => {
+                                setOpen(false);
+                                setShowAuth(true);
+                            }}
+                            type="button"
+                        >
+                            <span
+                                className="settings-menu-icon"
+                                aria-hidden="true"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M5 12a7 7 0 1 1 7 7m-4.5-7a4.5 4.5 0 0 0 9 0m-4.5 4v4"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </span>
+                            <span className="settings-menu-label">認証</span>
+                            <span className="settings-menu-trailing">
+                                <span className="settings-menu-arrow">›</span>
+                            </span>
+                        </button>
                     </div>
                 </div>
             )}
@@ -321,6 +362,77 @@ export const HeaderMenu = ({
                             embedded
                             noCard
                             showCloseButton={false}
+                        />
+                    </div>
+                </div>
+            )}
+            {showAuth && (
+                <div
+                    className="modal-backdrop"
+                    onClick={() => setShowAuth(false)}
+                >
+                    <div
+                        className="modal-card stack gap-m"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ minWidth: "360px" }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                }}
+                            >
+                                <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M5 12a7 7 0 1 1 7 7m-4.5-7a4.5 4.5 0 0 0 9 0m-4.5 4v4"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                                <span style={{ fontWeight: 700 }}>認証</span>
+                            </div>
+                            <button
+                                className="icon-btn"
+                                aria-label="閉じる"
+                                title="閉じる"
+                                onClick={() => setShowAuth(false)}
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M6 6l12 12M18 6L6 18"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <HeaderAuth
+                            onAuthChange={onAuthChange}
+                            onLogout={() => {
+                                onLogout();
+                                setShowAuth(false);
+                            }}
                         />
                     </div>
                 </div>

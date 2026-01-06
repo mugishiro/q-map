@@ -28,6 +28,26 @@ output "lambda_function_name" {
   value       = module.api.lambda_function_name
 }
 
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = module.auth.user_pool_id
+}
+
+output "cognito_user_pool_client_id" {
+  description = "Cognito User Pool Client ID"
+  value       = module.auth.user_pool_client_id
+}
+
+output "cognito_user_pool_issuer" {
+  description = "Cognito User Pool Issuer URL"
+  value       = module.auth.user_pool_issuer
+}
+
+output "cognito_domain" {
+  description = "Cognito Hosted UI ドメイン"
+  value       = module.auth.cognito_domain
+}
+
 output "amplify_app_id" {
   description = "Amplify App ID"
   value       = module.amplify.app_id

@@ -48,6 +48,21 @@ variable "nodes_gsi2_name" {
   type        = string
 }
 
+variable "cognito_user_pool_arn" {
+  description = "Cognito User Pool ARN"
+  type        = string
+}
+
+variable "cognito_user_pool_client_id" {
+  description = "Cognito User Pool Client ID"
+  type        = string
+}
+
+variable "cognito_user_pool_issuer" {
+  description = "Cognito User Pool Issuer URL"
+  type        = string
+}
+
 variable "allowed_origins" {
   description = "HTTP API の CORS で許可するオリジン"
   type        = list(string)

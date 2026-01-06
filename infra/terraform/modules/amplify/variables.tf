@@ -13,6 +13,21 @@ variable "api_endpoint" {
   type        = string
 }
 
+variable "user_pool_id" {
+  description = "Cognito User Pool ID"
+  type        = string
+}
+
+variable "user_pool_client_id" {
+  description = "Cognito User Pool Client ID"
+  type        = string
+}
+
+variable "cognito_domain" {
+  description = "Cognito Hosted UI ドメイン"
+  type        = string
+}
+
 variable "env_vars_extra" {
   description = "追加の環境変数 (string map)"
   type        = map(string)

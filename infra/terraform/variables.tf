@@ -20,6 +20,24 @@ variable "default_tags" {
   default     = {}
 }
 
+variable "domain_prefix" {
+  description = "Cognito Hosted UI 用のドメインプレフィックス（ユニークである必要あり）"
+  type        = string
+  default     = "" # 未指定なら name_prefix (例: qmap-dev) を使用
+}
+
+variable "callback_urls" {
+  description = "Cognito User Pool Client の許可済みコールバック URL"
+  type        = list(string)
+  default     = []
+}
+
+variable "logout_urls" {
+  description = "Cognito User Pool Client の許可済みログアウト URL"
+  type        = list(string)
+  default     = []
+}
+
 variable "allowed_origins" {
   description = "HTTP API の CORS で許可するオリジン"
   type        = list(string)

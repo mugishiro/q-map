@@ -4,7 +4,9 @@ import { TopicList } from "./components/TopicList";
 import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderMenu from "./components/HeaderMenu";
+import LoginScreen from "./components/LoginScreen";
 import { api } from "./api";
+import { auth } from "./auth";
 import { Node, Topic } from "./types";
 import { initTheme } from "./theme";
 
@@ -79,6 +81,10 @@ function App() {
     const [topicsCollapsed, setTopicsCollapsed] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [authenticated, setAuthenticated] = useState<boolean>(
+        Boolean(api.getToken()),
+    );
+    const [authError, setAuthError] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
     const [mobileSection, setMobileSection] = useState<
         "topics" | "tree" | "chat"
@@ -101,6 +107,7 @@ function App() {
     }, []);
 
     const refreshTopics = async (preferredId?: string | null) => {
+        if (!authenticated) return;
         try {
             const res = await api.listTopics();
             const normalized = res.items.map(
@@ -120,7 +127,58 @@ function App() {
     };
 
     useEffect(() => {
-        void refreshTopics();
+        if (authenticated) {
+            refreshTopics();
+        }
+    }, [authenticated]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const state = params.get("state");
+        const oauthError = params.get("error");
+        const oauthErrorDescription = params.get("error_description");
+        if (!code && !oauthError) return;
+
+        const cleanupQuery = () => {
+            window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname,
+            );
+        };
+
+        if (oauthError) {
+            auth.clearAuthArtifacts();
+            setAuthError(
+                oauthErrorDescription
+                    ? `${oauthError}: ${oauthErrorDescription}`
+                    : oauthError,
+            );
+            cleanupQuery();
+            return;
+        }
+
+        const run = async () => {
+            setLoading(true);
+            setError(null);
+            setAuthError(null);
+            try {
+                const tokens = await auth.exchangeCodeForToken(
+                    code,
+                    state ?? undefined,
+                );
+                api.setToken(tokens.accessToken);
+                setAuthenticated(true);
+                await refreshTopics();
+            } catch (e) {
+                setError((e as Error).message);
+            } finally {
+                cleanupQuery();
+                setLoading(false);
+            }
+        };
+        void run();
     }, []);
 
     const loadNodes = async (topicId: string, selectNodeId?: string | null) => {
@@ -441,6 +499,19 @@ function App() {
         if (isMobile) setMobileSection("chat");
     };
 
+    const handleLogout = () => {
+        api.clearToken();
+        auth.clearAuthArtifacts();
+        setAuthenticated(false);
+        setPendingNewChat(false);
+        setTopics([]);
+        setNodes([]);
+        setPath([]);
+        setSelectedNodeId(null);
+        setLastLaterNodeId(null);
+        setChatDraft("");
+    };
+
     const selectNode = (nodeId: string) => {
         setSelectedNodeId(nodeId);
         setPath(buildPathLocal(nodeId, nodes));
@@ -458,6 +529,15 @@ function App() {
                 () => chatInputRef.current?.focus({ preventScroll: true }),
                 0,
             );
+        }
+    };
+
+    const handleLoginStart = async () => {
+        setAuthError(null);
+        try {
+            await auth.startLogin();
+        } catch (e) {
+            setAuthError((e as Error).message);
         }
     };
 
@@ -592,6 +672,8 @@ function App() {
             )}
             <div className="sidebar-bottom">
                 <HeaderMenu
+                    onAuthChange={refreshTopics}
+                    onLogout={handleLogout}
                     placement="up"
                     align="left"
                     showLabel={!topicsCollapsed}
@@ -682,6 +764,17 @@ function App() {
             {error && <div className="card error-card">エラー: {error}</div>}
         </div>
     );
+
+    if (!authenticated) {
+        return (
+            <LoginScreen
+                onLogin={handleLoginStart}
+                authError={authError}
+                error={error}
+                loading={loading}
+            />
+        );
+    }
 
     return (
         <Layout
