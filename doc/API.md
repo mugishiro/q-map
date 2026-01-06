@@ -4,10 +4,10 @@
 - dev: `https://csdq8anoqk.execute-api.ap-northeast-1.amazonaws.com/dev`  
 - prod: `https://4s9u0m4qqh.execute-api.ap-northeast-1.amazonaws.com/prod`  
 フォーマット: `application/json`  
-認証: Cognito 等で発行された JWT を `Authorization: Bearer <JWT>` で送る。全リソースは JWT の `userId` に紐づく。
+認証: なし。全リソースはサーバ側の既定 userId に紐づく。
 
 ## 共通
-- ヘッダ: `Content-Type: application/json`, `Authorization: Bearer <JWT>`
+- ヘッダ: `Content-Type: application/json`
 - タイムスタンプ: ISO 8601（UTC）
 - ページネーション: `limit`（デフォルト 50）、`cursor`（文字列）。`nextCursor` が null で終端。
 - エラー形式: 共通エラーを参照。
@@ -52,7 +52,7 @@ export type UserSettings = {
 };
 ```
 
-## 認証・ユーザー設定
+## ユーザー設定
 ### GET /me/settings
 - 用途: LLM 設定の確認（API キー値は返さない）。
 - レスポンス 200:
@@ -297,7 +297,7 @@ export type UserSettings = {
   }
 }
 ```
-- 代表コード: `UNAUTHENTICATED`, `FORBIDDEN`, `TOPIC_NOT_FOUND`, `NODE_NOT_FOUND`, `LLM_API_KEY_MISSING`, `LLM_REQUEST_FAILED`, `VALIDATION_ERROR`.
+- 代表コード: `TOPIC_NOT_FOUND`, `NODE_NOT_FOUND`, `LLM_API_KEY_MISSING`, `LLM_REQUEST_FAILED`, `VALIDATION_ERROR`.
 
 ## 実装上の注意
 - `baseNodeId` のパス以外（兄弟・未来分岐）の messages を LLM に混ぜないことが最重要。

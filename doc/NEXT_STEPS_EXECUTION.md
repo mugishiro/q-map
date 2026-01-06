@@ -12,13 +12,13 @@
   - `/<*>` → `/index.html` で SPA fallback。`/api/*` はキャッシュ無効。
 - 環境変数（Amplify 環境に設定、秘匿情報は置かない）:
   - `VITE_API_BASE_URL`（Amplify は `/api`, ローカルは APIGW 直）、`VITE_APP_STAGE`
-  - `VITE_COGNITO_DOMAIN`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_REDIRECT_URI`, `VITE_AWS_REGION`
 
 ## Lambda 環境変数・シークレットの扱い
 - 環境変数（例）:
   - `TOPICS_TABLE_NAME`, `NODES_TABLE_NAME`, `USER_SETTINGS_TABLE_NAME`
   - `NODES_GSI1_NAME`（parentId/createdAt 用）, `NODES_GSI2_NAME`（任意: userId/updatedAt）
   - `KMS_KEY_ARN`
+  - `DEFAULT_USER_ID`（未指定なら `user#public`）
   - `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`（未実装の場合はコード側デフォルト openai/gpt-4o-mini を使用）
   - `LLM_REQUEST_TIMEOUT_MS`, `MAX_MESSAGE_CHARS`, `REQUEST_LOG_LEVEL`（必要に応じて追加）
   - `STAGE`, `REGION`
@@ -40,8 +40,7 @@
 - モジュール分割案（`modules/` 配下を想定）:
   - `base`: KMS キー、共通ログ/タグ設定。
   - `data`: DynamoDB テーブル（UserSettings/Topics/Nodes + GSI1/任意 GSI2）。
-  - `auth`: Cognito User Pool / Domain / User Pool Client。
-  - `api`: Lambda（BFF）+ API Gateway HTTP API（JWT オーソライザー）、Lambda への環境変数付与、Dynamo/KMS/Secrets への権限付与。
+  - `api`: Lambda（BFF）+ API Gateway HTTP API、Lambda への環境変数付与、Dynamo/KMS/Secrets への権限付与。
 - ルート構成: `main.tf` で各モジュールを呼び出し、`stage`/`region`/`app`（例: `qmap`）を共通変数として渡す。命名規則 `${app}-${stage}-${resource}` を徹底（例: `qmap-dev-topics`, `qmap-prod-nodes-gsi1`）。
 - デプロイ手順の雛形:
   - `terraform init -backend-config="bucket=qmap-tfstate-<region>" -backend-config="dynamodb_table=qmap-terraform-locks" -backend-config="key=qmap/<stage>/terraform.tfstate"`
@@ -49,14 +48,6 @@
   - `terraform plan -var stage=<stage> -out tfplan`
   - `terraform apply tfplan`
 - 変数管理: `locals` でリソース名を組み立て、環境変数（Lambda 用）は `aws_lambda_function` の `environment` ブロックでセット。秘匿値は Secrets Manager/KMS と IAM ポリシーで制御する。
-
-## 認証統合（Cognito + API Gateway）
-- Cognito:
-  - Hosted UI + PKCE を実装済み（フロントで code パラメータを交換）。ドメイン例: `qmap-dev.auth.ap-northeast-1.amazoncognito.com` / `qmap-prod.auth.ap-northeast-1.amazoncognito.com`。
-  - User Pool Client: public client, callback/logout に Amplify ドメイン（`/` と `/callback`/`/logout`）と `http://localhost:5173/` を登録。Scope: `openid email profile`。Access Token 1h, Refresh 30d 目安（現状の Terraform 設定）。
-- API Gateway HTTP API:
-  - JWT オーソライザーで issuer=各 UserPool, audience=ClientId。全ルートに適用。
-  - CORS は tfvars の `allowed_origins` で管理（現在は Amplify ドメインと localhost）。
 
 ## バックエンド実装メモ（現状）
 - Lambda(Node.js/TypeScript, aws-sdk v2) + API Gateway HTTP API。ルートは `/v1/topics`, `/nodes`, `/chat`, `/me/settings` 等を実装済み。ID は `topic#uuid` / `node#uuid`、ラベルは階層＋通し番号で生成。

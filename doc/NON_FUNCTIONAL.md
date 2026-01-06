@@ -5,23 +5,12 @@
 2025-01-XX 更新: `/chat` の later→chat 昇格（nodeId 指定）とフロントの Ctrl/Cmd+Enter 送信を前提に整合を確認。
 
 ## 認証・認可
-- 認証: Cognito 等の JWT を `Authorization: Bearer <JWT>` で必須。`userId` は JWT から解決。
-- 認可: すべてのリソースは `userId` に紐づく。Topic/Node 取得時は `userId` 照合で早期拒否。
+- 認証: なし（JWT/Cognito 不要）。
+- 認可: ユーザー分離は行わず、すべてのリソースはサーバ側の既定 userId に紐づく。
 - CORS: SPA ドメインを Allow-Origin に限定。`/api/*` のみ許可。Credential は不要想定。
-- ログインフロー（Cognito Hosted UI + PKCE 想定）:
-  - 未ログイン時は Cognito Hosted UI へリダイレクト。
-  - 認証後、認可コードが付与され Amplify ドメインに戻る。
-  - フロントがコード＋PKCE でトークン交換し、ID/Access/Refresh トークンを取得。
-  - Access Token(JWT) を `Authorization: Bearer` に付け `/api/*` を呼ぶ。API Gateway で検証。
-  - 401/403 ならリフレッシュ→再ログインへ。ログアウトは Cognito サインアウトエンドポイントにリダイレクトし、ローカルトークンも破棄。
-- サインアップ（初回訪問時の流れ）:
-  - 「ログイン」押下で Cognito Hosted UI に遷移し、サインアップ（メール+パスワード）を実施。
-  - 必要に応じてメール検証コードを入力 → アカウント確定。
-  - サインアップ完了後、そのまま認可コードフローで SPA にリダイレクトされ、ID/Access トークンを取得。
-  - バックエンドは `sub` を userId として扱い、メールアドレスは DB に保存しない（Cognito 管理、PII 最小化）。
 
 ## レート制御・保護
-- API Gateway レベルで IP+userId ベースの基本レートリミットを設定（例: 10 RPS バースト 20）。
+- API Gateway レベルで IP ベースの基本レートリミットを設定（例: 10 RPS バースト 20）。
 - LLM 呼び出し失敗時のリトライ: プロバイダのレートエラーのみ指数バックオフ 2 回まで。`LLM_REQUEST_FAILED` を返し UI で再送を促す。
 - サイズ制限: `message` はサーバ側で文字数/トークン簡易上限をチェック（例: 4096 chars 目安）し、超過時 `VALIDATION_ERROR`。
 - ペイロード上限: 1 リクエストの JSON 目安 1MB 未満。ノード一覧はページネーションを利用し、過大レスポンスを防ぐ。
@@ -47,4 +36,4 @@
 
 ## エラーポリシー
 - 形式: `{"error": {"code": "...", "message": "..."}}` を統一（詳細は API.md）。
-- 主なコード: `UNAUTHENTICATED`, `FORBIDDEN`, `TOPIC_NOT_FOUND`, `NODE_NOT_FOUND`, `LLM_API_KEY_MISSING`, `LLM_REQUEST_FAILED`, `VALIDATION_ERROR`.
+- 主なコード: `TOPIC_NOT_FOUND`, `NODE_NOT_FOUND`, `LLM_API_KEY_MISSING`, `LLM_REQUEST_FAILED`, `VALIDATION_ERROR`.

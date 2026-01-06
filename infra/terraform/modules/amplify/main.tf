@@ -1,20 +1,17 @@
 locals {
-  app_name      = "${var.name_prefix}-app"
-  branch_name   = "main"
-  api_rewrite   = "${var.api_endpoint}/<*>"
+  app_name    = "${var.name_prefix}-app"
+  branch_name = "main"
+  api_rewrite = "${var.api_endpoint}/<*>"
   env_vars_base = {
-    VITE_API_BASE_URL         = "/api"
-    VITE_APP_STAGE            = var.stage
-    VITE_COGNITO_USER_POOL_ID = var.user_pool_id
-    VITE_COGNITO_CLIENT_ID    = var.user_pool_client_id
-    VITE_COGNITO_DOMAIN       = var.cognito_domain
+    VITE_API_BASE_URL = "/api"
+    VITE_APP_STAGE    = var.stage
   }
 }
 
 resource "aws_amplify_app" "this" {
-  name       = local.app_name
-  platform   = "WEB"
-  repository = "https://github.com/mugishiro/q-map.git"
+  name         = local.app_name
+  platform     = "WEB"
+  repository   = "https://github.com/mugishiro/q-map.git"
   access_token = var.access_token
 
   custom_rule {

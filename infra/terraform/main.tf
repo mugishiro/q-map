@@ -54,17 +54,6 @@ module "data" {
   kms_key_arn = module.base.kms_key_arn
 }
 
-module "auth" {
-  source = "./modules/auth"
-
-  name_prefix   = local.name_prefix
-  region        = var.region
-  tags          = local.default_tags
-  domain_prefix = var.domain_prefix
-  callback_urls = var.callback_urls
-  logout_urls   = var.logout_urls
-}
-
 module "api" {
   source = "./modules/api"
 
@@ -78,9 +67,6 @@ module "api" {
   user_settings_table_name     = module.data.user_settings_table_name
   nodes_gsi1_name              = module.data.nodes_gsi1_name
   nodes_gsi2_name              = module.data.nodes_gsi2_name
-  cognito_user_pool_arn        = module.auth.user_pool_arn
-  cognito_user_pool_client_id  = module.auth.user_pool_client_id
-  cognito_user_pool_issuer     = module.auth.user_pool_issuer
   allowed_origins              = var.allowed_origins
   lambda_timeout_seconds       = var.lambda_timeout_seconds
   lambda_memory_mb             = var.lambda_memory_mb
@@ -91,12 +77,9 @@ module "api" {
 module "amplify" {
   source = "./modules/amplify"
 
-  name_prefix         = local.name_prefix
-  stage               = local.stage
-  api_endpoint        = module.api.http_api_endpoint
-  user_pool_id        = module.auth.user_pool_id
-  user_pool_client_id = module.auth.user_pool_client_id
-  cognito_domain      = module.auth.cognito_domain
-  env_vars_extra      = var.lambda_environment_extras
-  access_token        = var.amplify_access_token
+  name_prefix    = local.name_prefix
+  stage          = local.stage
+  api_endpoint   = module.api.http_api_endpoint
+  env_vars_extra = var.lambda_environment_extras
+  access_token   = var.amplify_access_token
 }

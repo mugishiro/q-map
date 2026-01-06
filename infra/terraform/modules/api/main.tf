@@ -140,24 +140,12 @@ resource "aws_apigatewayv2_api" "http_api" {
 
   cors_configuration {
     allow_credentials = false
-    allow_headers     = ["authorization", "content-type"]
+    allow_headers     = ["content-type"]
     allow_methods     = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
     allow_origins     = var.allowed_origins
   }
 
   tags = var.tags
-}
-
-resource "aws_apigatewayv2_authorizer" "jwt" {
-  name             = "${var.name_prefix}-jwt"
-  api_id           = aws_apigatewayv2_api.http_api.id
-  authorizer_type  = "JWT"
-  identity_sources = ["$request.header.Authorization"]
-
-  jwt_configuration {
-    audience = [var.cognito_user_pool_client_id]
-    issuer   = var.cognito_user_pool_issuer
-  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
@@ -174,8 +162,7 @@ resource "aws_apigatewayv2_route" "routes" {
   api_id    = aws_apigatewayv2_api.http_api.id
   route_key = each.value
 
-  authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.jwt.id
+  authorization_type = "NONE"
   target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
