@@ -18,7 +18,6 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                 <div className="login-card">
                     <div className="login-card-header">
                         <div className="login-brand">QMap</div>
-                        <div className="login-subtitle">ログイン</div>
                     </div>
                     <button
                         className="btn solid login-primary"

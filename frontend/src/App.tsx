@@ -672,7 +672,6 @@ function App() {
             )}
             <div className="sidebar-bottom">
                 <HeaderMenu
-                    onAuthChange={refreshTopics}
                     onLogout={handleLogout}
                     placement="up"
                     align="left"
