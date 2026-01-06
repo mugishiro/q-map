@@ -292,6 +292,53 @@ export const HeaderMenu = ({
                                 <span className="settings-menu-arrow">›</span>
                             </span>
                         </button>
+                        {loggedIn && (
+                            <button
+                                className="settings-menu-item"
+                                onClick={() => {
+                                    onLogout();
+                                    setOpen(false);
+                                    setShowAuth(false);
+                                }}
+                                type="button"
+                            >
+                                <span
+                                    className="settings-menu-icon"
+                                    aria-hidden="true"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                        <path
+                                            d="M14 8l4 4-4 4"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                        <path
+                                            d="M9 12h9"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                </span>
+                                <span className="settings-menu-label">
+                                    ログアウト
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
             )}

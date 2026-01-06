@@ -17,7 +17,6 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
             <div className="login-panel">
                 <div className="login-card">
                     <div className="login-card-header">
-                        <div className="login-pill">Cognito PKCE</div>
                         <div className="login-brand">QMap</div>
                         <div className="login-subtitle">ログイン</div>
                     </div>
@@ -26,7 +25,7 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                         onClick={onLogin}
                         disabled={!isConfigured || loading}
                     >
-                        {loading ? "認証中..." : "Cognitoでログイン"}
+                        {loading ? "認証中..." : "ログイン"}
                     </button>
                     {errors.length > 0 && (
                         <div className="login-error">
