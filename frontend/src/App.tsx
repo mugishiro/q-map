@@ -733,6 +733,7 @@ function App() {
                     onPrefill={applyLaterDraft}
                     laterCounts={laterCounts}
                     laterItemsByParent={laterByParent}
+                    isMobile={isMobile}
                 />
             </div>
         </div>

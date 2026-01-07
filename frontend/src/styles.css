@@ -1983,13 +1983,15 @@ body[data-grid="off"] .gitk-shell {
     flex: 1;
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 8px;
+    padding: 10px 12px;
     background: var(--panel-bg);
+    font-size: 13px;
     font-weight: 600;
   }
   .mobile-tab.active {
-    border-color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
     color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--panel-bg));
   }
   .shell[data-mobile="true"] .grid {
     grid-template-columns: 1fr;
@@ -1999,14 +2001,23 @@ body[data-grid="off"] .gitk-shell {
       "left"
       "center"
       "right";
-    gap: 10px;
+    gap: 8px;
     padding: 8px;
   }
   .shell[data-mobile="true"] .grid.collapsed-left {
     grid-template-columns: 1fr;
   }
+  .shell[data-mobile="true"] .app-header {
+    padding: 12px 14px;
+  }
+  .shell[data-mobile="true"] .brand {
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
   .shell[data-mobile="true"] .panel {
     min-height: auto;
+    padding: 10px;
+    border-radius: 12px;
   }
   .shell[data-mobile="true"] .panel.left,
   .shell[data-mobile="true"] .panel.center,
@@ -2021,6 +2032,24 @@ body[data-grid="off"] .gitk-shell {
   }
   .shell[data-mobile="true"][data-section="chat"] .panel.right {
     display: block;
+  }
+  .shell[data-mobile="true"] .gitk-shell {
+    padding: 10px;
+  }
+  .shell[data-mobile="true"] .gitk-node {
+    width: 24px;
+    height: 24px;
+  }
+  .shell[data-mobile="true"] .gitk-dot-btn {
+    width: 16px;
+    height: 16px;
+  }
+  .shell[data-mobile="true"] .gitk-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .shell[data-mobile="true"] .list-title {
+    font-size: 14px;
   }
   .bubble-style {
     min-height: 240px;

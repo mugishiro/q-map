@@ -28,6 +28,7 @@ type Props = {
     string,
     { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[]
   >;
+  isMobile?: boolean;
 };
 
 const ROW_HEIGHT = 48;
@@ -152,11 +153,12 @@ export const TreeView = ({
   onPrefill,
   laterCounts,
   laterItemsByParent,
+  isMobile = false,
 }: Props) => {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [listOpen, setListOpen] = useState(true);
+  const [listOpen, setListOpen] = useState(!isMobile);
   const [listTooltipId, setListTooltipId] = useState<string | null>(null);
   const [nodeTooltip, setNodeTooltip] = useState<{
     text: string;
@@ -174,6 +176,7 @@ export const TreeView = ({
     placement: "top" | "bottom";
     items: { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[];
   } | null>(null);
+  const listWidth = isMobile ? 200 : LIST_WIDTH;
 
   const isTruncated = (el: HTMLElement | null) => {
     if (!el) return false;
@@ -265,6 +268,10 @@ export const TreeView = ({
       observer?.disconnect();
     };
   }, [updateScrollState]);
+
+  useEffect(() => {
+    if (isMobile) setListOpen(false);
+  }, [isMobile]);
 
   const scrollCanvas = (direction: -1 | 1) => {
     const el = canvasRef.current;
@@ -456,7 +463,7 @@ export const TreeView = ({
           {listOpen && (
             <div
               className="gitk-list"
-              style={{ height, "--list-width": `${LIST_WIDTH}px` } as CSSProperties & {
+              style={{ height, "--list-width": `${listWidth}px` } as CSSProperties & {
                 ["--list-width"]: string;
               }}
             >
