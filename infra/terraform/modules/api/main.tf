@@ -6,24 +6,25 @@ locals {
   api_prefix  = "/v1"
 
   routes = {
-    "GET ${local.api_prefix}/topics"                 = "GET ${local.api_prefix}/topics"
-    "POST ${local.api_prefix}/topics"                = "POST ${local.api_prefix}/topics"
-    "GET ${local.api_prefix}/topics/{topicId}"       = "GET ${local.api_prefix}/topics/{topicId}"
-    "DELETE ${local.api_prefix}/topics/{topicId}"    = "DELETE ${local.api_prefix}/topics/{topicId}"
-    "GET ${local.api_prefix}/topics/{topicId}/nodes" = "GET ${local.api_prefix}/topics/{topicId}/nodes"
-    "GET ${local.api_prefix}/nodes/{nodeId}"         = "GET ${local.api_prefix}/nodes/{nodeId}"
-    "GET ${local.api_prefix}/nodes/{nodeId}/path"    = "GET ${local.api_prefix}/nodes/{nodeId}/path"
-    "POST ${local.api_prefix}/nodes"                 = "POST ${local.api_prefix}/nodes"
-    "PATCH ${local.api_prefix}/nodes/{nodeId}"       = "PATCH ${local.api_prefix}/nodes/{nodeId}"
-    "POST ${local.api_prefix}/chat"                  = "POST ${local.api_prefix}/chat"
+    "GET ${local.api_prefix}/topics"                    = "GET ${local.api_prefix}/topics"
+    "POST ${local.api_prefix}/topics"                   = "POST ${local.api_prefix}/topics"
+    "GET ${local.api_prefix}/topics/{topicId}"          = "GET ${local.api_prefix}/topics/{topicId}"
+    "DELETE ${local.api_prefix}/topics/{topicId}"       = "DELETE ${local.api_prefix}/topics/{topicId}"
+    "GET ${local.api_prefix}/topics/{topicId}/nodes"    = "GET ${local.api_prefix}/topics/{topicId}/nodes"
+    "GET ${local.api_prefix}/nodes/{nodeId}"            = "GET ${local.api_prefix}/nodes/{nodeId}"
+    "GET ${local.api_prefix}/nodes/{nodeId}/path"       = "GET ${local.api_prefix}/nodes/{nodeId}/path"
+    "POST ${local.api_prefix}/nodes"                    = "POST ${local.api_prefix}/nodes"
+    "PATCH ${local.api_prefix}/nodes/{nodeId}"          = "PATCH ${local.api_prefix}/nodes/{nodeId}"
+    "DELETE ${local.api_prefix}/nodes/{nodeId}"         = "DELETE ${local.api_prefix}/nodes/{nodeId}"
+    "POST ${local.api_prefix}/chat"                     = "POST ${local.api_prefix}/chat"
     "POST ${local.api_prefix}/topics/{topicId}/summary" = "POST ${local.api_prefix}/topics/{topicId}/summary"
-    "GET ${local.api_prefix}/me/settings"            = "GET ${local.api_prefix}/me/settings"
-    "POST ${local.api_prefix}/me/settings"           = "POST ${local.api_prefix}/me/settings"
+    "GET ${local.api_prefix}/me/settings"               = "GET ${local.api_prefix}/me/settings"
+    "POST ${local.api_prefix}/me/settings"              = "POST ${local.api_prefix}/me/settings"
   }
 }
 
 data "archive_file" "lambda_zip" {
-  type        = "zip"
+  type = "zip"
   # dist_bundle is built by scripts/build-lambda.sh and contains compiled JS + aws-sdk dependency
   source_dir  = "${path.root}/../../backend/dist_bundle"
   output_path = "${path.module}/lambda.zip"
@@ -101,14 +102,14 @@ resource "aws_iam_role_policy" "lambda_dynamo_kms" {
 }
 
 resource "aws_lambda_function" "bff" {
-  function_name = local.lambda_name
-  role          = aws_iam_role.lambda.arn
-  handler       = "index.handler"
-  runtime       = "nodejs18.x"
-  filename      = data.archive_file.lambda_zip.output_path
+  function_name    = local.lambda_name
+  role             = aws_iam_role.lambda.arn
+  handler          = "index.handler"
+  runtime          = "nodejs18.x"
+  filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  timeout       = var.lambda_timeout_seconds
-  memory_size   = var.lambda_memory_mb
+  timeout          = var.lambda_timeout_seconds
+  memory_size      = var.lambda_memory_mb
 
   environment {
     variables = merge({
@@ -161,10 +162,10 @@ resource "aws_apigatewayv2_authorizer" "jwt" {
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
-  api_id           = aws_apigatewayv2_api.http_api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.bff.invoke_arn
-  integration_method = "POST"
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.bff.invoke_arn
+  integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
