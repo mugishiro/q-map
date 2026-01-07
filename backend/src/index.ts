@@ -695,7 +695,8 @@ export const handler = async (
     // PATCH /v1/nodes/{nodeId}
     if (method === "PATCH" && mNode) {
       const body = parseBody<{ title?: string; summary?: string }>(event);
-      const node = await findNodeById(userId, mNode.nodeId);
+      const nodeId = decodeURIComponent(mNode.nodeId);
+      const node = await findNodeById(userId, nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
       const updates = {
         ":title": body.title ?? node.title,
@@ -720,7 +721,8 @@ export const handler = async (
 
     // DELETE /v1/nodes/{nodeId}
     if (method === "DELETE" && mNode) {
-      const node = await findNodeById(userId, mNode.nodeId);
+      const nodeId = decodeURIComponent(mNode.nodeId);
+      const node = await findNodeById(userId, nodeId);
       if (!node) return error("NODE_NOT_FOUND", "Node not found", 404);
       if (node.type !== "later") {
         return error("DELETE_NOT_ALLOWED", "Only later nodes can be deleted", 400);
