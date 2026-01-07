@@ -329,7 +329,6 @@ export const TreeView = ({
                   <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </span>
-              <span>一覧</span>
             </button>
           </div>
         </div>
