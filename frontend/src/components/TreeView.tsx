@@ -193,17 +193,20 @@ export const TreeView = ({
   const showNodeTooltip = (event: MouseEvent<HTMLButtonElement>, text: string) => {
     if (!shellRef.current) return;
     const shellRect = shellRef.current.getBoundingClientRect();
+    const scrollTop = shellRef.current.scrollTop;
     const nodeRect = event.currentTarget.getBoundingClientRect();
     const anchorX = nodeRect.left - shellRect.left + nodeRect.width / 2;
-    const top = nodeRect.top - shellRect.top;
-    const bottom = nodeRect.bottom - shellRect.top;
+    const topInView = nodeRect.top - shellRect.top;
+    const bottomInView = nodeRect.bottom - shellRect.top;
     let align: "left" | "center" | "right" = "center";
     if (anchorX < TOOLTIP_MAX_WIDTH / 2 + TOOLTIP_MARGIN) {
       align = "left";
     } else if (anchorX > shellRect.width - TOOLTIP_MAX_WIDTH / 2 - TOOLTIP_MARGIN) {
       align = "right";
     }
-    const placement = top < TOOLTIP_TOP_THRESHOLD ? "bottom" : "top";
+    const placement = topInView < TOOLTIP_TOP_THRESHOLD ? "bottom" : "top";
+    const top = topInView + scrollTop;
+    const bottom = bottomInView + scrollTop;
     const y = placement === "top" ? top - TOOLTIP_OFFSET : bottom + TOOLTIP_OFFSET;
     setNodeTooltip({ text, x: anchorX, y, align, placement });
   };
@@ -221,13 +224,16 @@ export const TreeView = ({
       return;
     }
     const shellRect = shellRef.current.getBoundingClientRect();
+    const scrollTop = shellRef.current.scrollTop;
     const badgeRect = event.currentTarget.getBoundingClientRect();
     const anchorX = badgeRect.left - shellRect.left + badgeRect.width / 2;
-    const top = badgeRect.top - shellRect.top;
-    const bottom = badgeRect.bottom - shellRect.top;
-    const placement = top < LATER_POPOVER_TOP_THRESHOLD ? "bottom" : "top";
+    const topInView = badgeRect.top - shellRect.top;
+    const bottomInView = badgeRect.bottom - shellRect.top;
+    const placement = topInView < LATER_POPOVER_TOP_THRESHOLD ? "bottom" : "top";
     const maxX = Math.max(TOOLTIP_MARGIN, shellRect.width - TOOLTIP_MAX_WIDTH - TOOLTIP_MARGIN);
     const x = Math.min(Math.max(anchorX - TOOLTIP_MAX_WIDTH / 2, TOOLTIP_MARGIN), maxX);
+    const top = topInView + scrollTop;
+    const bottom = bottomInView + scrollTop;
     const y = placement === "top" ? top - TOOLTIP_OFFSET : bottom + TOOLTIP_OFFSET;
     setLaterPopover({ x, y, placement, items });
   };
