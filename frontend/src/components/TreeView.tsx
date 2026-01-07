@@ -45,6 +45,7 @@ const TOOLTIP_MAX_WIDTH = 280;
 const TOOLTIP_MARGIN = 12;
 const TOOLTIP_TOP_THRESHOLD = 56;
 const TOOLTIP_OFFSET = 12;
+const LATER_POPOVER_TOP_THRESHOLD = 120;
 
 const byCreatedAt = (a: Node, b: Node) => {
   if (a.createdAt === b.createdAt) return a.id < b.id ? -1 : 1;
@@ -170,6 +171,7 @@ export const TreeView = ({
   const [laterPopover, setLaterPopover] = useState<{
     x: number;
     y: number;
+    placement: "top" | "bottom";
     items: { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[];
   } | null>(null);
 
@@ -208,6 +210,26 @@ export const TreeView = ({
 
   const hideNodeTooltip = () => {
     setNodeTooltip(null);
+  };
+
+  const showLaterPopover = (
+    event: MouseEvent<HTMLSpanElement>,
+    items: { id: string; text: string; label?: string; parentLabel?: string; createdAt: string }[]
+  ) => {
+    if (!shellRef.current || items.length === 0) {
+      setLaterPopover(null);
+      return;
+    }
+    const shellRect = shellRef.current.getBoundingClientRect();
+    const badgeRect = event.currentTarget.getBoundingClientRect();
+    const anchorX = badgeRect.left - shellRect.left + badgeRect.width / 2;
+    const top = badgeRect.top - shellRect.top;
+    const bottom = badgeRect.bottom - shellRect.top;
+    const placement = top < LATER_POPOVER_TOP_THRESHOLD ? "bottom" : "top";
+    const maxX = Math.max(TOOLTIP_MARGIN, shellRect.width - TOOLTIP_MAX_WIDTH - TOOLTIP_MARGIN);
+    const x = Math.min(Math.max(anchorX - TOOLTIP_MAX_WIDTH / 2, TOOLTIP_MARGIN), maxX);
+    const y = placement === "top" ? top - TOOLTIP_OFFSET : bottom + TOOLTIP_OFFSET;
+    setLaterPopover({ x, y, placement, items });
   };
 
   const updateScrollState = useCallback(() => {
@@ -355,22 +377,6 @@ export const TreeView = ({
                   );
                 })}
               </svg>
-              {laterPopover && laterPopover.items.length > 0 && (
-                <div
-                  className="later-popover"
-                  style={{ top: laterPopover.y, left: laterPopover.x, transform: "translate(0, -100%)" }}
-                  onMouseLeave={() => setLaterPopover(null)}
-                >
-                  <div className="later-popover-title">後で聞く</div>
-                  <div className="later-popover-list">
-                    {laterPopover.items.map((item) => (
-                      <div key={item.id} className="later-popover-item">
-                        <div className="later-popover-text">{item.text || "(no title)"}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               {graphNodes.map((n) => {
                 const x = laneX(n.lane, laneGap);
                 const isSelected = selectedNodeId === n.id;
@@ -423,13 +429,13 @@ export const TreeView = ({
                         className="gitk-later-badge"
                         style={{ top: n.y - 8, left: x + 14 }}
                         aria-label={`後で聞く ${laterCount}件`}
-                        title={`後で聞く ${laterCount}件`}
-                        onMouseEnter={() => {
+                        onMouseEnter={(event) => {
                           const items = laterItemsByParent?.[n.id] ?? [];
-                          const anchorX = x + 20;
-                          const minX = PADDING_X + 8;
-                          const clampedX = Math.max(minX, anchorX);
-                          setLaterPopover({ x: clampedX, y: n.y - 18, items });
+                          if (items.length === 0) {
+                            setLaterPopover(null);
+                            return;
+                          }
+                          showLaterPopover(event, items);
                         }}
                         onMouseLeave={() => setLaterPopover(null)}
                       >
@@ -486,6 +492,22 @@ export const TreeView = ({
             </div>
           )}
         </div>
+        {laterPopover && laterPopover.items.length > 0 && (
+          <div
+            className={`later-popover ${laterPopover.placement === "bottom" ? "bottom" : ""}`}
+            style={{ top: laterPopover.y, left: laterPopover.x }}
+            onMouseLeave={() => setLaterPopover(null)}
+          >
+            <div className="later-popover-title">後で聞く</div>
+            <div className="later-popover-list">
+              {laterPopover.items.map((item) => (
+                <div key={item.id} className="later-popover-item">
+                  <div className="later-popover-text">{item.text || "(no title)"}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {nodeTooltip && (
           <div
             className={`gitk-tooltip ${nodeTooltip.align === "center" ? "" : `align-${nodeTooltip.align}`} ${

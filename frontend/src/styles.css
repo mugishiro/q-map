@@ -1089,6 +1089,9 @@ body[data-grid="off"] .gitk-shell {
   z-index: 6;
   pointer-events: auto;
 }
+.later-popover.bottom {
+  transform: translate(0, 0);
+}
 .later-popover-title {
   font-weight: 700;
   margin-bottom: 6px;
