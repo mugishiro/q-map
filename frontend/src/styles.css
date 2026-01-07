@@ -2023,11 +2023,9 @@ body[data-grid="off"] .gitk-shell {
   }
   .shell .grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       "header"
-      "left"
-      "center"
       "right";
     gap: 8px;
     padding: 8px;
@@ -2048,18 +2046,11 @@ body[data-grid="off"] .gitk-shell {
     border-radius: 12px;
   }
   .shell .panel.left,
-  .shell .panel.center,
-  .shell .panel.right {
+  .shell .panel.center {
     display: none;
   }
-  .shell[data-section="topics"] .panel.left {
-    display: block;
-  }
-  .shell[data-section="tree"] .panel.center {
-    display: block;
-  }
-  .shell[data-section="chat"] .panel.right {
-    display: block;
+  .shell .panel.right {
+    display: flex;
   }
   .shell .gitk-shell {
     padding: 10px;
@@ -2078,6 +2069,63 @@ body[data-grid="off"] .gitk-shell {
   }
   .shell .list-title {
     font-size: 14px;
+  }
+  .mobile-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: none;
+  }
+  .mobile-drawer.open {
+    display: block;
+  }
+  .mobile-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    background: rgba(15, 23, 42, 0.5);
+  }
+  .mobile-drawer-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(340px, 88vw);
+    display: flex;
+    flex-direction: column;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--border);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .mobile-drawer.open .mobile-drawer-panel {
+    transform: translateX(0);
+  }
+  .mobile-drawer[data-drawer="tree"] .mobile-drawer-panel {
+    width: 100%;
+    border-right: none;
+  }
+  .mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-bg);
+  }
+  .mobile-drawer-title {
+    font-weight: 700;
+  }
+  .mobile-drawer-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
   }
   .bubble-style {
     min-height: 240px;

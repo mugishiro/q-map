@@ -88,7 +88,10 @@ function App() {
     const [isMobile, setIsMobile] = useState(false);
     const [mobileSection, setMobileSection] = useState<
         "topics" | "tree" | "chat"
-    >("tree");
+    >("chat");
+    const [mobileDrawer, setMobileDrawer] = useState<"topics" | "tree" | null>(
+        null,
+    );
     const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
 
     useEffect(() => {
@@ -107,6 +110,19 @@ function App() {
             window.removeEventListener("orientationchange", update);
         };
     }, []);
+
+    useEffect(() => {
+        if (isMobile) {
+            setMobileSection("chat");
+            return;
+        }
+        setMobileDrawer(null);
+        setMobileSection("tree");
+    }, [isMobile]);
+
+    const toggleMobileDrawer = (next: "topics" | "tree") => {
+        setMobileDrawer((current) => (current === next ? null : next));
+    };
 
     const refreshTopics = async (preferredId?: string | null) => {
         if (!authenticated) return;
@@ -485,7 +501,10 @@ function App() {
         setSelectedTopicId(id);
         setSelectedNodeId(null);
         setLastLaterNodeId(null);
-        if (isMobile) setMobileSection("tree");
+        if (isMobile) {
+            setMobileSection("chat");
+            setMobileDrawer(null);
+        }
         await loadNodes(id);
     };
 
@@ -498,7 +517,10 @@ function App() {
         setChatDraft("");
         setNodes([]);
         setPath([]);
-        if (isMobile) setMobileSection("chat");
+        if (isMobile) {
+            setMobileSection("chat");
+            setMobileDrawer(null);
+        }
     };
 
     const handleLogout = () => {
@@ -512,6 +534,7 @@ function App() {
         setSelectedNodeId(null);
         setLastLaterNodeId(null);
         setChatDraft("");
+        setMobileDrawer(null);
     };
 
     const selectNode = (nodeId: string) => {
@@ -527,6 +550,7 @@ function App() {
         }
         if (isMobile) {
             setMobileSection("chat");
+            setMobileDrawer(null);
             setTimeout(
                 () => chatInputRef.current?.focus({ preventScroll: true }),
                 0,
@@ -770,12 +794,12 @@ function App() {
     const mobileHeaderAction = (
         <div className="mobile-only">
             <button
-                className={`icon-btn ${mobileSection === "topics" ? "active" : ""}`}
+                className={`icon-btn ${mobileDrawer === "topics" ? "active" : ""}`}
                 type="button"
                 aria-label="履歴"
                 title="履歴"
-                aria-pressed={mobileSection === "topics"}
-                onClick={() => setMobileSection("topics")}
+                aria-pressed={mobileDrawer === "topics"}
+                onClick={() => toggleMobileDrawer("topics")}
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <path
@@ -783,6 +807,45 @@ function App() {
                         stroke="currentColor"
                         strokeWidth="1.6"
                         strokeLinecap="round"
+                    />
+                </svg>
+            </button>
+            <button
+                className={`icon-btn ${mobileDrawer === "tree" ? "active" : ""}`}
+                type="button"
+                aria-label="ツリー"
+                title="ツリー"
+                aria-pressed={mobileDrawer === "tree"}
+                onClick={() => toggleMobileDrawer("tree")}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M7 4v8a3 3 0 0 0 3 3h7"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                    <circle
+                        cx="7"
+                        cy="4"
+                        r="2"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                    />
+                    <circle
+                        cx="10"
+                        cy="15"
+                        r="2"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                    />
+                    <circle
+                        cx="17"
+                        cy="15"
+                        r="2"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
                     />
                 </svg>
             </button>
@@ -816,7 +879,8 @@ function App() {
             leftCollapsed={topicsCollapsed}
             isMobile={isMobile}
             mobileSection={mobileSection}
-            onMobileSectionChange={setMobileSection}
+            mobileDrawer={mobileDrawer}
+            onMobileDrawerClose={() => setMobileDrawer(null)}
         />
     );
 }
