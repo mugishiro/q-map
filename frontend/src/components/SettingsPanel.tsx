@@ -126,7 +126,6 @@ const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = 
               {showApiKey ? "隠す" : "表示"}
             </button>
           </div>
-          <span className="settings-hint">保存時に暗号化され、クライアントへは返しません。</span>
         </label>
       </div>
       <div className="settings-actions">
