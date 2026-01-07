@@ -312,7 +312,7 @@ export const HeaderMenu = ({
                     <div
                         className="modal-card stack gap-m"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ minWidth: "360px" }}
+                        style={{ minWidth: "min(360px, 90vw)" }}
                     >
                         <div
                             style={{

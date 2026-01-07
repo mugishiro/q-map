@@ -141,6 +141,14 @@ body[data-grid="off"] {
   align-items: center;
   gap: 8px;
 }
+
+.mobile-nav {
+  display: none;
+}
+
+.mobile-only {
+  display: none;
+}
 .auth-controls {
   display: flex;
   align-items: center;
@@ -168,6 +176,15 @@ body[data-grid="off"] {
   align-items: center;
   gap: 8px;
   width: 100%;
+}
+
+.topbar .settings-header {
+  width: auto;
+}
+
+.topbar .settings-trigger {
+  width: auto;
+  padding: 8px;
 }
 
 .settings-popover {
@@ -771,6 +788,12 @@ body[data-grid="off"] {
 }
 .icon-btn:hover {
   background: var(--ghost-bg);
+}
+
+.icon-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-bg));
 }
 .modal-backdrop {
   position: fixed;
@@ -1979,6 +2002,11 @@ body[data-grid="off"] .gitk-shell {
     background: var(--secondary);
     border-bottom: 1px solid var(--border);
   }
+  .mobile-only {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
   .mobile-tab {
     flex: 1;
     border: 1px solid var(--border);
@@ -1993,7 +2021,7 @@ body[data-grid="off"] .gitk-shell {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 12%, var(--panel-bg));
   }
-  .shell[data-mobile="true"] .grid {
+  .shell .grid {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
     grid-template-areas:
@@ -2004,51 +2032,51 @@ body[data-grid="off"] .gitk-shell {
     gap: 8px;
     padding: 8px;
   }
-  .shell[data-mobile="true"] .grid.collapsed-left {
+  .shell .grid.collapsed-left {
     grid-template-columns: 1fr;
   }
-  .shell[data-mobile="true"] .app-header {
+  .shell .app-header {
     padding: 12px 14px;
   }
-  .shell[data-mobile="true"] .brand {
+  .shell .brand {
     font-size: 14px;
     letter-spacing: 0.02em;
   }
-  .shell[data-mobile="true"] .panel {
+  .shell .panel {
     min-height: auto;
     padding: 10px;
     border-radius: 12px;
   }
-  .shell[data-mobile="true"] .panel.left,
-  .shell[data-mobile="true"] .panel.center,
-  .shell[data-mobile="true"] .panel.right {
+  .shell .panel.left,
+  .shell .panel.center,
+  .shell .panel.right {
     display: none;
   }
-  .shell[data-mobile="true"][data-section="topics"] .panel.left {
+  .shell[data-section="topics"] .panel.left {
     display: block;
   }
-  .shell[data-mobile="true"][data-section="tree"] .panel.center {
+  .shell[data-section="tree"] .panel.center {
     display: block;
   }
-  .shell[data-mobile="true"][data-section="chat"] .panel.right {
+  .shell[data-section="chat"] .panel.right {
     display: block;
   }
-  .shell[data-mobile="true"] .gitk-shell {
+  .shell .gitk-shell {
     padding: 10px;
   }
-  .shell[data-mobile="true"] .gitk-node {
+  .shell .gitk-node {
     width: 24px;
     height: 24px;
   }
-  .shell[data-mobile="true"] .gitk-dot-btn {
+  .shell .gitk-dot-btn {
     width: 16px;
     height: 16px;
   }
-  .shell[data-mobile="true"] .gitk-dot {
+  .shell .gitk-dot {
     width: 7px;
     height: 7px;
   }
-  .shell[data-mobile="true"] .list-title {
+  .shell .list-title {
     font-size: 14px;
   }
   .bubble-style {

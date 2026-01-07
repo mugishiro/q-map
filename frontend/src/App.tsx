@@ -96,14 +96,16 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const mq = window.matchMedia("(max-width: 900px)");
-        const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-            setIsMobile(e.matches);
+        const update = () => {
+            setIsMobile(window.innerWidth <= 900);
         };
-        handler(mq);
-        const listener = (e: MediaQueryListEvent) => handler(e);
-        mq.addEventListener("change", listener);
-        return () => mq.removeEventListener("change", listener);
+        update();
+        window.addEventListener("resize", update);
+        window.addEventListener("orientationchange", update);
+        return () => {
+            window.removeEventListener("resize", update);
+            window.removeEventListener("orientationchange", update);
+        };
     }, []);
 
     const refreshTopics = async (preferredId?: string | null) => {
@@ -765,6 +767,35 @@ function App() {
         </div>
     );
 
+    const mobileHeaderAction = (
+        <div className="mobile-only">
+            <button
+                className={`icon-btn ${mobileSection === "topics" ? "active" : ""}`}
+                type="button"
+                aria-label="履歴"
+                title="履歴"
+                aria-pressed={mobileSection === "topics"}
+                onClick={() => setMobileSection("topics")}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M4 6h16M4 12h16M4 18h16"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                    />
+                </svg>
+            </button>
+            <HeaderMenu
+                onLogout={handleLogout}
+                placement="down"
+                align="right"
+                showLabel={false}
+                label="設定"
+            />
+        </div>
+    );
+
     if (!authenticated) {
         return (
             <LoginScreen
@@ -781,6 +812,7 @@ function App() {
             left={left}
             center={center}
             right={right}
+            headerAction={mobileHeaderAction}
             leftCollapsed={topicsCollapsed}
             isMobile={isMobile}
             mobileSection={mobileSection}
