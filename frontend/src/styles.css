@@ -1446,10 +1446,15 @@ body[data-grid="off"] .gitk-shell {
     flex: 1 1 auto;
     min-height: 0;
     overflow: auto;
+    position: relative;
+}
+.chat-log {
+    display: block;
+}
+.chat-log-body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    position: relative;
 }
 .bubble-flat {
     padding: 0;
