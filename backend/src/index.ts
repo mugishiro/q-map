@@ -112,6 +112,35 @@ const letterForDepth = (depth: number) => {
   return String.fromCharCode(code);
 };
 
+const API_KEY_CACHE_TTL_MS = Number(process.env.LLM_API_KEY_CACHE_TTL_MS) || 5 * 60 * 1000;
+interface ApiKeyCacheEntry {
+  apiKey: string;
+  expiresAt: number;
+}
+const apiKeyCache = new Map<string, ApiKeyCacheEntry>();
+
+const getCachedApiKey = (userId: string) => {
+  const entry = apiKeyCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() >= entry.expiresAt) {
+    apiKeyCache.delete(userId);
+    return null;
+  }
+  return entry.apiKey;
+};
+
+const cacheApiKey = (userId: string, apiKey: string) => {
+  apiKeyCache.set(userId, { apiKey, expiresAt: Date.now() + API_KEY_CACHE_TTL_MS });
+};
+
+const resolveApiKey = async (userId: string, ciphertext: string) => {
+  const cached = getCachedApiKey(userId);
+  if (cached) return cached;
+  const plaintext = await decryptApiKey(ciphertext);
+  cacheApiKey(userId, plaintext);
+  return plaintext;
+};
+
 const maskApiKey = (apiKey: string) => {
   if (!apiKey) return null;
   if (apiKey.length <= 6) return "******";
@@ -374,6 +403,7 @@ const saveUserSettings = async (userId: string, input: { llmProvider: LLMProvide
 
   const apiKeyEncrypted = await encryptApiKey(input.apiKey);
   const now = nowIso();
+  cacheApiKey(userId, input.apiKey);
   await ddb
     .put({
       TableName: USER_SETTINGS_TABLE,
@@ -394,7 +424,7 @@ const callLLM = async (userId: string, messages: Message[]): Promise<Message> =>
   if (!settings || !settings.apiKeyEncrypted) {
     throw new AppError("LLM_API_KEY_MISSING", "LLM API key is not configured.", 400);
   }
-  const apiKey = await decryptApiKey(settings.apiKeyEncrypted);
+  const apiKey = await resolveApiKey(userId, settings.apiKeyEncrypted);
   const provider: LLMProvider = settings.llmProvider || "openai";
   const model = settings.model || "gpt-4o-mini";
   const timeoutMs = 30_000;
@@ -533,7 +563,8 @@ export const handler = async (
       return json(200, {
         llmProvider: settings?.llmProvider || null,
         model: settings?.model || null,
-        apiKeyMasked: settings?.apiKeyEncrypted ? maskApiKey(await decryptApiKey(settings.apiKeyEncrypted)) : null,
+      apiKeyMasked:
+        settings?.apiKeyEncrypted ? maskApiKey(await resolveApiKey(userId, settings.apiKeyEncrypted)) : null,
       });
     }
 
