@@ -5,10 +5,13 @@ import { TreeView } from "./components/TreeView";
 import ChatPanel from "./components/ChatPanel";
 import HeaderMenu from "./components/HeaderMenu";
 import LoginScreen from "./components/LoginScreen";
+import SettingsPanel from "./components/SettingsPanel";
 import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
 import { initTheme } from "./theme";
+
+const LLM_PROMPT_KEY = "qmap_llm_prompted_v1";
 
 const buildPathLocal = (nodeId: string, nodes: Node[]): Node[] => {
     const map = new Map<string, Node>();
@@ -86,6 +89,9 @@ function App() {
     );
     const [authError, setAuthError] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [llmConfigured, setLlmConfigured] = useState<boolean | null>(null);
+    const [llmChecking, setLlmChecking] = useState(false);
+    const [showLlmModal, setShowLlmModal] = useState(false);
     const [mobileSection, setMobileSection] = useState<
         "topics" | "tree" | "chat"
     >("chat");
@@ -149,6 +155,36 @@ function App() {
             refreshTopics();
         }
     }, [authenticated]);
+
+    const refreshLlmSettings = async () => {
+        if (!authenticated) return;
+        setLlmChecking(true);
+        try {
+            const res = await api.getSettings();
+            setLlmConfigured(Boolean(res.apiKeyMasked));
+        } catch {
+            setLlmConfigured(false);
+        } finally {
+            setLlmChecking(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!authenticated) {
+            setLlmConfigured(null);
+            return;
+        }
+        void refreshLlmSettings();
+    }, [authenticated]);
+
+    useEffect(() => {
+        if (!authenticated) return;
+        if (llmConfigured !== false) return;
+        const prompted = localStorage.getItem(LLM_PROMPT_KEY);
+        if (prompted) return;
+        setShowLlmModal(true);
+        localStorage.setItem(LLM_PROMPT_KEY, "1");
+    }, [authenticated, llmConfigured]);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -535,6 +571,7 @@ function App() {
         setLastLaterNodeId(null);
         setChatDraft("");
         setMobileDrawer(null);
+        setLlmConfigured(null);
     };
 
     const selectNode = (nodeId: string) => {
@@ -569,6 +606,7 @@ function App() {
 
     const activeNodeId = path[path.length - 1]?.id ?? null;
     const activeNode = path[path.length - 1] ?? null;
+    const llmNeedsSetup = authenticated && llmConfigured === false;
     const treeNodes = useMemo(
         () => nodes.filter((n) => n.type !== "later"),
         [nodes],
@@ -703,6 +741,8 @@ function App() {
                     align="left"
                     showLabel={!topicsCollapsed}
                     label="設定"
+                    llmNeedsSetup={llmNeedsSetup}
+                    onOpenLlm={() => setShowLlmModal(true)}
                 />
             </div>
         </div>
@@ -767,6 +807,27 @@ function App() {
 
     const right = (
         <div className="stack gap-m fill">
+            {llmNeedsSetup && (
+                <div className="llm-banner card">
+                    <div className="llm-banner-title">
+                        LLM 設定が未完了です
+                    </div>
+                    <div className="llm-banner-body">
+                        APIキーを登録するとチャットが有効になります。
+                    </div>
+                    <div className="llm-banner-actions">
+                        <button
+                            className="btn solid"
+                            onClick={() => setShowLlmModal(true)}
+                        >
+                            LLM 設定を開く
+                        </button>
+                        <span className="llm-banner-meta">
+                            設定は右上の「設定」からも開けます。
+                        </span>
+                    </div>
+                </div>
+            )}
             <ChatPanel
                 path={path}
                 loading={loading}
@@ -855,8 +916,27 @@ function App() {
                 align="right"
                 showLabel={false}
                 label="設定"
+                llmNeedsSetup={llmNeedsSetup}
+                onOpenLlm={() => setShowLlmModal(true)}
             />
         </div>
+    );
+
+    const headerAction = (
+        <>
+            <div className="desktop-only">
+                <HeaderMenu
+                    onLogout={handleLogout}
+                    placement="down"
+                    align="right"
+                    showLabel={false}
+                    label="設定"
+                    llmNeedsSetup={llmNeedsSetup}
+                    onOpenLlm={() => setShowLlmModal(true)}
+                />
+            </div>
+            {mobileHeaderAction}
+        </>
     );
 
     if (!authenticated) {
@@ -871,17 +951,85 @@ function App() {
     }
 
     return (
-        <Layout
-            left={left}
-            center={center}
-            right={right}
-            headerAction={mobileHeaderAction}
-            leftCollapsed={topicsCollapsed}
-            isMobile={isMobile}
-            mobileSection={mobileSection}
-            mobileDrawer={mobileDrawer}
-            onMobileDrawerClose={() => setMobileDrawer(null)}
-        />
+        <>
+            <Layout
+                left={left}
+                center={center}
+                right={right}
+                headerAction={headerAction}
+                leftCollapsed={topicsCollapsed}
+                isMobile={isMobile}
+                mobileSection={mobileSection}
+                mobileDrawer={mobileDrawer}
+                onMobileDrawerClose={() => setMobileDrawer(null)}
+            />
+            {showLlmModal && (
+                <div
+                    className="modal-backdrop"
+                    onClick={() => setShowLlmModal(false)}
+                >
+                    <div
+                        className="modal-card stack gap-m"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ minWidth: "min(380px, 92vw)" }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                }}
+                            >
+                                <span style={{ fontWeight: 700 }}>
+                                    LLM 設定
+                                </span>
+                                {!llmChecking && llmNeedsSetup && (
+                                    <span className="settings-chip">
+                                        未設定
+                                    </span>
+                                )}
+                            </div>
+                            <button
+                                className="icon-btn"
+                                aria-label="閉じる"
+                                title="閉じる"
+                                onClick={() => setShowLlmModal(false)}
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M6 6l12 12M18 6L6 18"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <SettingsPanel
+                            embedded
+                            noCard
+                            showCloseButton={false}
+                            onSaved={() => {
+                                setLlmConfigured(true);
+                                setShowLlmModal(false);
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
 

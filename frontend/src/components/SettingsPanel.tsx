@@ -21,9 +21,16 @@ type Props = {
   hideTheme?: boolean;
   showCloseButton?: boolean;
   noCard?: boolean;
+  onSaved?: () => void;
 };
 
-const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = true, noCard = false }: Props) => {
+const SettingsPanel = ({
+  variant = "panel",
+  embedded = false,
+  showCloseButton = true,
+  noCard = false,
+  onSaved,
+}: Props) => {
   const isHeader = variant === "header";
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,6 +82,7 @@ const SettingsPanel = ({ variant = "panel", embedded = false, showCloseButton = 
       setCurrentMasked(mask(form.apiKey) || currentMasked);
       setNotice("保存しました。チャット送信にこのキーが使われます。");
       setForm((f) => ({ ...f, apiKey: "" }));
+      onSaved?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {

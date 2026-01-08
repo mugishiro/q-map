@@ -11,6 +11,8 @@ import {
 
 type Props = {
     onLogout: () => void;
+    llmNeedsSetup?: boolean;
+    onOpenLlm?: () => void;
     placement?: "up" | "down";
     align?: "left" | "right";
     showLabel?: boolean;
@@ -19,6 +21,8 @@ type Props = {
 
 export const HeaderMenu = ({
     onLogout,
+    llmNeedsSetup = false,
+    onOpenLlm,
     placement = "down",
     align = "left",
     showLabel = false,
@@ -69,7 +73,9 @@ export const HeaderMenu = ({
     return (
         <div className="settings-header" ref={menuRef}>
             <button
-                className={`settings-trigger ${showLabel ? "with-label" : ""}`}
+                className={`settings-trigger ${showLabel ? "with-label" : ""} ${
+                    llmNeedsSetup ? "needs-attention" : ""
+                }`}
                 aria-label={label}
                 title={label}
                 onClick={() => setOpen((v) => !v)}
@@ -95,6 +101,9 @@ export const HeaderMenu = ({
                         />
                     </svg>
                 </span>
+                {llmNeedsSetup && (
+                    <span className="settings-attention-dot" aria-hidden="true" />
+                )}
                 {showLabel && (
                     <span className="settings-trigger-label">{label}</span>
                 )}
@@ -222,9 +231,13 @@ export const HeaderMenu = ({
                             </div>
                         </div>
                         <button
-                            className="settings-menu-item"
+                            className={`settings-menu-item ${llmNeedsSetup ? "attention" : ""}`}
                             onClick={() => {
                                 setOpen(false);
+                                if (onOpenLlm) {
+                                    onOpenLlm();
+                                    return;
+                                }
                                 setShowLlm(true);
                             }}
                             type="button"
@@ -252,6 +265,11 @@ export const HeaderMenu = ({
                                 LLM 設定
                             </span>
                             <span className="settings-menu-trailing">
+                                {llmNeedsSetup && (
+                                    <span className="settings-menu-meta">
+                                        未設定
+                                    </span>
+                                )}
                                 <span className="settings-menu-arrow">›</span>
                             </span>
                         </button>
