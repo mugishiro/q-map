@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import "../styles.css";
+import { useI18n } from "../i18n";
 
 type Props = {
     left: ReactNode;
@@ -24,11 +25,12 @@ export const Layout = ({
     mobileDrawer = null,
     onMobileDrawerClose,
 }: Props) => {
+    const { t } = useI18n();
     const drawerTitle =
         mobileDrawer === "topics"
-            ? "履歴"
+            ? t("drawer.history")
             : mobileDrawer === "tree"
-              ? "ツリー"
+              ? t("drawer.tree")
               : "";
     const drawerContent =
         mobileDrawer === "topics"
@@ -68,7 +70,7 @@ export const Layout = ({
                     <button
                         className="mobile-drawer-backdrop"
                         type="button"
-                        aria-label="閉じる"
+                        aria-label={t("drawer.close")}
                         onClick={() => onMobileDrawerClose?.()}
                     />
                     <div className="mobile-drawer-panel" role="dialog">
@@ -79,7 +81,7 @@ export const Layout = ({
                             <button
                                 className="icon-btn"
                                 type="button"
-                                aria-label="閉じる"
+                                aria-label={t("drawer.close")}
                                 onClick={() => onMobileDrawerClose?.()}
                             >
                                 <svg

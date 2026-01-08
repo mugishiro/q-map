@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatMessage, Node } from "../types";
 import LaterList from "./LaterList";
+import { useI18n } from "../i18n";
 
 const normalizeMarkdown = (text: string) => {
     const lines = text.split(/\r?\n/);
@@ -161,6 +162,7 @@ export const ChatPanel = ({
     onOpenLater,
     onDeleteLater,
 }: Props) => {
+    const { t } = useI18n();
     const canAddLater = !loading && Boolean(draft.trim()) && !disableAddLater;
     const logRef = useRef<HTMLDivElement | null>(null);
     const localInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -186,11 +188,7 @@ export const ChatPanel = ({
                 list.push({
                     ...m,
                     nodeId: n.id,
-                    pending:
-                        (m as any).pending === true ||
-                        (n.id.startsWith("temp-") &&
-                            m.role === "assistant" &&
-                            m.content === "考え中…"),
+                    pending: (m as any).pending === true,
                     isQuestion: m.role === "user",
                 }),
             ),
@@ -370,7 +368,7 @@ export const ChatPanel = ({
                         className="selection-toolbar"
                         style={{ top: selection.top, left: selection.left }}
                         role="group"
-                        aria-label="選択テキスト操作"
+                        aria-label={t("chat.selectionActions")}
                     >
                         <button
                             className="selection-btn"
@@ -381,7 +379,7 @@ export const ChatPanel = ({
                             }}
                             type="button"
                         >
-                            聞く
+                            {t("chat.ask")}
                         </button>
                         <button
                             className="selection-btn"
@@ -394,13 +392,13 @@ export const ChatPanel = ({
                             disabled={disableAddLater}
                             type="button"
                         >
-                            あとで聞く
+                            {t("chat.askLater")}
                         </button>
                     </div>
                 )}
                 <div className="chat-log-body">
                     {history.length === 0 && (
-                        <div className="empty">会話がありません</div>
+                        <div className="empty">{t("chat.empty")}</div>
                     )}
                     {history.map((m, idx) => (
                         <div
@@ -418,14 +416,14 @@ export const ChatPanel = ({
                                 <div className="bubble-content">
                                     <span
                                         className="loader-dots"
-                                        aria-label="考え中…"
+                                        aria-label={t("chat.thinking")}
                                     >
                                         <span className="loader-dot" />
                                         <span className="loader-dot" />
                                         <span className="loader-dot" />
                                     </span>
                                     <span style={{ marginLeft: "8px" }}>
-                                        考え中…
+                                        {t("chat.thinking")}
                                     </span>
                                 </div>
                             ) : (
@@ -475,7 +473,7 @@ export const ChatPanel = ({
                     className="input large"
                     ref={textareaRef}
                     rows={3}
-                    placeholder="わからないことをAIに質問する"
+                    placeholder={t("chat.placeholder")}
                     value={draft}
                     onChange={(e) => onDraftChange(e.target.value)}
                     onKeyDown={(e) => {
@@ -491,8 +489,8 @@ export const ChatPanel = ({
                         className="btn ghost icon-only"
                         onClick={addLater}
                         disabled={!canAddLater}
-                        aria-label="あとで聞くに追加"
-                        title="あとで聞くに追加"
+                        aria-label={t("chat.askLaterAdd")}
+                        title={t("chat.askLaterAdd")}
                     >
                         <span className="btn-icon" aria-hidden="true">
                             <svg
@@ -521,8 +519,8 @@ export const ChatPanel = ({
                         className="btn solid icon-only"
                         onClick={send}
                         disabled={loading}
-                        aria-label="送信"
-                        title="送信"
+                        aria-label={t("chat.send")}
+                        title={t("chat.send")}
                     >
                         <span className="btn-icon" aria-hidden="true">
                             <svg

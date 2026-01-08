@@ -1,5 +1,6 @@
 import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Node } from "../types";
+import { useI18n } from "../i18n";
 
 type GraphNode = Node & {
   lane: number;
@@ -155,6 +156,7 @@ export const TreeView = ({
   laterItemsByParent,
   isMobile = false,
 }: Props) => {
+  const { t } = useI18n();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -324,13 +326,13 @@ export const TreeView = ({
         <div className="gitk-list-toolbar">
           <div className="gitk-toolbar">
             {showScrollControls && (
-              <div className="gitk-scroll-controls" aria-label="横スクロール">
+              <div className="gitk-scroll-controls" aria-label={t("tree.scroll")}>
                 <button
                   className="gitk-scroll-btn"
                   onClick={() => scrollCanvas(-1)}
                   type="button"
-                  aria-label="左にスクロール"
-                  title="左にスクロール"
+                  aria-label={t("tree.scrollLeft")}
+                  title={t("tree.scrollLeft")}
                   disabled={!canScrollLeft}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -341,8 +343,8 @@ export const TreeView = ({
                   className="gitk-scroll-btn"
                   onClick={() => scrollCanvas(1)}
                   type="button"
-                  aria-label="右にスクロール"
-                  title="右にスクロール"
+                  aria-label={t("tree.scrollRight")}
+                  title={t("tree.scrollRight")}
                   disabled={!canScrollRight}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -356,8 +358,8 @@ export const TreeView = ({
               onClick={() => setListOpen((v) => !v)}
               type="button"
               aria-pressed={listOpen}
-              aria-label="ノード一覧を切り替える"
-              title={listOpen ? "一覧を閉じる" : "一覧を開く"}
+              aria-label={t("tree.listToggle")}
+              title={listOpen ? t("tree.listClose") : t("tree.listOpen")}
             >
               <span className="gitk-list-toggle-icon" aria-hidden="true">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -370,7 +372,7 @@ export const TreeView = ({
         <div className="gitk-body" style={{ height }}>
           <div ref={canvasRef} className="gitk-canvas" style={{ height }}>
             <div className="gitk-graph" style={{ width, height }}>
-              {!graphNodes.length && <div className="gitk-empty">ノードなし</div>}
+              {!graphNodes.length && <div className="gitk-empty">{t("tree.empty")}</div>}
               <svg className="gitk-svg" width={width} height={height}>
                 {edges.map((e, idx) => {
                   const isPathEdge = pathEdgeSet.has(`${e.parentId}|${e.childId}`);
@@ -431,7 +433,7 @@ export const TreeView = ({
                         hideNodeTooltip();
                       }}
                       type="button"
-                      aria-label={n.title || n.summary || "node"}
+                      aria-label={n.title || n.summary || t("node.fallback")}
                     >
                       <span className="gitk-dot-btn">
                         <span className="gitk-dot" />
@@ -441,7 +443,7 @@ export const TreeView = ({
                       <span
                         className="gitk-later-badge"
                         style={{ top: n.y - 8, left: x + 14 }}
-                        aria-label={`後で聞く ${laterCount}件`}
+                        aria-label={`${t("later.label")} ${t("later.count", { count: laterCount })}`}
                         onMouseEnter={(event) => {
                           const items = laterItemsByParent?.[n.id] ?? [];
                           if (items.length === 0) {
@@ -471,7 +473,7 @@ export const TreeView = ({
                 const isSelected = selectedNodeId === n.id;
                 const onPath = pathNodeSet.has(n.id);
                 const isHovered = hoveredNodeId === n.id;
-                const label = n.title || n.summary || "(no title)";
+                const label = n.title || n.summary || t("node.noTitle");
                 const color = onPath || isSelected ? PATH_COLOR : OTHER_COLOR;
                 const listStyle: CSSProperties & { ["--branch-color"]?: string } = {
                   top: n.y,
@@ -511,11 +513,11 @@ export const TreeView = ({
             style={{ top: laterPopover.y, left: laterPopover.x }}
             onMouseLeave={() => setLaterPopover(null)}
           >
-            <div className="later-popover-title">後で聞く</div>
+            <div className="later-popover-title">{t("later.label")}</div>
             <div className="later-popover-list">
               {laterPopover.items.map((item) => (
                 <div key={item.id} className="later-popover-item">
-                  <div className="later-popover-text">{item.text || "(no title)"}</div>
+                  <div className="later-popover-text">{item.text || t("node.noTitle")}</div>
                 </div>
               ))}
             </div>

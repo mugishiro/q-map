@@ -10,6 +10,7 @@ import { api } from "./api";
 import { auth } from "./auth";
 import { Node, Topic } from "./types";
 import { initTheme } from "./theme";
+import { useI18n } from "./i18n";
 
 const LLM_PROMPT_KEY = "qmap_llm_prompted_v1";
 
@@ -73,6 +74,7 @@ const isLaterNode = (node?: Node | null) => {
 };
 
 function App() {
+    const { t } = useI18n();
     const [topics, setTopics] = useState<Topic[]>([]);
     const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
     const [pendingNewChat, setPendingNewChat] = useState(false);
@@ -488,7 +490,7 @@ function App() {
             ? nodes.find((n) => n.id === targetBase)
             : null;
         if (baseNode?.type === "later") {
-            setError("「あとで聞く」の下には追加できません。");
+            setError(t("later.disallowUnderLater"));
             return;
         }
         setLoading(true);
@@ -685,13 +687,13 @@ function App() {
                     className="icon-btn"
                     aria-label={
                         topicsCollapsed
-                            ? "サイドバーを開く"
-                            : "サイドバーを畳む"
+                            ? t("layout.sidebarOpen")
+                            : t("layout.sidebarClose")
                     }
                     title={
                         topicsCollapsed
-                            ? "サイドバーを開く"
-                            : "サイドバーを畳む"
+                            ? t("layout.sidebarOpen")
+                            : t("layout.sidebarClose")
                     }
                     onClick={() => setTopicsCollapsed((v) => !v)}
                 >
@@ -711,8 +713,8 @@ function App() {
                 </button>
                 <button
                     className="sidebar-action primary"
-                    aria-label="新しいチャット"
-                    title="新しいチャット"
+                    aria-label={t("layout.newChat")}
+                    title={t("layout.newChat")}
                     onClick={handleNewChat}
                     disabled={loading}
                 >
@@ -731,7 +733,7 @@ function App() {
                             />
                         </svg>
                     </span>
-                    {!topicsCollapsed && <span>新しいチャット</span>}
+                    {!topicsCollapsed && <span>{t("layout.newChat")}</span>}
                 </button>
             </div>
             {!topicsCollapsed && (
@@ -749,7 +751,7 @@ function App() {
                     placement="up"
                     align="left"
                     showLabel={!topicsCollapsed}
-                    label="設定"
+                    label={t("header.settings")}
                     llmNeedsSetup={llmNeedsSetup}
                     onOpenLlm={() => setShowLlmModal(true)}
                 />
@@ -819,20 +821,20 @@ function App() {
             {llmNeedsSetup && (
                 <div className="llm-banner card">
                     <div className="llm-banner-title">
-                        LLM 設定が未完了です
+                        {t("banner.llmTitle")}
                     </div>
                     <div className="llm-banner-body">
-                        APIキーを登録するとチャットが有効になります。
+                        {t("banner.llmBody")}
                     </div>
                     <div className="llm-banner-actions">
                         <button
                             className="btn solid"
                             onClick={() => setShowLlmModal(true)}
                         >
-                            LLM 設定を開く
+                            {t("banner.llmOpen")}
                         </button>
                         <span className="llm-banner-meta">
-                            設定は右上の「設定」からも開けます。
+                            {t("banner.llmHint")}
                         </span>
                     </div>
                 </div>
@@ -857,7 +859,11 @@ function App() {
                 onOpenLater={(item) => openLaterItem(item)}
                 onDeleteLater={(item) => handleDeleteLater(item.id)}
             />
-            {error && <div className="card error-card">エラー: {error}</div>}
+            {error && (
+                <div className="card error-card">
+                    {t("app.errorPrefix")}: {error}
+                </div>
+            )}
         </div>
     );
 
@@ -866,8 +872,8 @@ function App() {
             <button
                 className={`icon-btn ${mobileDrawer === "topics" ? "active" : ""}`}
                 type="button"
-                aria-label="履歴"
-                title="履歴"
+                aria-label={t("drawer.history")}
+                title={t("drawer.history")}
                 aria-pressed={mobileDrawer === "topics"}
                 onClick={() => toggleMobileDrawer("topics")}
             >
@@ -883,8 +889,8 @@ function App() {
             <button
                 className={`icon-btn ${mobileDrawer === "tree" ? "active" : ""}`}
                 type="button"
-                aria-label="ツリー"
-                title="ツリー"
+                aria-label={t("drawer.tree")}
+                title={t("drawer.tree")}
                 aria-pressed={mobileDrawer === "tree"}
                 onClick={() => toggleMobileDrawer("tree")}
             >
@@ -924,7 +930,7 @@ function App() {
                 placement="down"
                 align="right"
                 showLabel={false}
-                label="設定"
+                label={t("header.settings")}
                 llmNeedsSetup={llmNeedsSetup}
                 onOpenLlm={() => setShowLlmModal(true)}
             />
@@ -939,7 +945,7 @@ function App() {
                     placement="down"
                     align="right"
                     showLabel={false}
-                    label="設定"
+                    label={t("header.settings")}
                     llmNeedsSetup={llmNeedsSetup}
                     onOpenLlm={() => setShowLlmModal(true)}
                 />
@@ -997,18 +1003,18 @@ function App() {
                                 }}
                             >
                                 <span style={{ fontWeight: 700 }}>
-                                    LLM 設定
+                                    {t("llm.label")}
                                 </span>
                                 {!llmChecking && llmNeedsSetup && (
                                     <span className="settings-chip">
-                                        未設定
+                                        {t("llm.unset")}
                                     </span>
                                 )}
                             </div>
                             <button
                                 className="icon-btn"
-                                aria-label="閉じる"
-                                title="閉じる"
+                                aria-label={t("menu.close")}
+                                title={t("menu.close")}
                                 onClick={() => setShowLlmModal(false)}
                             >
                                 <svg

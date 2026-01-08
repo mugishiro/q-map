@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Topic } from "../types";
+import { useI18n } from "../i18n";
 
 type Props = {
   topics: Topic[];
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export const TopicList = ({ topics, selectedTopicId, onSelect }: Props) => {
+  const { t } = useI18n();
   const sorted = useMemo(() => [...topics].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)), [topics]);
 
   return (
@@ -22,7 +24,7 @@ export const TopicList = ({ topics, selectedTopicId, onSelect }: Props) => {
             <div className="list-title">{t.name}</div>
           </button>
         ))}
-        {!topics.length && <div className="empty">チャットがありません</div>}
+        {!topics.length && <div className="empty">{t("topic.empty")}</div>}
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { getStoredGrid, getStoredTheme, setGridVisible, setTheme, type ThemeOption } from "../theme";
+import { useI18n } from "../i18n";
 
 export const ThemeSelect = () => {
+  const { t } = useI18n();
   const [theme, setThemeState] = useState<ThemeOption>("light");
   const [grid, setGrid] = useState<boolean>(true);
 
@@ -34,15 +36,15 @@ export const ThemeSelect = () => {
             />
           </svg>
           <span className="label" style={{ margin: 0 }}>
-            テーマ
+            {t("theme.label")}
           </span>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           <button className={`btn ${theme === "light" ? "solid" : "ghost"}`} onClick={() => applyTheme("light")}>
-            Light
+            {t("theme.light")}
           </button>
           <button className={`btn ${theme === "dark" ? "solid" : "ghost"}`} onClick={() => applyTheme("dark")}>
-            Dark
+            {t("theme.dark")}
           </button>
         </div>
       </div>
@@ -58,15 +60,15 @@ export const ThemeSelect = () => {
             />
           </svg>
           <span className="label" style={{ margin: 0 }}>
-            グリッド
+            {t("grid.label")}
           </span>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           <button className={`btn ${grid ? "solid" : "ghost"}`} onClick={() => applyGrid(true)}>
-            ON
+            {t("grid.on")}
           </button>
           <button className={`btn ${!grid ? "solid" : "ghost"}`} onClick={() => applyGrid(false)}>
-            OFF
+            {t("grid.off")}
           </button>
         </div>
       </div>

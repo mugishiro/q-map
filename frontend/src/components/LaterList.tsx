@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useI18n } from "../i18n";
 
 type LaterItem = {
   id: string;
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export const LaterList = ({ items, activeId, onOpen, onRemove, variant = "panel" }: Props) => {
+  const { t } = useI18n();
   const [tooltipId, setTooltipId] = useState<string | null>(null);
   const sorted = useMemo(
     () => [...items].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
@@ -41,7 +43,7 @@ export const LaterList = ({ items, activeId, onOpen, onRemove, variant = "panel"
 
   if (variant === "chips") {
     return (
-      <div className="later-chips" aria-label="後で聞く">
+      <div className="later-chips" aria-label={t("later.label")}>
         {sorted.map((n) => (
           <div
             key={n.id}
@@ -54,13 +56,13 @@ export const LaterList = ({ items, activeId, onOpen, onRemove, variant = "panel"
             onMouseLeave={handleTooltipLeave}
           >
             <button className="later-chip-text" type="button" onClick={() => onOpen(n)} aria-label={n.text}>
-              {n.text || "(no title)"}
+              {n.text || t("later.savedQuestion")}
             </button>
             {onRemove && (
               <button
                 className="later-chip-remove"
                 type="button"
-                aria-label="削除"
+                aria-label={t("action.delete")}
                 onClick={() => onRemove(n)}
               >
                 ×
@@ -68,27 +70,27 @@ export const LaterList = ({ items, activeId, onOpen, onRemove, variant = "panel"
             )}
           </div>
         ))}
-        {sorted.length === 0 && <div className="empty later-chip-empty">登録なし</div>}
+        {sorted.length === 0 && <div className="empty later-chip-empty">{t("later.empty")}</div>}
       </div>
     );
   }
 
   const content = (
     <>
-      <div className="later-header" aria-label="後で聞く">
+      <div className="later-header" aria-label={t("later.label")}>
         <div className="later-title">
-          <span>後で聞く</span>
-          <span className="later-count">{items.length} 件</span>
+          <span>{t("later.label")}</span>
+          <span className="later-count">{t("later.count", { count: items.length })}</span>
         </div>
       </div>
       <div className="later-list">
-        {sorted.length === 0 && <div className="empty">登録なし</div>}
+        {sorted.length === 0 && <div className="empty">{t("later.empty")}</div>}
         {sorted.map((n) => (
           <button
             key={n.id}
             className={`later-item ${n.id === activeId ? "active" : ""} ${tooltipId === n.id ? "has-tooltip" : ""}`}
             data-tooltip={tooltipId === n.id ? n.text : undefined}
-            aria-label={n.text || "保存済みの質問"}
+            aria-label={n.text || t("later.savedQuestion")}
             onClick={() => onOpen(n)}
             onMouseEnter={(e) => {
               const textEl = e.currentTarget.querySelector<HTMLElement>(".later-text");
@@ -97,8 +99,8 @@ export const LaterList = ({ items, activeId, onOpen, onRemove, variant = "panel"
             onMouseLeave={handleTooltipLeave}
             type="button"
           >
-            <div className="later-text" aria-label="保存済みの質問">
-              {n.text || "(no title)"}
+            <div className="later-text" aria-label={t("later.savedQuestion")}>
+              {n.text || t("later.savedQuestion")}
             </div>
           </button>
         ))}

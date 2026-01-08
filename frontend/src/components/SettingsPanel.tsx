@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { UserSettings } from "../types";
+import { useI18n } from "../i18n";
 
 const mask = (value: string | null) => {
   if (!value) return null;
@@ -31,6 +32,7 @@ const SettingsPanel = ({
   noCard = false,
   onSaved,
 }: Props) => {
+  const { t } = useI18n();
   const isHeader = variant === "header";
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,7 +82,7 @@ const SettingsPanel = ({
         apiKey: form.apiKey,
       });
       setCurrentMasked(mask(form.apiKey) || currentMasked);
-      setNotice("保存しました。チャット送信にこのキーが使われます。");
+      setNotice(t("llm.noticeSaved"));
       setForm((f) => ({ ...f, apiKey: "" }));
       onSaved?.();
     } catch (e) {
@@ -93,12 +95,16 @@ const SettingsPanel = ({
   const llmSection = (
     <div className="settings-panel">
       <div className="settings-section-header">
-        <span className="label">LLM 設定</span>
-        {currentMasked && <span className="settings-chip">保存済み: {currentMasked}</span>}
+        <span className="label">{t("llm.label")}</span>
+        {currentMasked && (
+          <span className="settings-chip">
+            {t("llm.saved", { value: currentMasked })}
+          </span>
+        )}
       </div>
       <div className="settings-fields">
         <label className="settings-field">
-          <span className="settings-field-label">Provider</span>
+          <span className="settings-field-label">{t("llm.provider")}</span>
           <select
             className="input"
             value={form.llmProvider}
@@ -112,16 +118,16 @@ const SettingsPanel = ({
           </select>
         </label>
         <label className="settings-field">
-          <span className="settings-field-label">Model</span>
+          <span className="settings-field-label">{t("llm.model")}</span>
           <input
             className="input"
-            placeholder="例: gpt-4o-mini"
+            placeholder={t("llm.exampleModel")}
             value={form.model}
             onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
           />
         </label>
         <label className="settings-field">
-          <span className="settings-field-label">API Key</span>
+          <span className="settings-field-label">{t("llm.apiKey")}</span>
           <div className="settings-inline">
             <input
               className="input"
@@ -131,18 +137,18 @@ const SettingsPanel = ({
               onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
             />
             <button className="btn ghost" onClick={() => setShowApiKey((v) => !v)}>
-              {showApiKey ? "隠す" : "表示"}
+              {showApiKey ? t("llm.hide") : t("llm.show")}
             </button>
           </div>
         </label>
       </div>
       <div className="settings-actions">
         <button className="btn solid" onClick={save} disabled={loading}>
-          保存
+          {t("llm.save")}
         </button>
         {showCloseButton && (
           <button className="btn ghost" onClick={() => setOpen(false)} disabled={loading}>
-            閉じる
+            {t("llm.close")}
           </button>
         )}
       </div>
@@ -161,7 +167,7 @@ const SettingsPanel = ({
     return (
       <div className="settings-header">
         <button className="btn ghost" onClick={() => setOpen((v) => !v)}>
-          {open ? "設定を閉じる" : "LLM 設定"}
+          {open ? t("settings.openClose") : t("settings.open")}
         </button>
         {open && <div className="settings-popover card">{formContent}</div>}
       </div>
@@ -172,11 +178,13 @@ const SettingsPanel = ({
     return (
       <div className="card">
         <div className="stack gap-xs">
-          <div className="label">LLM 設定</div>
-          <div>プロバイダ/モデル/APIキーを設定してチャットを有効化します。</div>
-          <div className="helper-inline">保存済み: {currentMasked || "なし"}</div>
+          <div className="label">{t("llm.label")}</div>
+          <div>{t("llm.helper")}</div>
+          <div className="helper-inline">
+            {t("llm.saved", { value: currentMasked || t("llm.savedNone") })}
+          </div>
           <button className="btn solid" onClick={() => setOpen(true)}>
-            設定を開く
+            {t("llm.open")}
           </button>
         </div>
       </div>

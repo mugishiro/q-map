@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { auth } from "../auth";
+import { useI18n } from "../i18n";
 
 type Props = {
     onLogin: () => void;
@@ -9,6 +10,7 @@ type Props = {
 };
 
 const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
+    const { t } = useI18n();
     const isConfigured = useMemo(() => auth.isConfigured(), []);
     const errors = [authError, error].filter(Boolean) as string[];
 
@@ -24,7 +26,7 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                         onClick={onLogin}
                         disabled={!isConfigured || loading}
                     >
-                        {loading ? "認証中..." : "ログイン"}
+                        {loading ? t("auth.loggingIn") : t("auth.login")}
                     </button>
                     {errors.length > 0 && (
                         <div className="login-error">

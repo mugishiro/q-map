@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { api } from "../api";
 import { auth } from "../auth";
+import { useI18n } from "../i18n";
 
 type Props = {
     onAuthChange: () => void;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 const HeaderAuth = ({ onAuthChange, onLogout }: Props) => {
+    const { t } = useI18n();
     const [error, setError] = useState<string | null>(null);
 
     const isConfigured = useMemo(() => auth.isConfigured(), []);
@@ -34,8 +36,8 @@ const HeaderAuth = ({ onAuthChange, onLogout }: Props) => {
     };
 
     return (
-        <div className="auth-controls stack gap-s">
-            <div className="label">認証</div>
+            <div className="auth-controls stack gap-s">
+            <div className="label">{t("auth.label")}</div>
             <div className="stack gap-xs">
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     {loggedIn ? (
@@ -48,7 +50,7 @@ const HeaderAuth = ({ onAuthChange, onLogout }: Props) => {
                                 background: "transparent",
                             }}
                         >
-                            ログアウト
+                            {t("auth.logout")}
                         </button>
                     ) : (
                         <button
@@ -56,7 +58,7 @@ const HeaderAuth = ({ onAuthChange, onLogout }: Props) => {
                             onClick={startLogin}
                             disabled={!isConfigured}
                         >
-                            ログイン
+                            {t("auth.login")}
                         </button>
                     )}
                 </div>

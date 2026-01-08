@@ -8,6 +8,7 @@ import {
     setTheme,
     type ThemeOption,
 } from "../theme";
+import { useI18n } from "../i18n";
 
 type Props = {
     onLogout: () => void;
@@ -26,8 +27,10 @@ export const HeaderMenu = ({
     placement = "down",
     align = "left",
     showLabel = false,
-    label = "設定",
+    label,
 }: Props) => {
+    const { t, language, setLanguage } = useI18n();
+    const labelText = label ?? t("header.settings");
     const [open, setOpen] = useState(false);
     const [showLlm, setShowLlm] = useState(false);
     const [theme, setThemeState] = useState<ThemeOption>(() =>
@@ -36,8 +39,8 @@ export const HeaderMenu = ({
     const [grid, setGrid] = useState<boolean>(() => getStoredGrid());
     const menuRef = useRef<HTMLDivElement | null>(null);
     const loggedIn = Boolean(api.getToken());
-    const themeLabel = theme === "dark" ? "Dark" : "Light";
-    const gridLabel = grid ? "On" : "Off";
+    const themeLabel = theme === "dark" ? t("theme.dark") : t("theme.light");
+    const gridLabel = grid ? t("grid.on") : t("grid.off");
     const applyTheme = (next: ThemeOption) => {
         setThemeState(next);
         setTheme(next);
@@ -76,8 +79,8 @@ export const HeaderMenu = ({
                 className={`settings-trigger ${showLabel ? "with-label" : ""} ${
                     llmNeedsSetup ? "needs-attention" : ""
                 }`}
-                aria-label={label}
-                title={label}
+                aria-label={labelText}
+                title={labelText}
                 onClick={() => setOpen((v) => !v)}
                 type="button"
             >
@@ -105,17 +108,19 @@ export const HeaderMenu = ({
                     <span className="settings-attention-dot" aria-hidden="true" />
                 )}
                 {showLabel && (
-                    <span className="settings-trigger-label">{label}</span>
+                    <span className="settings-trigger-label">{labelText}</span>
                 )}
             </button>
             {open && (
                 <div className={popoverClass}>
                     <div className="settings-popover-header">
-                        <span className="settings-popover-title">設定</span>
+                        <span className="settings-popover-title">
+                            {t("header.settings")}
+                        </span>
                         <button
                             className="icon-btn settings-popover-close"
-                            aria-label="閉じる"
-                            title="閉じる"
+                            aria-label={t("menu.close")}
+                            title={t("menu.close")}
                             onClick={() => setOpen(false)}
                         >
                             <svg
@@ -157,7 +162,9 @@ export const HeaderMenu = ({
                                     />
                                 </svg>
                             </span>
-                            <span className="settings-menu-label">テーマ</span>
+                            <span className="settings-menu-label">
+                                {t("theme.label")}
+                            </span>
                             <span className="settings-menu-trailing">
                                 <span className="settings-menu-meta">
                                     {themeLabel}
@@ -170,14 +177,14 @@ export const HeaderMenu = ({
                                     onClick={() => applyTheme("light")}
                                     type="button"
                                 >
-                                    Light
+                                    {t("theme.light")}
                                 </button>
                                 <button
                                     className={`settings-submenu-item ${theme === "dark" ? "active" : ""}`}
                                     onClick={() => applyTheme("dark")}
                                     type="button"
                                 >
-                                    Dark
+                                    {t("theme.dark")}
                                 </button>
                             </div>
                         </div>
@@ -205,7 +212,7 @@ export const HeaderMenu = ({
                                 </svg>
                             </span>
                             <span className="settings-menu-label">
-                                グリッド
+                                {t("grid.label")}
                             </span>
                             <span className="settings-menu-trailing">
                                 <span className="settings-menu-meta">
@@ -219,14 +226,69 @@ export const HeaderMenu = ({
                                     onClick={() => applyGrid(true)}
                                     type="button"
                                 >
-                                    On
+                                    {t("grid.on")}
                                 </button>
                                 <button
                                     className={`settings-submenu-item ${!grid ? "active" : ""}`}
                                     onClick={() => applyGrid(false)}
                                     type="button"
                                 >
-                                    Off
+                                    {t("grid.off")}
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            className="settings-menu-item has-submenu"
+                            role="button"
+                            tabIndex={0}
+                        >
+                            <span
+                                className="settings-menu-icon"
+                                aria-hidden="true"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M12 3v18M3 12h18"
+                                        stroke="currentColor"
+                                        strokeWidth="1.4"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </span>
+                            <span className="settings-menu-label">
+                                {t("language.label")}
+                            </span>
+                            <span className="settings-menu-trailing">
+                                <span className="settings-menu-meta">
+                                    {language === "ja"
+                                        ? t("language.ja")
+                                        : t("language.en")}
+                                </span>
+                                <span className="settings-menu-arrow">›</span>
+                            </span>
+                            <div className="settings-submenu" role="menu">
+                                <button
+                                    className={`settings-submenu-item ${
+                                        language === "ja" ? "active" : ""
+                                    }`}
+                                    onClick={() => setLanguage("ja")}
+                                    type="button"
+                                >
+                                    {t("language.ja")}
+                                </button>
+                                <button
+                                    className={`settings-submenu-item ${
+                                        language === "en" ? "active" : ""
+                                    }`}
+                                    onClick={() => setLanguage("en")}
+                                    type="button"
+                                >
+                                    {t("language.en")}
                                 </button>
                             </div>
                         </div>
@@ -262,12 +324,12 @@ export const HeaderMenu = ({
                                 </svg>
                             </span>
                             <span className="settings-menu-label">
-                                LLM 設定
+                                {t("menu.llm")}
                             </span>
                             <span className="settings-menu-trailing">
                                 {llmNeedsSetup && (
                                     <span className="settings-menu-meta">
-                                        未設定
+                                        {t("menu.unset")}
                                     </span>
                                 )}
                                 <span className="settings-menu-arrow">›</span>
@@ -315,7 +377,7 @@ export const HeaderMenu = ({
                                     </svg>
                                 </span>
                                 <span className="settings-menu-label">
-                                    ログアウト
+                                    {t("menu.logout")}
                                 </span>
                             </button>
                         )}
@@ -361,13 +423,13 @@ export const HeaderMenu = ({
                                     />
                                 </svg>
                                 <span style={{ fontWeight: 700 }}>
-                                    LLM 設定
+                                    {t("llm.label")}
                                 </span>
                             </div>
                             <button
                                 className="icon-btn"
-                                aria-label="閉じる"
-                                title="閉じる"
+                                aria-label={t("menu.close")}
+                                title={t("menu.close")}
                                 onClick={() => setShowLlm(false)}
                             >
                                 <svg

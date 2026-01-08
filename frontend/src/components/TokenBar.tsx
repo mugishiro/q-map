@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { api } from "../api";
 import { auth } from "../auth";
+import { useI18n } from "../i18n";
 
 type Props = { onTokenSaved: () => void };
 
 export const TokenBar = ({ onTokenSaved }: Props) => {
+  const { t } = useI18n();
   const [token, setToken] = useState(api.getToken() || "");
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -47,21 +49,21 @@ export const TokenBar = ({ onTokenSaved }: Props) => {
         />
         <div className="stack gap-s" style={{ alignItems: "flex-end" }}>
           <button className="btn ghost" onClick={save}>
-            保存
+            {t("token.save")}
           </button>
           <button className="btn ghost" onClick={logout}>
-            ログアウト
+            {t("token.logout")}
           </button>
           <button className="btn" onClick={startLogin} disabled={!cognitoConfigured}>
-            Cognitoでログイン
+            {t("token.login")}
           </button>
         </div>
       </div>
       <div className="helper">
-        認証済みJWTを貼り付けるか、Cognito Hosted UI でログインしてアクセストークンを取得します。
+        {t("token.helper")}
         {!cognitoConfigured && (
           <div style={{ color: "#b91c1c" }}>
-            VITE_COGNITO_DOMAIN / VITE_COGNITO_CLIENT_ID が未設定です。
+            {t("token.missingConfig")}
           </div>
         )}
         {authError && <div style={{ color: "#b91c1c" }}>{authError}</div>}
