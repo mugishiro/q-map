@@ -24,3 +24,6 @@ frontend/dist/
 backend/dist/
 backend/dist_bundle/
 dist/
+
+# Docs (local only)
+doc/
