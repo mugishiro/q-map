@@ -87,16 +87,3 @@ module "api" {
   lambda_environment_extras    = var.lambda_environment_extras
   lambda_log_retention_in_days = var.lambda_log_retention_in_days
 }
-
-module "amplify" {
-  source = "./modules/amplify"
-
-  name_prefix         = local.name_prefix
-  stage               = local.stage
-  api_endpoint        = module.api.http_api_endpoint
-  user_pool_id        = module.auth.user_pool_id
-  user_pool_client_id = module.auth.user_pool_client_id
-  cognito_domain      = module.auth.cognito_domain
-  env_vars_extra      = var.lambda_environment_extras
-  access_token        = var.amplify_access_token
-}

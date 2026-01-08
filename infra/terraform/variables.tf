@@ -67,10 +67,3 @@ variable "lambda_log_retention_in_days" {
   type        = number
   default     = 14
 }
-
-variable "amplify_access_token" {
-  description = "Amplify が GitHub と接続するためのアクセストークン（PAT）。平文を tfvars に置かず環境変数経由で渡す。"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
