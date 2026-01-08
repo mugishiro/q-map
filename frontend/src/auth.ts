@@ -63,6 +63,15 @@ const buildAuthorizeUrl = (config: CognitoConfig, state: string, codeChallenge: 
   return `${config.domain}/oauth2/authorize?${params.toString()}`;
 };
 
+const buildLogoutUrl = (config: CognitoConfig) => {
+  const logoutUri = import.meta.env.VITE_COGNITO_LOGOUT_URI || config.redirectUri;
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    logout_uri: logoutUri,
+  });
+  return `${config.domain}/logout?${params.toString()}`;
+};
+
 const getStoredState = () => localStorage.getItem(STATE_KEY);
 const getStoredVerifier = () => localStorage.getItem(VERIFIER_KEY);
 
@@ -135,5 +144,10 @@ export const auth = {
   getConfig,
   startLogin,
   exchangeCodeForToken,
+  getLogoutUrl: () => {
+    const config = getConfig();
+    if (!config) return null;
+    return buildLogoutUrl(config);
+  },
   clearAuthArtifacts: clearPkce,
 };

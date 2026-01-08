@@ -20,6 +20,10 @@ export const TokenBar = ({ onTokenSaved }: Props) => {
     auth.clearAuthArtifacts();
     setToken("");
     onTokenSaved();
+    const logoutUrl = auth.getLogoutUrl();
+    if (logoutUrl) {
+      window.location.href = logoutUrl;
+    }
   };
 
   const startLogin = async () => {

@@ -27,6 +27,10 @@ const HeaderAuth = ({ onAuthChange, onLogout }: Props) => {
         auth.clearAuthArtifacts();
         onAuthChange();
         onLogout?.();
+        const logoutUrl = auth.getLogoutUrl();
+        if (logoutUrl) {
+            window.location.href = logoutUrl;
+        }
     };
 
     return (

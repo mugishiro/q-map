@@ -577,6 +577,10 @@ function App() {
         setAuthenticated(false);
         clearWorkspaceState();
         setLlmConfigured(null);
+        const logoutUrl = auth.getLogoutUrl();
+        if (logoutUrl) {
+            window.location.href = logoutUrl;
+        }
     };
 
     const selectNode = (nodeId: string) => {
