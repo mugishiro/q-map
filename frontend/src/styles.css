@@ -2076,6 +2076,26 @@ body[data-grid="off"] .gitk-shell {
     font-weight: 600;
     font-size: 16px;
 }
+.login-description {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--login-muted);
+}
+.login-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--login-text);
+}
+.login-list li::marker {
+    color: var(--login-accent);
+}
+.login-hint {
+    font-size: 12px;
+    color: var(--login-muted);
+}
 
 .login-primary,
 .login-secondary {
