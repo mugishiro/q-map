@@ -13,6 +13,7 @@
 - `NON_FUNCTIONAL.md`: 非機能方針（認証・レート制御・運用/監視・CORS/バージョニング等）。
 - `NEXT_STEPS.md`: 直近の着手タスク（Amplify設定、CI/CD、IaC、認証統合、モック実装、計測）。
 - `IMPLEMENTATION_PLAN.md`: v1 の進め方（IaC, 認証統合, Lambda BFF, フロント, 計測, CI/CD, 後続検討）。
+- `VERCEL.md`: Vercel への移行手順（Hostingのみ / Cognito維持）。
 
 読む順序の目安:
 1) SPEC → USER_FLOW でユースケース理解  
