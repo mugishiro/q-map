@@ -51,4 +51,3 @@ terraform apply -var-file=prod.tfvars
 
 ## 補足
 - Preview/PR 環境で Cognito を使う場合、callback/logout/allowed_origins に Preview ドメインも追加する。
-- Amplify の利用を完全に止める場合は、Terraform の `module "amplify"` を削除して apply する。

@@ -11,9 +11,9 @@
 
 - CI/CD 強化  
   - GitHub Actions で Terraform plan/apply（prod は手動承認）とフロント build を自動化。plan 結果を PR にコメント。
-  - Amplify プレビュー（PR）を有効化するか方針決定。
+  - Vercel Preview（PR）を有効化するか方針決定。
 - ドメイン/配信まわり  
-  - 独自ドメインを使う場合、APIGW/Amplify へカスタムドメイン・証明書を設定し、tfvars を更新して再 apply。CloudFront 経由で `/api/*` リライトする場合の設定を決める。
+  - 独自ドメインを使う場合、APIGW/Vercel へカスタムドメイン・証明書を設定し、tfvars を更新して再 apply。`/api/*` リライトの設定を確認する。
 - バックエンドの堅牢化  
   - バリデーション/エラー整備、メッセージ長やレート制限をサーバ側で enforce。構造化ログとメトリクス（LLM latency/token in/out）を出力。
   - LLM 呼び出しのタイムアウト/リトライ、プロバイダごとのモデル選択 UI/API。

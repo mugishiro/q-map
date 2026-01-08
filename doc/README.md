@@ -8,10 +8,10 @@
 - `USER_FLOW.md`: 1 ユーザーの操作を時系列で追った具体例。
 - `API.md`: REST API 仕様（リクエスト/レスポンス例、重要エンドポイント）。
 - `DYNAMODB_DESIGN.md`: テーブル構成と GSI 設計。
-- `ARCHITECTURE.md`: インフラ構成（Amplify Hosting/CDN + API Gateway/Lambda/DynamoDB/KMS/LLM）。
+- `ARCHITECTURE.md`: インフラ構成（Vercel + API Gateway/Lambda/DynamoDB/KMS/LLM）。
 - `DECISIONS.md`: v1 の意思決定（ID, messages, トークン方針, URL ルーティング）。
 - `NON_FUNCTIONAL.md`: 非機能方針（認証・レート制御・運用/監視・CORS/バージョニング等）。
-- `NEXT_STEPS.md`: 直近の着手タスク（Amplify設定、CI/CD、IaC、認証統合、モック実装、計測）。
+- `NEXT_STEPS.md`: 直近の着手タスク（Vercel設定、CI/CD、IaC、認証統合、モック実装、計測）。
 - `IMPLEMENTATION_PLAN.md`: v1 の進め方（IaC, 認証統合, Lambda BFF, フロント, 計測, CI/CD, 後続検討）。
 - `VERCEL.md`: Vercel への移行手順（Hostingのみ / Cognito維持）。
 

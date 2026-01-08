@@ -1,5 +1,5 @@
 stage           = "prod"
 region          = "ap-northeast-1"
-callback_urls   = ["https://main.d3c16q2d8f1ppt.amplifyapp.com/callback"]
-logout_urls     = ["https://main.d3c16q2d8f1ppt.amplifyapp.com/logout"]
-allowed_origins = ["https://main.d3c16q2d8f1ppt.amplifyapp.com"]
+callback_urls   = ["https://q-map-prod.vercel.app/callback"]
+logout_urls     = ["https://q-map-prod.vercel.app/logout"]
+allowed_origins = ["https://q-map-prod.vercel.app"]

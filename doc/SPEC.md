@@ -102,7 +102,7 @@ QMap は LLM との対話を Git のコミットツリーのように分岐・�
 
 ## 非機能・運用
 - コスト試算（ユーザー LLM 代除外）
-  - Amplify Hosting (CDN 含む): 100〜400 円/月 規模
+  - Vercel Hosting: 100〜400 円/月 規模
   - DynamoDB: 0〜100 円/月
   - Lambda: 10〜50 円/月
   - CloudWatch: 50〜100 円/月

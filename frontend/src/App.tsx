@@ -559,18 +559,23 @@ function App() {
         }
     };
 
-    const handleLogout = () => {
-        api.clearToken();
-        auth.clearAuthArtifacts();
-        setAuthenticated(false);
+    const clearWorkspaceState = () => {
         setPendingNewChat(false);
         setTopics([]);
         setNodes([]);
         setPath([]);
+        setSelectedTopicId(null);
         setSelectedNodeId(null);
         setLastLaterNodeId(null);
         setChatDraft("");
         setMobileDrawer(null);
+    };
+
+    const handleLogout = () => {
+        api.clearToken();
+        auth.clearAuthArtifacts();
+        setAuthenticated(false);
+        clearWorkspaceState();
         setLlmConfigured(null);
     };
 

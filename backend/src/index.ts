@@ -560,11 +560,13 @@ export const handler = async (
     // GET /v1/me/settings
     if (method === "GET" && path === "/v1/me/settings") {
       const settings = await readUserSettings(userId);
+      const apiKeyMasked = settings?.apiKeyEncrypted
+        ? maskApiKey(await resolveApiKey(userId, settings.apiKeyEncrypted))
+        : null;
       return json(200, {
         llmProvider: settings?.llmProvider || null,
         model: settings?.model || null,
-      apiKeyMasked:
-        settings?.apiKeyEncrypted ? maskApiKey(await resolveApiKey(userId, settings.apiKeyEncrypted)) : null,
+        apiKeyMasked,
       });
     }
 

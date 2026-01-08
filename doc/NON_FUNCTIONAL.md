@@ -10,7 +10,7 @@
 - CORS: SPA ドメインを Allow-Origin に限定。`/api/*` のみ許可。Credential は不要想定。
 - ログインフロー（Cognito Hosted UI + PKCE 想定）:
   - 未ログイン時は Cognito Hosted UI へリダイレクト。
-  - 認証後、認可コードが付与され Amplify ドメインに戻る。
+  - 認証後、認可コードが付与され Vercel ドメインに戻る。
   - フロントがコード＋PKCE でトークン交換し、ID/Access/Refresh トークンを取得。
   - Access Token(JWT) を `Authorization: Bearer` に付け `/api/*` を呼ぶ。API Gateway で検証。
   - 401/403 ならリフレッシュ→再ログインへ。ログアウトは Cognito サインアウトエンドポイントにリダイレクトし、ローカルトークンも破棄。
