@@ -25,28 +25,50 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                     </div>
                     <div className="login-demo-body">
                         <div className="login-demo-chat">
-                            <div className="demo-bubble demo-bubble-user">プロジェクト作成</div>
-                            <div className="demo-bubble demo-bubble-bot">ノードを選択</div>
-                            <div className="demo-bubble demo-bubble-user">分岐を追加</div>
+                            <div className="demo-bubble demo-bubble-user">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
+                            <div className="demo-bubble demo-bubble-bot">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
+                            <div className="demo-bubble demo-bubble-user">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
+                            <div className="demo-input">
+                                <span className="demo-input-line" />
+                            </div>
                         </div>
                         <div className="login-demo-graph">
                             <div className="demo-node demo-node-root">
-                                <span>Start</span>
+                                <span className="demo-node-label" />
                             </div>
                             <div className="demo-node demo-node-focus">
-                                <span>選択</span>
+                                <span className="demo-node-label" />
                             </div>
                             <div className="demo-node demo-node-branch-a">
-                                <span>案A</span>
+                                <span className="demo-node-label" />
                             </div>
                             <div className="demo-node demo-node-branch-b">
-                                <span>案B</span>
+                                <span className="demo-node-label" />
                             </div>
                             <div className="demo-connector demo-connector-root" />
                             <div className="demo-connector demo-connector-left" />
                             <div className="demo-connector demo-connector-right" />
                         </div>
                     </div>
+                    <div className="demo-cursor" />
                 </div>
             </div>
             <div className="login-panel">

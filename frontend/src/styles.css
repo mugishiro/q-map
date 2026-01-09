@@ -2029,6 +2029,7 @@ body[data-grid="off"] .gitk-shell {
     grid-template-rows: auto 1fr;
     gap: 8px;
     padding: 14px;
+    position: relative;
     transform: translateY(12px);
     animation: demoFloat 8s ease-in-out infinite;
 }
@@ -2070,7 +2071,7 @@ body[data-grid="off"] .gitk-shell {
     padding: 16px;
     display: grid;
     gap: 10px;
-    align-content: center;
+    align-content: start;
     overflow: hidden;
     position: relative;
 }
@@ -2086,6 +2087,8 @@ body[data-grid="off"] .gitk-shell {
     opacity: 0;
     transform: translateY(12px);
     animation: bubbleIn 8s ease-in-out infinite;
+    display: grid;
+    place-items: center;
 }
 .demo-bubble-user {
     justify-self: start;
@@ -2100,6 +2103,41 @@ body[data-grid="off"] .gitk-shell {
     animation-delay: 3.4s;
 }
 
+.demo-dots {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+.demo-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.6;
+}
+.demo-dots span:nth-child(2) {
+    opacity: 0.8;
+}
+.demo-dots span:nth-child(3) {
+    opacity: 1;
+}
+
+.demo-input {
+    margin-top: auto;
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(226, 232, 240, 0.12);
+    border: 1px solid rgba(226, 232, 240, 0.2);
+    opacity: 0.6;
+}
+.demo-input-line {
+    display: block;
+    width: 58%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(226, 232, 240, 0.65);
+}
+
 .login-demo-graph {
     position: relative;
     border-radius: 20px;
@@ -2111,19 +2149,24 @@ body[data-grid="off"] .gitk-shell {
 
 .demo-node {
     position: absolute;
-    min-width: 84px;
-    padding: 8px 12px;
-    border-radius: 16px;
+    width: 88px;
+    height: 46px;
+    border-radius: 18px;
     background: rgba(148, 163, 184, 0.85);
     color: #0f172a;
     font-size: 12px;
     font-weight: 700;
     text-align: center;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+    display: grid;
+    place-items: center;
+    opacity: 0;
 }
 .demo-node-root {
     top: 18%;
     left: 18%;
+    animation: nodeIn 8s ease-in-out infinite;
+    animation-delay: 0.9s;
 }
 .demo-node-focus {
     top: 48%;
@@ -2131,21 +2174,30 @@ body[data-grid="off"] .gitk-shell {
     transform: translate(-50%, -50%);
     background: rgba(14, 165, 233, 0.9);
     color: #0b1120;
-    animation: nodePulse 2.6s ease-in-out infinite;
+    animation: nodeInCentered 8s ease-in-out infinite, nodePulse 2.6s ease-in-out infinite;
+    animation-delay: 1.6s, 0s;
 }
 .demo-node-branch-a {
     bottom: 18%;
     left: 20%;
-    opacity: 0;
     animation: branchIn 8s ease-in-out infinite;
-    animation-delay: 2.4s;
+    animation-delay: 3.1s;
 }
 .demo-node-branch-b {
     bottom: 18%;
     right: 20%;
-    opacity: 0;
     animation: branchIn 8s ease-in-out infinite;
-    animation-delay: 3s;
+    animation-delay: 3.6s;
+}
+
+.demo-node-label {
+    width: 50%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.65);
+}
+.demo-node-focus .demo-node-label {
+    background: rgba(15, 23, 42, 0.85);
 }
 
 .demo-connector {
@@ -2161,7 +2213,7 @@ body[data-grid="off"] .gitk-shell {
     top: 30%;
     left: 33%;
     transform: rotate(20deg);
-    animation-delay: 1s;
+    animation-delay: 1.4s;
 }
 .demo-connector-left {
     width: 3px;
@@ -2169,7 +2221,7 @@ body[data-grid="off"] .gitk-shell {
     top: 52%;
     left: 36%;
     transform: rotate(-40deg);
-    animation-delay: 2.4s;
+    animation-delay: 3.1s;
 }
 .demo-connector-right {
     width: 3px;
@@ -2177,7 +2229,20 @@ body[data-grid="off"] .gitk-shell {
     top: 52%;
     right: 36%;
     transform: rotate(40deg);
-    animation-delay: 3s;
+    animation-delay: 3.6s;
+}
+
+.demo-cursor {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(226, 232, 240, 0.9);
+    box-shadow: 0 0 0 6px rgba(226, 232, 240, 0.12);
+    top: 48%;
+    left: 44%;
+    animation: cursorMove 8s ease-in-out infinite;
+    opacity: 0.9;
 }
 
 .login-panel {
@@ -2383,6 +2448,42 @@ body[data-grid="off"] .gitk-shell {
     }
 }
 
+@keyframes nodeIn {
+    0%,
+    12% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    22%,
+    75% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    85%,
+    100% {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes nodeInCentered {
+    0%,
+    12% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateY(6px);
+    }
+    22%,
+    75% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateY(0);
+    }
+    85%,
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateY(-6px);
+    }
+}
+
 @keyframes branchIn {
     0%,
     30% {
@@ -2413,6 +2514,38 @@ body[data-grid="off"] .gitk-shell {
     85%,
     100% {
         opacity: 0;
+    }
+}
+
+@keyframes cursorMove {
+    0%,
+    8% {
+        opacity: 0;
+        transform: translate(0, 0);
+    }
+    16% {
+        opacity: 1;
+        transform: translate(-120px, 40px);
+    }
+    28% {
+        transform: translate(30px, 20px);
+    }
+    40% {
+        transform: translate(30px, 20px);
+    }
+    52% {
+        transform: translate(120px, 60px);
+    }
+    68% {
+        transform: translate(120px, 60px);
+    }
+    85% {
+        opacity: 0;
+        transform: translate(160px, 80px);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(160px, 80px);
     }
 }
 
@@ -2462,10 +2595,12 @@ body[data-grid="off"] .gitk-shell {
 @media (prefers-reduced-motion: reduce) {
     .login-demo-frame,
     .demo-bubble,
+    .demo-node,
     .demo-node-focus,
     .demo-node-branch-a,
     .demo-node-branch-b,
-    .demo-connector {
+    .demo-connector,
+    .demo-cursor {
         animation: none;
     }
     .login-panel {
