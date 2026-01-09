@@ -65,7 +65,6 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                             </div>
                         </div>
                     </div>
-                    <div className="demo-cursor" />
                 </div>
             </div>
             <div className="login-panel">
@@ -74,13 +73,10 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                         <div className="login-brand">QMap</div>
                     </div>
                     <div className="login-intro">
-                        <div className="login-intro-title">会話からノードを育てるマップ</div>
+                        <div className="login-intro-title">チャット履歴を可視化する</div>
                         <div className="login-intro-body">
-                            チャットするとノードが追加され、過去のノードを選ぶと分岐が
-                            生まれます。
-                        </div>
-                        <div className="login-intro-steps">
-                            作成 → 選択 → 分岐
+                            対話をするとノードが追加されます。
+                            過去のノードから対話をやり直すと、対話履歴が分岐していきます。
                         </div>
                     </div>
                     <button
