@@ -24,6 +24,34 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                         <span className="login-demo-dot" />
                     </div>
                     <div className="login-demo-body">
+                        <div className="login-demo-map">
+                            <div className="demo-map-grid" />
+                            <div className="demo-node demo-node-root">
+                                <span className="demo-node-dot" />
+                            </div>
+                            <div className="demo-node demo-node-child">
+                                <span className="demo-node-dot" />
+                            </div>
+                            <div className="demo-node demo-node-branch">
+                                <span className="demo-node-dot" />
+                            </div>
+                            <div className="demo-connector demo-connector-main" />
+                            <div className="demo-connector demo-connector-branch" />
+                        </div>
+                        <div className="login-demo-list">
+                            <div className="demo-list-item demo-list-item-active">
+                                <span className="demo-list-line" />
+                                <span className="demo-list-chip" />
+                            </div>
+                            <div className="demo-list-item">
+                                <span className="demo-list-line" />
+                                <span className="demo-list-chip" />
+                            </div>
+                            <div className="demo-list-item demo-list-item-branch">
+                                <span className="demo-list-line" />
+                                <span className="demo-list-chip" />
+                            </div>
+                        </div>
                         <div className="login-demo-chat">
                             <div className="demo-bubble demo-bubble-user">
                                 <span className="demo-dots">
@@ -49,23 +77,6 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                             <div className="demo-input">
                                 <span className="demo-input-line" />
                             </div>
-                        </div>
-                        <div className="login-demo-graph">
-                            <div className="demo-node demo-node-root">
-                                <span className="demo-node-label" />
-                            </div>
-                            <div className="demo-node demo-node-focus">
-                                <span className="demo-node-label" />
-                            </div>
-                            <div className="demo-node demo-node-branch-a">
-                                <span className="demo-node-label" />
-                            </div>
-                            <div className="demo-node demo-node-branch-b">
-                                <span className="demo-node-label" />
-                            </div>
-                            <div className="demo-connector demo-connector-root" />
-                            <div className="demo-connector demo-connector-left" />
-                            <div className="demo-connector demo-connector-right" />
                         </div>
                     </div>
                     <div className="demo-cursor" />
