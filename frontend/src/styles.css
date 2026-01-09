@@ -2197,7 +2197,7 @@ body[data-grid="off"] .gitk-shell {
 }
 .demo-node-branch {
     top: 42%;
-    left: 18%;
+    left: 44%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
@@ -2213,7 +2213,7 @@ body[data-grid="off"] .gitk-shell {
 }
 .demo-node-branch-3 {
     top: 64%;
-    left: 42%;
+    left: 46%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
@@ -2229,7 +2229,7 @@ body[data-grid="off"] .gitk-shell {
 }
 .demo-node-branch-5 {
     top: 86%;
-    left: 20%;
+    left: 42%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
@@ -2260,16 +2260,16 @@ body[data-grid="off"] .gitk-shell {
 }
 .demo-connector-main {
     width: 4px;
-    height: 92px;
-    top: 18%;
+    height: calc(30% - 14%);
+    top: calc(14% + 13px);
     left: calc(30% + 11px);
     transform: none;
     animation-delay: 0.9s;
 }
 .demo-connector-branch {
     width: 4px;
-    height: 62px;
-    top: 36%;
+    height: calc(52% - 30%);
+    top: calc(30% + 13px);
     left: calc(30% + 11px);
     transform: none;
     background: rgba(34, 197, 94, 0.75);
@@ -2277,37 +2277,37 @@ body[data-grid="off"] .gitk-shell {
 }
 .demo-connector-branch-2 {
     width: 4px;
-    height: 84px;
-    top: 56%;
+    height: calc(74% - 52%);
+    top: calc(52% + 13px);
     left: calc(30% + 11px);
     transform: none;
     background: rgba(34, 197, 94, 0.75);
     animation-delay: 3.6s;
 }
 .demo-connector-branch-3 {
-    width: 70px;
+    width: calc(44% - 30%);
     height: 4px;
-    top: 38%;
-    left: 18%;
-    transform: rotate(-26deg);
+    top: calc(42% + 13px);
+    left: calc(30% + 13px);
+    transform: none;
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 2.6s;
 }
 .demo-connector-branch-4 {
-    width: 72px;
+    width: calc(46% - 30%);
     height: 4px;
-    top: 58%;
-    left: 32%;
-    transform: rotate(24deg);
+    top: calc(64% + 13px);
+    left: calc(30% + 13px);
+    transform: none;
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 4.2s;
 }
 .demo-connector-branch-5 {
-    width: 66px;
+    width: calc(42% - 30%);
     height: 4px;
-    top: 80%;
-    left: 20%;
-    transform: rotate(-22deg);
+    top: calc(86% + 13px);
+    left: calc(30% + 13px);
+    transform: none;
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 5s;
 }
