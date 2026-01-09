@@ -38,20 +38,6 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                             <div className="demo-connector demo-connector-main" />
                             <div className="demo-connector demo-connector-branch" />
                         </div>
-                        <div className="login-demo-list">
-                            <div className="demo-list-item demo-list-item-active">
-                                <span className="demo-list-line" />
-                                <span className="demo-list-chip" />
-                            </div>
-                            <div className="demo-list-item">
-                                <span className="demo-list-line" />
-                                <span className="demo-list-chip" />
-                            </div>
-                            <div className="demo-list-item demo-list-item-branch">
-                                <span className="demo-list-line" />
-                                <span className="demo-list-chip" />
-                            </div>
-                        </div>
                         <div className="login-demo-chat">
                             <div className="demo-bubble demo-bubble-user">
                                 <span className="demo-dots">
@@ -86,6 +72,16 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                 <div className="login-card">
                     <div className="login-card-header">
                         <div className="login-brand">QMap</div>
+                    </div>
+                    <div className="login-intro">
+                        <div className="login-intro-title">会話からノードを育てるマップ</div>
+                        <div className="login-intro-body">
+                            チャットするとノードが追加され、過去のノードを選ぶと分岐が
+                            生まれます。
+                        </div>
+                        <div className="login-intro-steps">
+                            作成 → 選択 → 分岐
+                        </div>
                     </div>
                     <button
                         className="btn solid login-primary"
