@@ -38,11 +38,37 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                             <div className="demo-node demo-node-branch-2">
                                 <span className="demo-node-dot" />
                             </div>
+                            <div className="demo-node demo-node-branch-3">
+                                <span className="demo-node-dot" />
+                            </div>
+                            <div className="demo-node demo-node-branch-4">
+                                <span className="demo-node-dot" />
+                            </div>
+                            <div className="demo-node demo-node-branch-5">
+                                <span className="demo-node-dot" />
+                            </div>
                             <div className="demo-connector demo-connector-main" />
                             <div className="demo-connector demo-connector-branch" />
                             <div className="demo-connector demo-connector-branch-2" />
+                            <div className="demo-connector demo-connector-branch-3" />
+                            <div className="demo-connector demo-connector-branch-4" />
+                            <div className="demo-connector demo-connector-branch-5" />
                         </div>
                         <div className="login-demo-chat">
+                            <div className="demo-bubble demo-bubble-user">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
+                            <div className="demo-bubble demo-bubble-bot">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
                             <div className="demo-bubble demo-bubble-user">
                                 <span className="demo-dots">
                                     <span />

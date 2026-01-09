@@ -2128,6 +2128,12 @@ body[data-grid="off"] .gitk-shell {
 .demo-bubble-user:nth-child(5) {
     animation-delay: 5.2s;
 }
+.demo-bubble-bot:nth-child(6) {
+    animation-delay: 6.4s;
+}
+.demo-bubble-user:nth-child(7) {
+    animation-delay: 7.6s;
+}
 
 .demo-dots {
     display: inline-flex;
@@ -2184,26 +2190,50 @@ body[data-grid="off"] .gitk-shell {
     animation-delay: 0.4s;
 }
 .demo-node-child {
-    top: 40%;
-    left: 14%;
+    top: 34%;
+    left: 20%;
     animation: nodeIn 2.2s ease-out forwards, nodePulse 2.8s ease-in-out infinite;
-    animation-delay: 1.2s, 2.2s;
+    animation-delay: 1.6s, 2.2s;
 }
 .demo-node-branch {
-    top: 40%;
-    left: 30%;
+    top: 48%;
+    left: 34%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
     animation-delay: 2.8s;
 }
 .demo-node-branch-2 {
-    top: 58%;
-    left: 46%;
+    top: 62%;
+    left: 50%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
-    animation-delay: 4.6s;
+    animation-delay: 4s;
+}
+.demo-node-branch-3 {
+    top: 74%;
+    left: 64%;
+    border-color: rgba(59, 130, 246, 0.9);
+    background: rgba(219, 234, 254, 0.9);
+    animation: branchIn 2.6s ease-out forwards;
+    animation-delay: 5.2s;
+}
+.demo-node-branch-4 {
+    top: 84%;
+    left: 78%;
+    border-color: rgba(59, 130, 246, 0.9);
+    background: rgba(219, 234, 254, 0.9);
+    animation: branchIn 2.6s ease-out forwards;
+    animation-delay: 6.4s;
+}
+.demo-node-branch-5 {
+    top: 90%;
+    left: 88%;
+    border-color: rgba(59, 130, 246, 0.9);
+    background: rgba(219, 234, 254, 0.9);
+    animation: branchIn 2.6s ease-out forwards;
+    animation-delay: 7.6s;
 }
 
 .demo-node-dot {
@@ -2227,29 +2257,57 @@ body[data-grid="off"] .gitk-shell {
     z-index: 1;
 }
 .demo-connector-main {
-    width: 4px;
-    height: 62px;
-    top: 22%;
+    width: 70px;
+    height: 4px;
+    top: 24%;
     left: 16%;
+    transform: rotate(55deg);
     animation-delay: 1s;
 }
 .demo-connector-branch {
-    width: 70px;
+    width: 90px;
     height: 4px;
-    top: 42%;
-    left: 18%;
-    transform: rotate(-30deg);
+    top: 41%;
+    left: 26%;
+    transform: rotate(28deg);
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 2.9s;
 }
 .demo-connector-branch-2 {
-    width: 90px;
+    width: 95px;
     height: 4px;
-    top: 48%;
-    left: 24%;
+    top: 55%;
+    left: 40%;
+    transform: rotate(26deg);
+    background: rgba(59, 130, 246, 0.75);
+    animation-delay: 4s;
+}
+.demo-connector-branch-3 {
+    width: 95px;
+    height: 4px;
+    top: 68%;
+    left: 54%;
+    transform: rotate(26deg);
+    background: rgba(59, 130, 246, 0.75);
+    animation-delay: 5.2s;
+}
+.demo-connector-branch-4 {
+    width: 70px;
+    height: 4px;
+    top: 80%;
+    left: 68%;
+    transform: rotate(26deg);
+    background: rgba(59, 130, 246, 0.75);
+    animation-delay: 6.4s;
+}
+.demo-connector-branch-5 {
+    width: 55px;
+    height: 4px;
+    top: 86%;
+    left: 80%;
     transform: rotate(20deg);
     background: rgba(59, 130, 246, 0.75);
-    animation-delay: 4.6s;
+    animation-delay: 7.6s;
 }
 
 .login-panel {
