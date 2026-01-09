@@ -2011,13 +2011,14 @@ body[data-grid="off"] .gitk-shell {
     position: absolute;
     inset: 0;
     display: grid;
-    place-items: center;
+    place-items: center end;
+    padding-right: clamp(12px, 6vw, 84px);
     pointer-events: none;
-    opacity: 0.85;
+    opacity: 0.7;
 }
 
 .login-demo-frame {
-    width: min(760px, 92vw);
+    width: min(700px, 92vw);
     height: min(460px, 70vh);
     border-radius: 28px;
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.25));
@@ -2056,14 +2057,6 @@ body[data-grid="off"] .gitk-shell {
 .login-demo-dot:nth-child(3) {
     background: #22c55e;
 }
-.login-demo-title {
-    margin-left: auto;
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(226, 232, 240, 0.8);
-    letter-spacing: 0.08em;
-}
-
 .login-demo-body {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
@@ -2195,6 +2188,8 @@ body[data-grid="off"] .gitk-shell {
     animation: loginRise 0.8s ease both;
     animation-delay: 0.1s;
     width: min(420px, 100%);
+    margin-right: auto;
+    margin-left: clamp(0px, 6vw, 80px);
 }
 
 .login-pill {
@@ -2225,6 +2220,22 @@ body[data-grid="off"] .gitk-shell {
     gap: 16px;
     position: relative;
     overflow: hidden;
+}
+.login-card > * {
+    position: relative;
+    z-index: 1;
+}
+.login-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.6);
+    opacity: 0.35;
+    pointer-events: none;
+}
+:root[data-theme="dark"] .login-card::before {
+    background: rgba(15, 23, 42, 0.85);
+    opacity: 0.25;
 }
 :root[data-theme="dark"] .login-card {
     background: linear-gradient(
@@ -2408,6 +2419,14 @@ body[data-grid="off"] .gitk-shell {
 @media (max-width: 1000px) {
     .login-shell {
         padding: 40px 22px;
+    }
+    .login-panel {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .login-demo {
+        place-items: start center;
+        padding-right: 0;
     }
     .login-demo-frame {
         width: min(660px, 94vw);
