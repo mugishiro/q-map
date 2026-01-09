@@ -35,10 +35,28 @@ const LoginScreen = ({ onLogin, authError, error, loading = false }: Props) => {
                             <div className="demo-node demo-node-branch">
                                 <span className="demo-node-dot" />
                             </div>
+                            <div className="demo-node demo-node-branch-2">
+                                <span className="demo-node-dot" />
+                            </div>
                             <div className="demo-connector demo-connector-main" />
                             <div className="demo-connector demo-connector-branch" />
+                            <div className="demo-connector demo-connector-branch-2" />
                         </div>
                         <div className="login-demo-chat">
+                            <div className="demo-bubble demo-bubble-user">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
+                            <div className="demo-bubble demo-bubble-bot">
+                                <span className="demo-dots">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </span>
+                            </div>
                             <div className="demo-bubble demo-bubble-user">
                                 <span className="demo-dots">
                                     <span />
