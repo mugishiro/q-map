@@ -2196,8 +2196,8 @@ body[data-grid="off"] .gitk-shell {
     animation-delay: 1.3s, 1.9s;
 }
 .demo-node-branch {
-    top: 42%;
-    left: 44%;
+    top: 44%;
+    left: 46%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
@@ -2212,8 +2212,8 @@ body[data-grid="off"] .gitk-shell {
     animation-delay: 2.4s;
 }
 .demo-node-branch-3 {
-    top: 64%;
-    left: 46%;
+    top: 66%;
+    left: 48%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
@@ -2228,8 +2228,8 @@ body[data-grid="off"] .gitk-shell {
     animation-delay: 4s;
 }
 .demo-node-branch-5 {
-    top: 86%;
-    left: 42%;
+    top: 88%;
+    left: 46%;
     border-color: rgba(59, 130, 246, 0.9);
     background: rgba(219, 234, 254, 0.9);
     animation: branchIn 2.6s ease-out forwards;
@@ -2285,29 +2285,32 @@ body[data-grid="off"] .gitk-shell {
     animation-delay: 3.6s;
 }
 .demo-connector-branch-3 {
-    width: calc(44% - 30%);
+    width: calc((46% - 30%) * 1.5);
     height: 4px;
-    top: calc(42% + 13px);
+    top: calc(30% + 13px);
     left: calc(30% + 13px);
-    transform: none;
+    transform: rotate(35deg);
+    transform-origin: left center;
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 2.6s;
 }
 .demo-connector-branch-4 {
-    width: calc(46% - 30%);
+    width: calc((48% - 30%) * 1.4);
     height: 4px;
-    top: calc(64% + 13px);
+    top: calc(52% + 13px);
     left: calc(30% + 13px);
-    transform: none;
+    transform: rotate(32deg);
+    transform-origin: left center;
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 4.2s;
 }
 .demo-connector-branch-5 {
-    width: calc(42% - 30%);
+    width: calc((46% - 30%) * 1.5);
     height: 4px;
-    top: calc(86% + 13px);
+    top: calc(74% + 13px);
     left: calc(30% + 13px);
-    transform: none;
+    transform: rotate(35deg);
+    transform-origin: left center;
     background: rgba(59, 130, 246, 0.75);
     animation-delay: 5s;
 }
